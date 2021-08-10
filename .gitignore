@@ -1,0 +1,8 @@
+*.db
+**/bin/
+**/obj/
+.vscode
+.vs
+UpgradeLog.htm
+Backup
+launchSettings.json
