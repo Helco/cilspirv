@@ -8,4 +8,9 @@
     <WarningsAsErrors>NU1605;nullable;CS8618</WarningsAsErrors>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\cilspirv.transpiler\cilspirv.transpiler.csproj" />
+    <ProjectReference Include="..\test-shaders\test-shaders.csproj" />
+  </ItemGroup>
+
 </Project>

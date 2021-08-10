@@ -1,7 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>test_shaders</RootNamespace>
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <WarningsAsErrors>NU1605;nullable;CS8618</WarningsAsErrors>
@@ -12,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SpirvNet\SpirvNet.csproj" />
+    <ProjectReference Include="..\cilspirv\cilspirv.csproj" />
   </ItemGroup>
 
 </Project>
