@@ -50,7 +50,5 @@ namespace cilspirv.Spirv
     public abstract record PipeInstruction : Instruction {}
     /// <summary>Non-Uniform Instructions</summary>
     public abstract record NonUniformInstruction : Instruction {}
-    /// <summary>Reserved Instructions</summary>
-    public abstract record ReservedInstruction : Instruction {}
 }
 

@@ -22,7 +22,12 @@ namespace cilspirv.Spirv.Ops
             Args = args.ToImmutableArray();
         }
 
-        protected override void WriteCode(Span<uint> code) => 
-            Args.AsSpan().CopyTo(code);
+        public override void Write(Span<uint> codes)
+        {
+            if (codes.Length < WordCount)
+                throw new ArgumentException("Output span too small", nameof(codes));
+            codes[0] = InstructionCode;
+            Args.AsSpan().CopyTo(codes.Slice(1));
+        }
     }
 }

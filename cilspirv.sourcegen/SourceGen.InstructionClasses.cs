@@ -11,7 +11,7 @@ namespace cilspirv.SourceGen
         {
             using var output = new StreamWriter(outputPath);
             output.WriteLines(Header());
-            var classes = coreGrammar.instruction_printing_class.Skip(1);
+            var classes = coreGrammar.instruction_printing_class.Skip(1).Where(c => c.tag != "Reserved");
             foreach (var @class in classes)
                 output.WriteLines(InstructionClass(@class));
             output.WriteLines(Footer());

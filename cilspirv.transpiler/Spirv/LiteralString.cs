@@ -18,35 +18,29 @@ namespace cilspirv.Spirv
 
         public int WordCount => (Value.Length + 3) / 4;
 
-        public void WriteCode(List<uint> code)
+        public void Write(Span<uint> code, ref int i)
         {
             if (Value == "")
             {
-                code.Add(0u);
+                code[i++] = 0u;
                 return;
             }
 
             var bytes = Encoding.UTF8.GetBytes(Value);
-            var maxI = 0;
+            var j = 0;
 
             // encoding
-            for (var i = 0; i + 4 <= bytes.Length; i += 4)
-            {
-                var val = BitConverter.ToUInt32(bytes, i);
-                maxI = i + 4;
-                code.Add(val);
-            }
+            for (; j + 4 <= bytes.Length; j += 4)
+                code[i++] = BitConverter.ToUInt32(bytes, j);
 
             // null termination
             {
-                var b0 = maxI + 0 >= bytes.Length ? (byte)0u : bytes[maxI + 0];
-                var b1 = maxI + 1 >= bytes.Length ? (byte)0u : bytes[maxI + 1];
-                var b2 = maxI + 2 >= bytes.Length ? (byte)0u : bytes[maxI + 2];
-                var b3 = maxI + 3 >= bytes.Length ? (byte)0u : bytes[maxI + 3];
+                var b0 = j + 0 >= bytes.Length ? (byte)0u : bytes[j + 0];
+                var b1 = j + 1 >= bytes.Length ? (byte)0u : bytes[j + 1];
+                var b2 = j + 2 >= bytes.Length ? (byte)0u : bytes[j + 2];
+                var b3 = j + 3 >= bytes.Length ? (byte)0u : bytes[j + 3];
                 var zb = new[] {b0, b1, b2, b3};
-                var val = BitConverter.ToUInt32(zb, 0);
-                
-                code.Add(val);
+                code[i++] = BitConverter.ToUInt32(zb, 0);
             }
         }
 

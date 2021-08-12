@@ -30,7 +30,7 @@ namespace cilspirv.SourceGen
         private static string MapInstructionClassName(string tag) => tag
             .Replace("_and_", "And")
             .Replace("-", "")
-            .Replace("_", "");
+            .Replace("_", "") + "Instruction";
 
         private static string? Obsolete(string? lastVersion) =>
             string.IsNullOrWhiteSpace(lastVersion)

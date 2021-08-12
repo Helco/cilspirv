@@ -25,7 +25,7 @@ namespace cilspirv.Spirv
 
         public abstract OpCode OpCode { get; }
 
-        protected abstract void WriteCode(Span<uint> code);
+        public abstract void Write(Span<uint> code);
 
         public virtual IEnumerable<ID> AllIDs => Array.Empty<ID>();
 
@@ -89,18 +89,10 @@ namespace cilspirv.Spirv
                 throw new FormatException("End of codes");
 
             var op = cachedOps.TryGetValue(opcode, out var info)
-                ? (Instruction)info.CodeCtor.Invoke(new object[] { codes, start..(start + (int)wordCount) })
+                ? (Instruction)info.CodeCtor.Invoke(new object[] { codes, start..(start + (int)wordCount - 1) })
                 : new OpUnknown(opcode, codes.Skip(start).Take((int)wordCount));
             start += (int)wordCount;
             return op;
-        }
-
-        public void Write(Span<uint> code)
-        {
-            if (code.Length < WordCount)
-                throw new ArgumentException("Output span too small", nameof(code));
-            code[0] = InstructionCode;
-            WriteCode(code.Slice(1));
         }
 
         protected static string StrOf(ID id) => id.ToString();
