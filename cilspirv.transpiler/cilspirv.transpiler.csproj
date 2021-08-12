@@ -2,6 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>NU1605;nullable;CS8618</WarningsAsErrors>
+    <RootNamespace>cilspirv</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

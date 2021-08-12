@@ -10,17 +10,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "cilspirv.testcli", "cilspir
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "cilspirv", "cilspirv\cilspirv.csproj", "{BCAFA14E-D363-46D7-BFF3-839905A57E3A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpCodeGen", "OpCodeGen\OpCodeGen.csproj", "{A7E51B78-30BC-44DE-A259-AC3DFDEDB2EF}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpirvNet", "SpirvNet\SpirvNet.csproj", "{1EC609CB-867D-4A9E-9361-7143D473333A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dependencies", "Dependencies", "{14173C1E-2B31-4BB0-B3CF-CBCA7AEF4576}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{57C636FA-ECC2-4C3A-8E19-28077730C0D4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "test-shaders", "test-shaders\test-shaders.csproj", "{62C67682-125C-48AB-BC02-076C9FC24E53}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "test-shaders", "test-shaders\test-shaders.csproj", "{62C67682-125C-48AB-BC02-076C9FC24E53}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cilspirv.transpiler", "cilspirv.transpiler\cilspirv.transpiler.csproj", "{054F7A39-DC4E-470A-8E8A-7D56DF970736}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "cilspirv.transpiler", "cilspirv.transpiler\cilspirv.transpiler.csproj", "{054F7A39-DC4E-470A-8E8A-7D56DF970736}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -36,10 +34,6 @@ Global
 		{BCAFA14E-D363-46D7-BFF3-839905A57E3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BCAFA14E-D363-46D7-BFF3-839905A57E3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BCAFA14E-D363-46D7-BFF3-839905A57E3A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A7E51B78-30BC-44DE-A259-AC3DFDEDB2EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A7E51B78-30BC-44DE-A259-AC3DFDEDB2EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A7E51B78-30BC-44DE-A259-AC3DFDEDB2EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A7E51B78-30BC-44DE-A259-AC3DFDEDB2EF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1EC609CB-867D-4A9E-9361-7143D473333A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1EC609CB-867D-4A9E-9361-7143D473333A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1EC609CB-867D-4A9E-9361-7143D473333A}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -58,7 +52,6 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{0E0124B7-0666-462E-8608-254F4C4E6ADF} = {57C636FA-ECC2-4C3A-8E19-28077730C0D4}
-		{A7E51B78-30BC-44DE-A259-AC3DFDEDB2EF} = {14173C1E-2B31-4BB0-B3CF-CBCA7AEF4576}
 		{1EC609CB-867D-4A9E-9361-7143D473333A} = {14173C1E-2B31-4BB0-B3CF-CBCA7AEF4576}
 		{62C67682-125C-48AB-BC02-076C9FC24E53} = {57C636FA-ECC2-4C3A-8E19-28077730C0D4}
 	EndGlobalSection

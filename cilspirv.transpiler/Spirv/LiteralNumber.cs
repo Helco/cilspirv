@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SpirvNet.Spirv
+namespace cilspirv.Spirv
 {
     /// <summary>
     /// A numeric value consuming one or more words. 

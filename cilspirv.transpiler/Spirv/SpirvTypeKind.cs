@@ -1,6 +1,6 @@
-﻿namespace SpirvNet.Spirv
+﻿namespace cilspirv.Spirv
 {
-    public enum SpirvTypeEnum
+    public enum SpirvTypeKind
     {
         Void,
         Boolean,
