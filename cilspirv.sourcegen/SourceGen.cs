@@ -2,36 +2,68 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Text;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace cilspirv.SourceGen
 {
-    [Generator]
-    public class SourceGenerator : ISourceGenerator
+    internal static partial class SourceGen
     {
-        public void Execute(GeneratorExecutionContext context)
+        public static void Main(string[] args)
         {
-            var generateSpirvEnums =
-                context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.GenerateSpirvEnums", out var generateSpirvEnumSwitch) &&
-                generateSpirvEnumSwitch.Equals("true", StringComparison.OrdinalIgnoreCase);
-
-            var generateSpirvInstructions =
-                context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.GenerateSpirvInstructions", out var generateSpirvInstructionsSwitch) &&
-                generateSpirvInstructionsSwitch.Equals("true", StringComparison.OrdinalIgnoreCase);
-
-            var generateSpirvExtInstructions =
-                context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.GenerateSpirvExtInstructions", out var generateSpirvExtInstructionsSwitch) &&
-                generateSpirvExtInstructionsSwitch.Equals("true", StringComparison.OrdinalIgnoreCase);
-
-            var assembly = typeof(SourceGenerator).Assembly;
+            var assembly = typeof(SourceGen).Assembly;
             var coreGrammarStream = assembly.GetManifestResourceStream("spirv.core.grammar.json");
-            var coreGrammarReader = new StreamReader(coreGrammarStream);
-            using var coreGrammarJsonReader = new JsonTextReader(coreGrammarReader);
-            var coreGrammar = new JsonSerializer().Deserialize<CoreGrammar.Rootobject>(coreGrammarJsonReader);
+            using var coreGrammarReader = new StreamReader(coreGrammarStream);
+            var coreGrammar = JsonSerializer.Deserialize<CoreGrammar.Rootobject>(coreGrammarReader.ReadToEnd());
+
+            GenerateEnums(coreGrammar, "SpirvEnums.cs");
+            GenerateInstructionClasses(coreGrammar, "InstructionClasses.cs");
+            GenerateInstructionEnum(coreGrammar, "OpCode.cs");
+            GenerateInstructions(coreGrammar, "Ops");
         }
 
-        public void Initialize(GeneratorInitializationContext context) { }
+        private static void WriteLines(this StreamWriter writer, IEnumerable<string> lines)
+        {
+            foreach (var line in lines)
+                writer.WriteLine(line);
+        }
+
+        private static string MapInstructionClassName(string tag) => tag
+            .Replace("_and_", "And")
+            .Replace("-", "")
+            .Replace("_", "");
+
+        private static string? Obsolete(string? lastVersion) =>
+            string.IsNullOrWhiteSpace(lastVersion)
+            ? null
+            : $"[Obsolete(\"Last version for this enumerant was {lastVersion}\")]";
+
+        private static string? DependsOn(string? version, string[]? capabilities, string[]? extensions)
+        {
+            version = string.IsNullOrWhiteSpace(version) ? null : version;
+            capabilities ??= Array.Empty<string>();
+            extensions ??= Array.Empty<string>();
+            if (version == null && !capabilities.Any() && !extensions.Any())
+                return null;
+
+            var args = "";
+            if (version != null)
+                args += $"Version = \"{version}\"";
+            if (capabilities.Any())
+            {
+                if (args.Any())
+                    args += ", ";
+                var caps = string.Join(", ", capabilities.Select(c => "Capability." + c));
+                args += $"Capabilities = new[] {{ {caps} }}";
+            }
+            if (extensions.Any())
+            {
+                if (args.Any())
+                    args += ", ";
+                var exts = string.Join(", ", extensions.Select(e => $"\"{e}\""));
+                args += $"Extensions = new[] {{ {exts} }}";
+            }
+
+            return $"[DependsOn({args})]";
+        }
     }
 }

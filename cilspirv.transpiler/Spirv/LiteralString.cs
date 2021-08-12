@@ -12,13 +12,15 @@ namespace cilspirv.Spirv
     /// (i.e., the first octet is in the lowest-order 8-bits of the word). The final word contains the string’s nul-termination character(0),
     /// and all contents past the end of the string in the final word are padded with 0
     /// </summary>
-    public struct LiteralString
+    public readonly struct LiteralString
     {
-        public string Value;
+        public readonly string Value;
+
+        public int WordCount => (Value.Length + 3) / 4;
 
         public void WriteCode(List<uint> code)
         {
-            if (Value == null)
+            if (Value == "")
             {
                 code.Add(0u);
                 return;
@@ -48,16 +50,16 @@ namespace cilspirv.Spirv
             }
         }
 
-        /// <summary>
-        /// Reads the literal string from a code array
-        /// </summary>
-        public static LiteralString FromCode(uint[] code, ref int i)
+        public LiteralString(string value) => Value = value;
+
+        public LiteralString(IReadOnlyList<uint> code, ref int i)
         {
             // zero shortcut
-            if (code[i] == 0)
+            if (code[i] == 0u)
             {
                 ++i;
-                return new LiteralString { Value = "" };
+                Value = "";
+                return;
             }
 
             // restore bytes
@@ -76,10 +78,9 @@ namespace cilspirv.Spirv
             // remove trailing zeros
             while (bytes.Count > 0 && bytes[bytes.Count - 1] == 0)
                 bytes.RemoveAt(bytes.Count - 1);
-
+            
             // decode string
-            var s = Encoding.UTF8.GetString(bytes.ToArray());
-            return new LiteralString { Value = s };
+            Value = Encoding.UTF8.GetString(bytes.ToArray());
         }
 
         public override string ToString() => string.Format("\"{0}\"({1} char{2})", Value, (Value?.Length ?? -1), (Value?.Length ?? -1) > 1 ? "s" : "");

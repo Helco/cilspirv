@@ -10,9 +10,9 @@ namespace cilspirv.Spirv
     /// A numeric value consuming one or more words. 
     /// When a numeric value is larger than one word, low-order words appear first.
     /// </summary>
-    public struct LiteralNumber
+    public readonly struct LiteralNumber
     {
-        public uint Value;
+        public readonly uint Value;
 
         public LiteralNumber(uint val)
         {
