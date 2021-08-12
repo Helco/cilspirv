@@ -9,16 +9,16 @@ namespace cilspirv.Spirv.Ops
     [DependsOn(Version = "None", Capabilities = new[] { Capability.SubgroupVoteKHR }, Extensions = new[] { "SPV_KHR_subgroup_vote" })]
     public sealed record OpSubgroupAllEqualKHR : GroupInstruction
     {
-        public ID ResultType1 { get; init; }
-        public ID Result2 { get; init; }
+        public ID ResultType { get; init; }
+        public ID Result { get; init; }
         public ID Predicate { get; init; }
 
         public override OpCode OpCode => OpCode.OpSubgroupAllEqualKHR;
         public override int WordCount => 1 + 1 + 1 + 1;
-        public override ID? ResultID => Result2;
-        public override ID? ResultTypeID => ResultType1;
+        public override ID? ResultID => Result;
+        public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType1, Result2, Predicate };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Predicate };
 
         public OpSubgroupAllEqualKHR() {}
 
@@ -27,8 +27,8 @@ namespace cilspirv.Spirv.Ops
             var (start, end) = range.GetOffsetAndLength(codes.Count);
             end += start;
             var i = start;
-            ResultType1 = new ID(codes[i++]);
-            Result2 = new ID(codes[i++]);
+            ResultType = new ID(codes[i++]);
+            Result = new ID(codes[i++]);
             Predicate = new ID(codes[i++]);
         }
 
@@ -38,8 +38,8 @@ namespace cilspirv.Spirv.Ops
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = ResultType1.Value;
-            codes[i++] = Result2.Value;
+            codes[i++] = ResultType.Value;
+            codes[i++] = Result.Value;
             codes[i++] = Predicate.Value;
         }
     }

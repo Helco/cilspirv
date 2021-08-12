@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using cilspirv.Spirv.Ops;
+using cilspirv.Transpiler;
 
 namespace cilspirv.Spirv
-{/*
+{
     internal abstract record SpirvType : IInstructionGeneratable
     {
-        public abstract SpirvTypeEnum Kind { get; }
+        public abstract SpirvTypeKind Kind { get; }
 
         public IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context, out ID? resultId)
         {
@@ -26,7 +28,7 @@ namespace cilspirv.Spirv
 
     internal sealed record SpirvVoidType : SpirvType
     {
-        public override SpirvTypeEnum Kind => SpirvTypeEnum.Void;
+        public override SpirvTypeKind Kind => SpirvTypeKind.Void;
         public override string ToString() => "void";
         protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
         {
@@ -36,7 +38,7 @@ namespace cilspirv.Spirv
 
     internal sealed record SpirvBooleanType : SpirvScalarType
     {
-        public override SpirvTypeEnum Kind => SpirvTypeEnum.Boolean;
+        public override SpirvTypeKind Kind => SpirvTypeKind.Boolean;
         public override string ToString() => "bool";
         protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
         {
@@ -49,7 +51,7 @@ namespace cilspirv.Spirv
         public int Width { get; init; }
         public bool IsSigned { get; init; }
 
-        public override SpirvTypeEnum Kind => SpirvTypeEnum.Integer;
+        public override SpirvTypeKind Kind => SpirvTypeKind.Integer;
         public override string ToString() => $"{(IsSigned ? "u" : "")}int{Width}";
         protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
         {
@@ -66,7 +68,7 @@ namespace cilspirv.Spirv
     {
         public int Width { get; init; }
 
-        public override SpirvTypeEnum Kind => SpirvTypeEnum.Integer;
+        public override SpirvTypeKind Kind => SpirvTypeKind.Integer;
         public override string ToString() => $"float{Width}";
         protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
         {
@@ -80,17 +82,17 @@ namespace cilspirv.Spirv
 
     internal sealed record SpirvVectorType : SpirvCompositeType
     {
-        public SpirvScalarType ComponentType { get; init; }
+        public SpirvScalarType? ComponentType { get; init; }
         public int ComponentCount { get; init; }
 
-        public override SpirvTypeEnum Kind => SpirvTypeEnum.Vector;
+        public override SpirvTypeKind Kind => SpirvTypeKind.Vector;
         public override string ToString() => $"{ComponentType}Vec{ComponentCount}";
         protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
         {
             yield return new OpTypeVector()
             {
                 Result = resultId,
-                ComponentType = context.IDOf(ComponentType),
+                ComponentType = context.IDOf(ComponentType ?? throw new InvalidOperationException("ComponentType is not set")),
                 ComponentCount = ComponentCount
             };
         }
@@ -98,19 +100,19 @@ namespace cilspirv.Spirv
 
     internal sealed record SpirvMatrixType : SpirvCompositeType
     {
-        public SpirvVectorType ColumnType { get; init; }
+        public SpirvVectorType? ColumnType { get; init; }
         public int ColumnCount { get; init; }
-        public int RowCount => ColumnType.ComponentCount;
-        public SpirvScalarType ComponentType => ColumnType.ComponentType;
+        public int RowCount => ColumnType?.ComponentCount ?? 0;
+        public SpirvScalarType? ComponentType => ColumnType?.ComponentType;
 
-        public override SpirvTypeEnum Kind => SpirvTypeEnum.Matrix;
+        public override SpirvTypeKind Kind => SpirvTypeKind.Matrix;
         public override string ToString() => $"{ComponentType}Matrix{RowCount}x{ColumnCount}";
         protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
         {
             yield return new OpTypeMatrix()
             {
                 Result = resultId,
-                ColumnType = context.IDOf(ColumnType),
+                ColumnType = context.IDOf(ColumnType ?? throw new InvalidOperationException("ColumnType is not set")),
                 ColumnCount = ColumnCount
             };
         }
@@ -118,10 +120,10 @@ namespace cilspirv.Spirv
 
     internal sealed record SpirvArrayType : SpirvAggregateType
     {
-        public SpirvType ElementType { get; init; }
+        public SpirvType? ElementType { get; init; }
         public int Length { get; init; }
 
-        public override SpirvTypeEnum Kind => SpirvTypeEnum.Array;
+        public override SpirvTypeKind Kind => SpirvTypeKind.Array;
         public override string ToString() => $"{ElementType}[{Length}]";
         protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
         {
@@ -139,7 +141,7 @@ namespace cilspirv.Spirv
             yield return new OpTypeArray()
             {
                 Result = resultId,
-                ElementType = context.IDOf(ElementType),
+                ElementType = context.IDOf(ElementType ?? throw new InvalidOperationException("ElementType is not set")),
                 Length = lengthId
             };
         }
@@ -149,7 +151,7 @@ namespace cilspirv.Spirv
     {
         public ImmutableArray<SpirvType> Members { get; init; }
 
-        public override SpirvTypeEnum Kind => SpirvTypeEnum.Structure;
+        public override SpirvTypeKind Kind => SpirvTypeKind.Structure;
         public override string ToString() => $"{{{string.Join(", ", Members)}}}";
         protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
         {
@@ -158,8 +160,8 @@ namespace cilspirv.Spirv
                 Result = resultId,
                 Members = Members
                     .Select(context.IDOf)
-                    .ToArray()
+                    .ToImmutableArray()
             };
         }
-    }*/
+    }
 }

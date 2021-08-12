@@ -9,16 +9,16 @@ namespace cilspirv.Spirv.Ops
     [DependsOn(Capabilities = new[] { Capability.Addresses })]
     public sealed record OpInBoundsPtrAccessChain : MemoryInstruction
     {
-        public ID ResultType1 { get; init; }
-        public ID Result2 { get; init; }
+        public ID ResultType { get; init; }
+        public ID Result { get; init; }
         public ID Base { get; init; }
         public ID Element { get; init; }
         public ImmutableArray<ID> Indexes { get; init; }
 
         public override OpCode OpCode => OpCode.OpInBoundsPtrAccessChain;
         public override int WordCount => 1 + 1 + 1 + 1 + 1 + Indexes.Length;
-        public override ID? ResultID => Result2;
-        public override ID? ResultTypeID => ResultType1;
+        public override ID? ResultID => Result;
+        public override ID? ResultTypeID => ResultType;
 
         public override IEnumerable<ID> AllIDs
         {
@@ -37,8 +37,8 @@ namespace cilspirv.Spirv.Ops
             var (start, end) = range.GetOffsetAndLength(codes.Count);
             end += start;
             var i = start;
-            ResultType1 = new ID(codes[i++]);
-            Result2 = new ID(codes[i++]);
+            ResultType = new ID(codes[i++]);
+            Result = new ID(codes[i++]);
             Base = new ID(codes[i++]);
             Element = new ID(codes[i++]);
             Indexes = codes.Skip(i).Take(end - i)
@@ -52,8 +52,8 @@ namespace cilspirv.Spirv.Ops
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = ResultType1.Value;
-            codes[i++] = Result2.Value;
+            codes[i++] = ResultType.Value;
+            codes[i++] = Result.Value;
             codes[i++] = Base.Value;
             codes[i++] = Element.Value;
             foreach (var x in Indexes)

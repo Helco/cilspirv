@@ -9,18 +9,18 @@ namespace cilspirv.Spirv.Ops
     [DependsOn(Capabilities = new[] { Capability.Pipes })]
     public sealed record OpGetMaxPipePackets : PipeInstruction
     {
-        public ID ResultType1 { get; init; }
-        public ID Result2 { get; init; }
+        public ID ResultType { get; init; }
+        public ID Result { get; init; }
         public ID Pipe { get; init; }
         public ID PacketSize { get; init; }
         public ID PacketAlignment { get; init; }
 
         public override OpCode OpCode => OpCode.OpGetMaxPipePackets;
         public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1;
-        public override ID? ResultID => Result2;
-        public override ID? ResultTypeID => ResultType1;
+        public override ID? ResultID => Result;
+        public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType1, Result2, Pipe, PacketSize, PacketAlignment };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Pipe, PacketSize, PacketAlignment };
 
         public OpGetMaxPipePackets() {}
 
@@ -29,8 +29,8 @@ namespace cilspirv.Spirv.Ops
             var (start, end) = range.GetOffsetAndLength(codes.Count);
             end += start;
             var i = start;
-            ResultType1 = new ID(codes[i++]);
-            Result2 = new ID(codes[i++]);
+            ResultType = new ID(codes[i++]);
+            Result = new ID(codes[i++]);
             Pipe = new ID(codes[i++]);
             PacketSize = new ID(codes[i++]);
             PacketAlignment = new ID(codes[i++]);
@@ -42,8 +42,8 @@ namespace cilspirv.Spirv.Ops
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = ResultType1.Value;
-            codes[i++] = Result2.Value;
+            codes[i++] = ResultType.Value;
+            codes[i++] = Result.Value;
             codes[i++] = Pipe.Value;
             codes[i++] = PacketSize.Value;
             codes[i++] = PacketAlignment.Value;

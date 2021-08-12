@@ -9,17 +9,17 @@ namespace cilspirv.Spirv.Ops
     [DependsOn(Capabilities = new[] { Capability.Shader })]
     public sealed record OpArrayLength : MemoryInstruction
     {
-        public ID ResultType1 { get; init; }
-        public ID Result2 { get; init; }
+        public ID ResultType { get; init; }
+        public ID Result { get; init; }
         public ID Structure { get; init; }
         public LiteralNumber Arraymember { get; init; }
 
         public override OpCode OpCode => OpCode.OpArrayLength;
         public override int WordCount => 1 + 1 + 1 + 1 + 1;
-        public override ID? ResultID => Result2;
-        public override ID? ResultTypeID => ResultType1;
+        public override ID? ResultID => Result;
+        public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType1, Result2, Structure };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Structure };
 
         public OpArrayLength() {}
 
@@ -28,8 +28,8 @@ namespace cilspirv.Spirv.Ops
             var (start, end) = range.GetOffsetAndLength(codes.Count);
             end += start;
             var i = start;
-            ResultType1 = new ID(codes[i++]);
-            Result2 = new ID(codes[i++]);
+            ResultType = new ID(codes[i++]);
+            Result = new ID(codes[i++]);
             Structure = new ID(codes[i++]);
             Arraymember = (LiteralNumber)codes[i++];
         }
@@ -40,8 +40,8 @@ namespace cilspirv.Spirv.Ops
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = ResultType1.Value;
-            codes[i++] = Result2.Value;
+            codes[i++] = ResultType.Value;
+            codes[i++] = Result.Value;
             codes[i++] = Structure.Value;
             codes[i++] = Arraymember.Value;
         }

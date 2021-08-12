@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,12 +25,12 @@ namespace cilspirv.Spirv
             Value = BitConverter.ToUInt32(val, start);
         }
 
-        public static LiteralNumber[] ArrayFor(byte[] vals)
+        public static ImmutableArray<LiteralNumber> ArrayFor(byte[] vals)
         {
             var nrs = new LiteralNumber[vals.Length / 4];
             for (var i = 0; i < vals.Length; i += 4)
                 nrs[i / 4] = new LiteralNumber(vals, i);
-            return nrs;
+            return nrs.ToImmutableArray();
         }
 
         public static implicit operator LiteralNumber(float val) => new LiteralNumber(BitConverter.GetBytes(val), 0);
@@ -37,14 +38,14 @@ namespace cilspirv.Spirv
         public static implicit operator LiteralNumber(bool val) => new LiteralNumber(val ? 1u : 0u);
         public static implicit operator LiteralNumber(uint val) => new LiteralNumber(val);
 
-        public static LiteralNumber[] ArrayFor(int val) => ArrayFor(BitConverter.GetBytes(val));
-        public static LiteralNumber[] ArrayFor(uint val) => ArrayFor(BitConverter.GetBytes(val));
-        public static LiteralNumber[] ArrayFor(float val) => ArrayFor(BitConverter.GetBytes(val));
-        public static LiteralNumber[] ArrayFor(long val) => ArrayFor(BitConverter.GetBytes(val));
-        public static LiteralNumber[] ArrayFor(ulong val) => ArrayFor(BitConverter.GetBytes(val));
-        public static LiteralNumber[] ArrayFor(double val) => ArrayFor(BitConverter.GetBytes(val));
+        public static ImmutableArray<LiteralNumber> ArrayFor(int val) => ArrayFor(BitConverter.GetBytes(val));
+        public static ImmutableArray<LiteralNumber> ArrayFor(uint val) => ArrayFor(BitConverter.GetBytes(val));
+        public static ImmutableArray<LiteralNumber> ArrayFor(float val) => ArrayFor(BitConverter.GetBytes(val));
+        public static ImmutableArray<LiteralNumber> ArrayFor(long val) => ArrayFor(BitConverter.GetBytes(val));
+        public static ImmutableArray<LiteralNumber> ArrayFor(ulong val) => ArrayFor(BitConverter.GetBytes(val));
+        public static ImmutableArray<LiteralNumber> ArrayFor(double val) => ArrayFor(BitConverter.GetBytes(val));
 
-        public static LiteralNumber[] Array(params uint[] vals) => vals.Select(v => new LiteralNumber(v)).ToArray();
+        public static ImmutableArray<LiteralNumber> Array(params uint[] vals) => vals.Select(v => new LiteralNumber(v)).ToImmutableArray();
 
         public override string ToString() => Value.ToString();
     }

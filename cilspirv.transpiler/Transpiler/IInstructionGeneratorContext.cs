@@ -7,7 +7,7 @@ namespace cilspirv.Transpiler
     internal interface IInstructionGeneratorContext
     {
         ID CreateID();
-        //ID IDOf(SpirvType type);
+        ID IDOf(SpirvType type);
     }
 
     internal interface IInstructionGeneratable

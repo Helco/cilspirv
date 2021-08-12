@@ -8,15 +8,15 @@ namespace cilspirv.Spirv.Ops
 {
     public sealed record OpTypePointer : TypeDeclarationInstruction
     {
-        public ID Result1 { get; init; }
-        public StorageClass StorageClass2 { get; init; }
+        public ID Result { get; init; }
+        public StorageClass StorageClass { get; init; }
         public ID Type { get; init; }
 
         public override OpCode OpCode => OpCode.OpTypePointer;
         public override int WordCount => 1 + 1 + 1 + 1;
-        public override ID? ResultID => Result1;
+        public override ID? ResultID => Result;
 
-        public override IEnumerable<ID> AllIDs => new[] { Result1, Type };
+        public override IEnumerable<ID> AllIDs => new[] { Result, Type };
 
         public OpTypePointer() {}
 
@@ -25,8 +25,8 @@ namespace cilspirv.Spirv.Ops
             var (start, end) = range.GetOffsetAndLength(codes.Count);
             end += start;
             var i = start;
-            Result1 = new ID(codes[i++]);
-            StorageClass2 = (StorageClass)codes[i++];
+            Result = new ID(codes[i++]);
+            StorageClass = (StorageClass)codes[i++];
             Type = new ID(codes[i++]);
         }
 
@@ -36,8 +36,8 @@ namespace cilspirv.Spirv.Ops
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = Result1.Value;
-            codes[i++] = (uint)StorageClass2;
+            codes[i++] = Result.Value;
+            codes[i++] = (uint)StorageClass;
             codes[i++] = Type.Value;
         }
     }

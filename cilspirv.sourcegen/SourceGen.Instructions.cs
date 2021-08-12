@@ -18,7 +18,7 @@ namespace cilspirv.SourceGen
         {
             instruction.operands ??= Array.Empty<CoreGrammar.Operand>();
             var duplicateGroups = instruction.operands
-                .GroupBy(op => op.name)
+                .GroupBy(op => MapOperandName(op))
                 .Where(g => g.Count() > 1);
             foreach (var duplicateGroup in duplicateGroups)
             {

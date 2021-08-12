@@ -9,8 +9,8 @@ namespace cilspirv.Spirv.Ops
     [DependsOn(Version = "1.1", Capabilities = new[] { Capability.SubgroupDispatch })]
     public sealed record OpGetKernelLocalSizeForSubgroupCount : DeviceSideEnqueueInstruction
     {
-        public ID ResultType1 { get; init; }
-        public ID Result2 { get; init; }
+        public ID ResultType { get; init; }
+        public ID Result { get; init; }
         public ID SubgroupCount { get; init; }
         public ID Invoke { get; init; }
         public ID Param { get; init; }
@@ -19,10 +19,10 @@ namespace cilspirv.Spirv.Ops
 
         public override OpCode OpCode => OpCode.OpGetKernelLocalSizeForSubgroupCount;
         public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1;
-        public override ID? ResultID => Result2;
-        public override ID? ResultTypeID => ResultType1;
+        public override ID? ResultID => Result;
+        public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType1, Result2, SubgroupCount, Invoke, Param, ParamSize, ParamAlign };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, SubgroupCount, Invoke, Param, ParamSize, ParamAlign };
 
         public OpGetKernelLocalSizeForSubgroupCount() {}
 
@@ -31,8 +31,8 @@ namespace cilspirv.Spirv.Ops
             var (start, end) = range.GetOffsetAndLength(codes.Count);
             end += start;
             var i = start;
-            ResultType1 = new ID(codes[i++]);
-            Result2 = new ID(codes[i++]);
+            ResultType = new ID(codes[i++]);
+            Result = new ID(codes[i++]);
             SubgroupCount = new ID(codes[i++]);
             Invoke = new ID(codes[i++]);
             Param = new ID(codes[i++]);
@@ -46,8 +46,8 @@ namespace cilspirv.Spirv.Ops
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = ResultType1.Value;
-            codes[i++] = Result2.Value;
+            codes[i++] = ResultType.Value;
+            codes[i++] = Result.Value;
             codes[i++] = SubgroupCount.Value;
             codes[i++] = Invoke.Value;
             codes[i++] = Param.Value;

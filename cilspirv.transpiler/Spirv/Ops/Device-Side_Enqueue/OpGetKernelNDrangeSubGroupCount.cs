@@ -9,8 +9,8 @@ namespace cilspirv.Spirv.Ops
     [DependsOn(Capabilities = new[] { Capability.DeviceEnqueue })]
     public sealed record OpGetKernelNDrangeSubGroupCount : DeviceSideEnqueueInstruction
     {
-        public ID ResultType1 { get; init; }
-        public ID Result2 { get; init; }
+        public ID ResultType { get; init; }
+        public ID Result { get; init; }
         public ID NDRange { get; init; }
         public ID Invoke { get; init; }
         public ID Param { get; init; }
@@ -19,10 +19,10 @@ namespace cilspirv.Spirv.Ops
 
         public override OpCode OpCode => OpCode.OpGetKernelNDrangeSubGroupCount;
         public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1;
-        public override ID? ResultID => Result2;
-        public override ID? ResultTypeID => ResultType1;
+        public override ID? ResultID => Result;
+        public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType1, Result2, NDRange, Invoke, Param, ParamSize, ParamAlign };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, NDRange, Invoke, Param, ParamSize, ParamAlign };
 
         public OpGetKernelNDrangeSubGroupCount() {}
 
@@ -31,8 +31,8 @@ namespace cilspirv.Spirv.Ops
             var (start, end) = range.GetOffsetAndLength(codes.Count);
             end += start;
             var i = start;
-            ResultType1 = new ID(codes[i++]);
-            Result2 = new ID(codes[i++]);
+            ResultType = new ID(codes[i++]);
+            Result = new ID(codes[i++]);
             NDRange = new ID(codes[i++]);
             Invoke = new ID(codes[i++]);
             Param = new ID(codes[i++]);
@@ -46,8 +46,8 @@ namespace cilspirv.Spirv.Ops
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = ResultType1.Value;
-            codes[i++] = Result2.Value;
+            codes[i++] = ResultType.Value;
+            codes[i++] = Result.Value;
             codes[i++] = NDRange.Value;
             codes[i++] = Invoke.Value;
             codes[i++] = Param.Value;

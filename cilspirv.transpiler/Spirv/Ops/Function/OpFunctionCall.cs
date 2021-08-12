@@ -8,15 +8,15 @@ namespace cilspirv.Spirv.Ops
 {
     public sealed record OpFunctionCall : FunctionInstruction
     {
-        public ID ResultType1 { get; init; }
-        public ID Result2 { get; init; }
+        public ID ResultType { get; init; }
+        public ID Result { get; init; }
         public ID Function { get; init; }
         public ImmutableArray<ID> Arguments { get; init; }
 
         public override OpCode OpCode => OpCode.OpFunctionCall;
         public override int WordCount => 1 + 1 + 1 + 1 + Arguments.Length;
-        public override ID? ResultID => Result2;
-        public override ID? ResultTypeID => ResultType1;
+        public override ID? ResultID => Result;
+        public override ID? ResultTypeID => ResultType;
 
         public override IEnumerable<ID> AllIDs
         {
@@ -35,8 +35,8 @@ namespace cilspirv.Spirv.Ops
             var (start, end) = range.GetOffsetAndLength(codes.Count);
             end += start;
             var i = start;
-            ResultType1 = new ID(codes[i++]);
-            Result2 = new ID(codes[i++]);
+            ResultType = new ID(codes[i++]);
+            Result = new ID(codes[i++]);
             Function = new ID(codes[i++]);
             Arguments = codes.Skip(i).Take(end - i)
                 .Select(x => new ID(x))
@@ -49,8 +49,8 @@ namespace cilspirv.Spirv.Ops
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = ResultType1.Value;
-            codes[i++] = Result2.Value;
+            codes[i++] = ResultType.Value;
+            codes[i++] = Result.Value;
             codes[i++] = Function.Value;
             foreach (var x in Arguments)
             {

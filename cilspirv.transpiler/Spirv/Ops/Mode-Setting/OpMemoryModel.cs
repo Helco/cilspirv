@@ -8,8 +8,8 @@ namespace cilspirv.Spirv.Ops
 {
     public sealed record OpMemoryModel : ModeSettingInstruction
     {
-        public AddressingModel AddressingModel1 { get; init; }
-        public MemoryModel MemoryModel2 { get; init; }
+        public AddressingModel AddressingModel { get; init; }
+        public MemoryModel MemoryModel { get; init; }
 
         public override OpCode OpCode => OpCode.OpMemoryModel;
         public override int WordCount => 1 + 1 + 1;
@@ -22,8 +22,8 @@ namespace cilspirv.Spirv.Ops
             var (start, end) = range.GetOffsetAndLength(codes.Count);
             end += start;
             var i = start;
-            AddressingModel1 = (AddressingModel)codes[i++];
-            MemoryModel2 = (MemoryModel)codes[i++];
+            AddressingModel = (AddressingModel)codes[i++];
+            MemoryModel = (MemoryModel)codes[i++];
         }
 
         public override void Write(Span<uint> codes)
@@ -32,8 +32,8 @@ namespace cilspirv.Spirv.Ops
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = (uint)AddressingModel1;
-            codes[i++] = (uint)MemoryModel2;
+            codes[i++] = (uint)AddressingModel;
+            codes[i++] = (uint)MemoryModel;
         }
     }
 }

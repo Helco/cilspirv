@@ -10,8 +10,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "cilspirv.testcli", "cilspir
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "cilspirv", "cilspirv\cilspirv.csproj", "{BCAFA14E-D363-46D7-BFF3-839905A57E3A}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dependencies", "Dependencies", "{14173C1E-2B31-4BB0-B3CF-CBCA7AEF4576}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{57C636FA-ECC2-4C3A-8E19-28077730C0D4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "test-shaders", "test-shaders\test-shaders.csproj", "{62C67682-125C-48AB-BC02-076C9FC24E53}"
