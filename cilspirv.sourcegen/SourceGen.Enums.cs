@@ -44,7 +44,7 @@ namespace cilspirv.SourceGen
 
                     var name = enumerant.enumerant;
                     if (name.StartsWith('1') || name.StartsWith('2') || name.StartsWith('3'))
-                        name = bitEnum.category + name;
+                        name = bitEnum.kind + name;
                     yield return $"        {name} = {enumerant.value}U,";
                 }
                 yield return "    }";

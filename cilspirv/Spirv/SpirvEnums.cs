@@ -6,16 +6,21 @@ namespace cilspirv.Spirv
     [Flags]
     public enum ImageOperands : uint
     {
+        
         None = 0x0000U,
         [DependsOn(Capabilities = new[] { Capability.Shader })]
         Bias = 0x0001U,
+        
         Lod = 0x0002U,
+        
         Grad = 0x0004U,
+        
         ConstOffset = 0x0008U,
         [DependsOn(Capabilities = new[] { Capability.ImageGatherExtended })]
         Offset = 0x0010U,
         [DependsOn(Capabilities = new[] { Capability.ImageGatherExtended })]
         ConstOffsets = 0x0020U,
+        
         Sample = 0x0040U,
         [DependsOn(Capabilities = new[] { Capability.MinLod })]
         MinLod = 0x0080U,
@@ -43,6 +48,7 @@ namespace cilspirv.Spirv
     [Flags]
     public enum FPFastMathMode : uint
     {
+        
         None = 0x0000U,
         [DependsOn(Capabilities = new[] { Capability.Kernel })]
         NotNaN = 0x0001U,
@@ -62,15 +68,21 @@ namespace cilspirv.Spirv
     [Flags]
     public enum SelectionControl : uint
     {
+        
         None = 0x0000U,
+        
         Flatten = 0x0001U,
+        
         DontFlatten = 0x0002U,
     }
     [Flags]
     public enum LoopControl : uint
     {
+        
         None = 0x0000U,
+        
         Unroll = 0x0001U,
+        
         DontUnroll = 0x0002U,
         [DependsOn(Version = "1.1")]
         DependencyInfinite = 0x0004U,
@@ -106,10 +118,15 @@ namespace cilspirv.Spirv
     [Flags]
     public enum FunctionControl : uint
     {
+        
         None = 0x0000U,
+        
         Inline = 0x0001U,
+        
         DontInline = 0x0002U,
+        
         Pure = 0x0004U,
+        
         Const = 0x0008U,
         [DependsOn(Version = "None", Capabilities = new[] { Capability.OptNoneINTEL })]
         OptNoneINTEL = 0x10000U,
@@ -117,19 +134,29 @@ namespace cilspirv.Spirv
     [Flags]
     public enum MemorySemantics : uint
     {
+        
         Relaxed = 0x0000U,
+        
         None = 0x0000U,
+        
         Acquire = 0x0002U,
+        
         Release = 0x0004U,
+        
         AcquireRelease = 0x0008U,
+        
         SequentiallyConsistent = 0x0010U,
         [DependsOn(Capabilities = new[] { Capability.Shader })]
         UniformMemory = 0x0040U,
+        
         SubgroupMemory = 0x0080U,
+        
         WorkgroupMemory = 0x0100U,
+        
         CrossWorkgroupMemory = 0x0200U,
         [DependsOn(Capabilities = new[] { Capability.AtomicStorage })]
         AtomicCounterMemory = 0x0400U,
+        
         ImageMemory = 0x0800U,
         [DependsOn(Version = "1.5", Capabilities = new[] { Capability.VulkanMemoryModel })]
         OutputMemory = 0x1000U,
@@ -149,9 +176,13 @@ namespace cilspirv.Spirv
     [Flags]
     public enum MemoryAccess : uint
     {
+        
         None = 0x0000U,
+        
         Volatile = 0x0001U,
+        
         Aligned = 0x0002U,
+        
         Nontemporal = 0x0004U,
         [DependsOn(Version = "1.5", Capabilities = new[] { Capability.VulkanMemoryModel })]
         MakePointerAvailable = 0x0008U,
@@ -169,6 +200,7 @@ namespace cilspirv.Spirv
     [Flags]
     public enum KernelProfilingInfo : uint
     {
+        
         None = 0x0000U,
         [DependsOn(Capabilities = new[] { Capability.Kernel })]
         CmdExecTime = 0x0001U,
@@ -213,12 +245,19 @@ namespace cilspirv.Spirv
     }
     public enum SourceLanguage : uint
     {
+        
         Unknown = 0U,
+        
         ESSL = 1U,
+        
         GLSL = 2U,
+        
         OpenCL_C = 3U,
+        
         OpenCL_CPP = 4U,
+        
         HLSL = 5U,
+        
         CPP_for_OpenCL = 6U,
     }
     public enum ExecutionModel : uint
@@ -268,6 +307,7 @@ namespace cilspirv.Spirv
     }
     public enum AddressingModel : uint
     {
+        
         Logical = 0U,
         [DependsOn(Capabilities = new[] { Capability.Addresses })]
         Physical32 = 1U,
@@ -325,6 +365,7 @@ namespace cilspirv.Spirv
         DepthLess = 15U,
         [DependsOn(Capabilities = new[] { Capability.Shader })]
         DepthUnchanged = 16U,
+        
         LocalSize = 17U,
         [DependsOn(Capabilities = new[] { Capability.Kernel })]
         LocalSizeHint = 18U,
@@ -429,16 +470,21 @@ namespace cilspirv.Spirv
     }
     public enum StorageClass : uint
     {
+        
         UniformConstant = 0U,
+        
         Input = 1U,
         [DependsOn(Capabilities = new[] { Capability.Shader })]
         Uniform = 2U,
         [DependsOn(Capabilities = new[] { Capability.Shader })]
         Output = 3U,
+        
         Workgroup = 4U,
+        
         CrossWorkgroup = 5U,
         [DependsOn(Capabilities = new[] { Capability.Shader, Capability.VectorComputeINTEL })]
         Private = 6U,
+        
         Function = 7U,
         [DependsOn(Capabilities = new[] { Capability.GenericPointer })]
         Generic = 8U,
@@ -446,6 +492,7 @@ namespace cilspirv.Spirv
         PushConstant = 9U,
         [DependsOn(Capabilities = new[] { Capability.AtomicStorage })]
         AtomicCounter = 10U,
+        
         Image = 11U,
         [DependsOn(Version = "1.3", Capabilities = new[] { Capability.Shader }, Extensions = new[] { "SPV_KHR_storage_buffer_storage_class", "SPV_KHR_variable_pointers" })]
         StorageBuffer = 12U,
@@ -487,10 +534,11 @@ namespace cilspirv.Spirv
     public enum Dim : uint
     {
         [DependsOn(Capabilities = new[] { Capability.Sampled1D, Capability.Image1D })]
-        ValueEnum1D = 0U,
+        Dim1D = 0U,
         [DependsOn(Capabilities = new[] { Capability.Shader, Capability.Kernel, Capability.ImageMSArray })]
-        ValueEnum2D = 1U,
-        ValueEnum3D = 2U,
+        Dim2D = 1U,
+        
+        Dim3D = 2U,
         [DependsOn(Capabilities = new[] { Capability.Shader, Capability.ImageCubeArray })]
         Cube = 3U,
         [DependsOn(Capabilities = new[] { Capability.SampledRect, Capability.ImageRect })]
@@ -522,6 +570,7 @@ namespace cilspirv.Spirv
     }
     public enum ImageFormat : uint
     {
+        
         Unknown = 0U,
         [DependsOn(Capabilities = new[] { Capability.Shader })]
         Rgba32f = 1U,
@@ -688,9 +737,13 @@ namespace cilspirv.Spirv
     }
     public enum FPRoundingMode : uint
     {
+        
         RTE = 0U,
+        
         RTZ = 1U,
+        
         RTP = 2U,
+        
         RTN = 3U,
     }
     public enum FPDenormMode : uint
@@ -799,6 +852,7 @@ namespace cilspirv.Spirv
         GLSLPacked = 9U,
         [DependsOn(Capabilities = new[] { Capability.Kernel })]
         CPacked = 10U,
+        
         BuiltIn = 11U,
         [DependsOn(Capabilities = new[] { Capability.Shader })]
         NoPerspective = 13U,
@@ -812,13 +866,19 @@ namespace cilspirv.Spirv
         Sample = 17U,
         [DependsOn(Capabilities = new[] { Capability.Shader })]
         Invariant = 18U,
+        
         Restrict = 19U,
+        
         Aliased = 20U,
+        
         Volatile = 21U,
         [DependsOn(Capabilities = new[] { Capability.Kernel })]
         Constant = 22U,
+        
         Coherent = 23U,
+        
         NonWritable = 24U,
+        
         NonReadable = 25U,
         [DependsOn(Capabilities = new[] { Capability.Shader })]
         Uniform = 26U,
@@ -846,6 +906,7 @@ namespace cilspirv.Spirv
         XfbStride = 37U,
         [DependsOn(Capabilities = new[] { Capability.Kernel })]
         FuncParamAttr = 38U,
+        
         FPRoundingMode = 39U,
         [DependsOn(Capabilities = new[] { Capability.Kernel })]
         FPFastMathMode = 40U,
@@ -1022,11 +1083,17 @@ namespace cilspirv.Spirv
         FragDepth = 22U,
         [DependsOn(Capabilities = new[] { Capability.Shader })]
         HelperInvocation = 23U,
+        
         NumWorkgroups = 24U,
+        
         WorkgroupSize = 25U,
+        
         WorkgroupId = 26U,
+        
         LocalInvocationId = 27U,
+        
         GlobalInvocationId = 28U,
+        
         LocalInvocationIndex = 29U,
         [DependsOn(Capabilities = new[] { Capability.Kernel })]
         WorkDim = 30U,
@@ -1213,10 +1280,15 @@ namespace cilspirv.Spirv
     }
     public enum Scope : uint
     {
+        
         CrossDevice = 0U,
+        
         Device = 1U,
+        
         Workgroup = 2U,
+        
         Subgroup = 3U,
+        
         Invocation = 4U,
         [DependsOn(Version = "1.5", Capabilities = new[] { Capability.VulkanMemoryModel })]
         QueueFamily = 5U,
@@ -1253,6 +1325,7 @@ namespace cilspirv.Spirv
     }
     public enum Capability : uint
     {
+        
         Matrix = 0U,
         [DependsOn(Capabilities = new[] { Capability.Matrix })]
         Shader = 1U,
@@ -1260,15 +1333,21 @@ namespace cilspirv.Spirv
         Geometry = 2U,
         [DependsOn(Capabilities = new[] { Capability.Shader })]
         Tessellation = 3U,
+        
         Addresses = 4U,
+        
         Linkage = 5U,
+        
         Kernel = 6U,
         [DependsOn(Capabilities = new[] { Capability.Kernel })]
         Vector16 = 7U,
         [DependsOn(Capabilities = new[] { Capability.Kernel })]
         Float16Buffer = 8U,
+        
         Float16 = 9U,
+        
         Float64 = 10U,
+        
         Int64 = 11U,
         [DependsOn(Capabilities = new[] { Capability.Int64 })]
         Int64Atomics = 12U,
@@ -1288,6 +1367,7 @@ namespace cilspirv.Spirv
         LiteralSampler = 20U,
         [DependsOn(Capabilities = new[] { Capability.Shader })]
         AtomicStorage = 21U,
+        
         Int16 = 22U,
         [DependsOn(Capabilities = new[] { Capability.Tessellation })]
         TessellationPointSize = 23U,
@@ -1319,6 +1399,7 @@ namespace cilspirv.Spirv
         SampledRect = 37U,
         [DependsOn(Capabilities = new[] { Capability.Addresses })]
         GenericPointer = 38U,
+        
         Int8 = 39U,
         [DependsOn(Capabilities = new[] { Capability.Shader })]
         InputAttachment = 40U,
@@ -1326,11 +1407,13 @@ namespace cilspirv.Spirv
         SparseResidency = 41U,
         [DependsOn(Capabilities = new[] { Capability.Shader })]
         MinLod = 42U,
+        
         Sampled1D = 43U,
         [DependsOn(Capabilities = new[] { Capability.Sampled1D })]
         Image1D = 44U,
         [DependsOn(Capabilities = new[] { Capability.Shader })]
         SampledCubeArray = 45U,
+        
         SampledBuffer = 46U,
         [DependsOn(Capabilities = new[] { Capability.SampledBuffer })]
         ImageBuffer = 47U,
