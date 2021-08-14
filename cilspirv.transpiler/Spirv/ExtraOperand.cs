@@ -101,6 +101,7 @@ namespace cilspirv.Spirv
         public static implicit operator ExtraOperand(double val) => new ExtraOperand(LiteralNumber.ArrayFor(val));
         public static implicit operator ExtraOperand(string val) => new ExtraOperand(val);
         public static implicit operator ExtraOperand(Enum val) => new ExtraOperand(val);
+        public static implicit operator ExtraOperand(ID id) => new ExtraOperand(id);
 
         public void Write(Span<uint> code, Func<ID, uint> mapID)
         {

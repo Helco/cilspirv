@@ -9,13 +9,7 @@ namespace cilspirv.Spirv
 {
     internal abstract record SpirvType : IInstructionGeneratable
     {
-        public IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context, out ID? resultId)
-        {
-            resultId = context.CreateID();
-            return TypeInstructions(context, resultId.Value);
-        }
-
-        protected abstract IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId);
+        public abstract IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context);
     }
 
     internal abstract record SpirvOpaqueType : SpirvType { }
@@ -27,18 +21,18 @@ namespace cilspirv.Spirv
     internal sealed record SpirvVoidType : SpirvType
     {
         public override string ToString() => "Void";
-        protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
+        public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
-            yield return new OpTypeVoid() { Result = resultId };
+            yield return new OpTypeVoid() { Result = context.CreateIDFor(this) };
         }
     }
 
     internal sealed record SpirvBooleanType : SpirvScalarType
     {
         public override string ToString() => "Bool";
-        protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
+        public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
-            yield return new OpTypeBool() { Result = resultId };
+            yield return new OpTypeBool() { Result = context.CreateIDFor(this) };
         }
     }
 
@@ -48,11 +42,11 @@ namespace cilspirv.Spirv
         public bool IsSigned { get; init; }
 
         public override string ToString() => $"{(IsSigned ? "U" : "")}Int{Width}";
-        protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
+        public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypeInt()
             {
-                Result = resultId,
+                Result = context.CreateIDFor(this),
                 Width = Width,
                 Signedness = IsSigned ? 1 : 0
             };
@@ -64,11 +58,11 @@ namespace cilspirv.Spirv
         public int Width { get; init; }
 
         public override string ToString() => $"Float{Width}";
-        protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
+        public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypeFloat()
             {
-                Result = resultId,
+                Result = context.CreateIDFor(this),
                 Width = Width
             };
         }
@@ -80,11 +74,11 @@ namespace cilspirv.Spirv
         public int ComponentCount { get; init; }
 
         public override string ToString() => $"{ComponentType}Vec{ComponentCount}";
-        protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
+        public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypeVector()
             {
-                Result = resultId,
+                Result = context.CreateIDFor(this),
                 ComponentType = context.IDOf(ComponentType ?? throw new InvalidOperationException("ComponentType is not set")),
                 ComponentCount = ComponentCount
             };
@@ -99,11 +93,11 @@ namespace cilspirv.Spirv
         public SpirvScalarType? ComponentType => ColumnType?.ComponentType;
 
         public override string ToString() => $"{ComponentType}Matrix{RowCount}x{ColumnCount}";
-        protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
+        public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypeMatrix()
             {
-                Result = resultId,
+                Result = context.CreateIDFor(this),
                 ColumnType = context.IDOf(ColumnType ?? throw new InvalidOperationException("ColumnType is not set")),
                 ColumnCount = ColumnCount
             };
@@ -116,7 +110,7 @@ namespace cilspirv.Spirv
         public int Length { get; init; }
 
         public override string ToString() => $"{ElementType}[{Length}]";
-        protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
+        public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             var lengthId = context.CreateID();
             yield return new OpConstant()
@@ -131,7 +125,7 @@ namespace cilspirv.Spirv
             };
             yield return new OpTypeArray()
             {
-                Result = resultId,
+                Result = context.CreateIDFor(this),
                 ElementType = context.IDOf(ElementType ?? throw new InvalidOperationException("ElementType is not set")),
                 Length = lengthId
             };
@@ -143,11 +137,11 @@ namespace cilspirv.Spirv
         public SpirvType? ElementType { get; init; }
 
         public override string ToString() => $"{ElementType}[]";
-        protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
+        public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypeRuntimeArray()
             {
-                Result = resultId,
+                Result = context.CreateIDFor(this),
                 ElementType = context.IDOf(ElementType ?? throw new InvalidOperationException("ElementType is not set"))
             };
         }
@@ -158,11 +152,11 @@ namespace cilspirv.Spirv
         public ImmutableArray<SpirvType> Members { get; init; }
 
         public override string ToString() => $"{{{string.Join(", ", Members)}}}";
-        protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
+        public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypeStruct()
             {
-                Result = resultId,
+                Result = context.CreateIDFor(this),
                 Members = Members
                     .Select(context.IDOf)
                     .ToImmutableArray()
@@ -202,11 +196,11 @@ namespace cilspirv.Spirv
             + (tags.Any() ? $",{string.Join(',', tags)})" : ")");
         }
 
-        protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
+        public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypeImage()
             {
-                Result = resultId,
+                Result = context.CreateIDFor(this),
                 SampledType = context.IDOf(SampledType ?? throw new InvalidOperationException("SampledType is not set")),
                 Dim = Dim,
                 Depth = IsDepth switch
@@ -232,11 +226,11 @@ namespace cilspirv.Spirv
     internal sealed record SpirvSamplerType : SpirvOpaqueType
     {
         public override string ToString() => "Sampler";
-        protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
+        public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypeSampler()
             {
-                Result = resultId
+                Result = context.CreateIDFor(this)
             };
         }
     }
@@ -245,11 +239,11 @@ namespace cilspirv.Spirv
     {
         public SpirvImageType? ImageType { get; init; }
         public override string ToString() => "Sampled" + ImageType?.ToString();
-        protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
+        public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypeSampledImage()
             {
-                Result = resultId,
+                Result = context.CreateIDFor(this),
                 ImageType = context.IDOf(ImageType ?? throw new InvalidOperationException("ImageType is not set"))
             };
         }
@@ -258,15 +252,15 @@ namespace cilspirv.Spirv
     internal sealed record SpirvPointerType : SpirvType
     {
         public SpirvType? Type { get; init; }
-        public StorageClass Storage { get; init; }
-        public override string ToString() => $"{Storage}<{Type}>";
-        protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
+        public StorageClass StorageClass { get; init; }
+        public override string ToString() => $"{StorageClass}<{Type}>";
+        public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypePointer()
             {
-                Result = resultId,
+                Result = context.CreateIDFor(this),
                 Type = context.IDOf(Type ?? throw new InvalidOperationException("Type is not set")),
-                StorageClass = Storage
+                StorageClass = StorageClass
             };
         }
     }
@@ -276,11 +270,11 @@ namespace cilspirv.Spirv
         public SpirvType? ReturnType { get; init; }
         public ImmutableArray<SpirvType> ParameterTypes { get; init; }
         public override string ToString() => $"{ReturnType}({string.Join(", ", ParameterTypes)})";
-        protected override IEnumerator<Instruction> TypeInstructions(IInstructionGeneratorContext context, ID resultId)
+        public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypeFunction()
             {
-                Result = resultId,
+                Result = context.CreateIDFor(this),
                 ReturnType = context.IDOf(ReturnType ?? throw new InvalidOperationException("ReturnType is not set")),
                 Parameters = ParameterTypes.Select(context.IDOf).ToImmutableArray()
             };
