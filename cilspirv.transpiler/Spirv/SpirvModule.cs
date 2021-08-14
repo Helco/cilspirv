@@ -124,7 +124,7 @@ namespace cilspirv.Spirv
 
         private static uint EncodeVersion(Version v) => (v.Major < 0 || v.Major > 255 || v.Minor < 0 || v.Minor > 255)
             ? throw new ArgumentOutOfRangeException(nameof(v))
-            : (ushort)((v.Major << 8) | (v.Minor << 8));
+            : (ushort)((v.Major << 8) | (v.Minor));
 
         private static Version DecodeVersion(uint v) => new Version((int)(v >> 8) & 0xff, (int)(v & 0xff));
     }

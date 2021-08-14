@@ -25,16 +25,20 @@ namespace cilspirv.Spirv
         public ImmutableArray<ExtraOperand> ExtraOperands { get; init; }
 
         public abstract int WordCount { get; }
-        protected int ExtraWordCount => ExtraOperands.Sum(o => o.WordCount);
+        protected int ExtraWordCount => ExtraOperands.IsDefaultOrEmpty
+            ? 0
+            : ExtraOperands.Sum(o => o.WordCount);
 
         public abstract OpCode OpCode { get; }
 
         public abstract void Write(Span<uint> code, Func<ID, uint> mapID);
 
         public virtual IEnumerable<ID> AllIDs => Array.Empty<ID>();
-        protected IEnumerable<ID> ExtraIDs => ExtraOperands
-            .Where(o => o.Kind == ExtraOperandKind.ID)
-            .Select(o => o.ID);
+        protected IEnumerable<ID> ExtraIDs => ExtraOperands.IsDefaultOrEmpty
+            ? Enumerable.Empty<ID>()
+            : ExtraOperands
+                .Where(o => o.Kind == ExtraOperandKind.ID)
+                .Select(o => o.ID);
 
         /// <summary>
         /// Opcode: The 16 high-order bits are the WordCount of the

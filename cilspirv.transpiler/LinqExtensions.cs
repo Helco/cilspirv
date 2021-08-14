@@ -21,7 +21,8 @@ namespace cilspirv
 
         private static IEnumerable<T> EnumeratorAsEnumerable<T>(IEnumerator<T> enumerator)
         {
-            enumerator.Reset();
+            if (enumerator.Current != null)
+                enumerator.Reset();
             while (enumerator.MoveNext())
                 yield return enumerator.Current;
         }

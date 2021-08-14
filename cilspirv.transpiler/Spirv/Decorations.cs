@@ -79,9 +79,9 @@ namespace cilspirv.Spirv
         public static DecorationEntry VectorComputeFunctionINTEL() => new DecorationEntry(Decoration.VectorComputeFunctionINTEL);
         public static DecorationEntry StackCallINTEL() => new DecorationEntry(Decoration.StackCallINTEL);
         public static DecorationEntry GlobalVariableOffsetINTEL() => new DecorationEntry(Decoration.GlobalVariableOffsetINTEL);
-        public static DecorationEntry CounterBuffer() => new DecorationEntry(Decoration.CounterBuffer);
+        public static DecorationEntry CounterBuffer(ID bufferId) => new DecorationEntry(Decoration.CounterBuffer, bufferId);
         public static DecorationEntry HlslCounterBufferGOOGLE() => new DecorationEntry(Decoration.HlslCounterBufferGOOGLE);
-        public static DecorationEntry UserSemantic() => new DecorationEntry(Decoration.UserSemantic);
+        public static DecorationEntry UserSemantic(string semantic) => new DecorationEntry(Decoration.UserSemantic, semantic);
         public static DecorationEntry HlslSemanticGOOGLE() => new DecorationEntry(Decoration.HlslSemanticGOOGLE);
         public static DecorationEntry UserTypeGOOGLE() => new DecorationEntry(Decoration.UserTypeGOOGLE);
         public static DecorationEntry FunctionRoundingModeINTEL() => new DecorationEntry(Decoration.FunctionRoundingModeINTEL);

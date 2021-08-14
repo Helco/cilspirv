@@ -8,17 +8,19 @@ using System.Collections.Immutable;
 namespace cilspirv.Transpiler
 {
 
-    internal class TranspilerModule : IInstructionGeneratable
+    internal class TranspilerModule
     {
         private readonly ObservableHashSet<Capability> capabilities = new ObservableHashSet<Capability>();
+        private readonly ObservableHashSet<TranspilerType> types = new ObservableHashSet<TranspilerType>();
         private readonly HashSet<Capability> allCapabilities = new HashSet<Capability>();
+        private Dictionary<SpirvType, TranspilerType> spirvToTranspilerType = new Dictionary<SpirvType, TranspilerType>();
 
         public AddressingModel AddressingModel { get; set; }
         public MemoryModel MemoryModel { get; set; }
         public ISet<Capability> Capabilities => capabilities;
         public ISet<string> Extensions { get; } = new HashSet<string>();
         public ISet<TranspilerExtInstructionSet> ExtInstructionSets { get; } = new HashSet<TranspilerExtInstructionSet>();
-        public ISet<TranspilerType> Types { get; } = new HashSet<TranspilerType>();
+        public ISet<TranspilerType> Types => types;
         public ISet<TranspilerFunction> Functions { get; } = new HashSet<TranspilerFunction>();
         public IEnumerable<TranspilerEntryFunction> EntryPoints => Functions.OfType<TranspilerEntryFunction>();
         public ISet<TranspilerVariable> GlobalVariables { get; } = new HashSet<TranspilerVariable>();
@@ -51,7 +53,19 @@ namespace cilspirv.Transpiler
             }
         }
 
-        public IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        public TranspilerType GetTranspilerTypeFor(SpirvType spirvType)
+        {
+            if (types.ResetHasChanged())
+                spirvToTranspilerType = Types.ToDictionary(t => t.Type);
+            if (spirvToTranspilerType.TryGetValue(spirvType, out var transpilerType))
+                return transpilerType;
+
+            transpilerType = new TranspilerType(name: null, spirvType);
+            types.Add(transpilerType);
+            return transpilerType;
+        }
+
+        public IEnumerable<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             foreach (var cap in Capabilities)
                 yield return new OpCapability()
@@ -84,7 +98,7 @@ namespace cilspirv.Transpiler
             var functionInstructions =
                 Functions.Except(functionDefs).SelectMany(f => f.GenerateInstructions(context))
                 .Concat(functionDefs.SelectMany(f => f.GenerateInstructions(context)))
-                .ToImmutableArray();
+                .ToArray();
 
             var instructionSets = new List<IEnumerable<Instruction>>();
 
@@ -92,19 +106,25 @@ namespace cilspirv.Transpiler
             {
                 instructionSets.Add(context
                     .OfType<IDebugInstructionGeneratable>()
-                    .SelectMany(g => g.GenerateDebugInfo(context)));
+                    .SelectMany(g => g.GenerateDebugInfo(context))
+                    .ToArray());
             }
 
             instructionSets.Add(context
                 .OfType<IDecoratableInstructionGeneratable>()
-                .SelectMany(d => d.GenerateDecorations(context)));
+                .SelectMany(d => d.GenerateDecorations(context))
+                .ToArray());
 
             instructionSets.Add(context
-                .OfType<TranspilerType>()
-                .SelectMany(t => t.GenerateInstructions(context)));
+                .OfType<SpirvType>()
+                .Concat(context.OfType<TranspilerType>().Select(t => t.Type))
+                .Distinct()
+                .SelectMany(t => t.GenerateInstructions(context))
+                .ToArray());
 
             instructionSets.Add(GlobalVariables
-                .SelectMany(v => v.GenerateInstructions(context)));
+                .SelectMany(v => v.GenerateInstructions(context))
+                .ToArray());
 
             instructionSets.Add(functionInstructions);
 

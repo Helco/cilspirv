@@ -147,7 +147,7 @@ namespace cilspirv.Spirv
 
         public bool Equals(ExtraOperand other) =>
             Kind == other.Kind &&
-            numeric.SequenceEqual(other.numeric) &&
+            numeric == other.numeric &&
             textual == other.textual &&
             enumType == other.enumType &&
             rawValue == other.rawValue;
