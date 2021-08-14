@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
+using cilspirv.Library;
 using cilspirv.Spirv;
 using cilspirv.Transpiler;
 
@@ -12,27 +13,24 @@ namespace cilspirv.testcli
         static void Main(string[] args)
         {
             var assembly = typeof(test_shaders.Simple).Assembly;
-            var assemblyDef = Mono.Cecil.AssemblyDefinition.ReadAssembly(assembly.Location);
-            Console.WriteLine(assemblyDef.MainModule.Types[1].FullName);
-
-            var module = new TranspilerModule();
-            module.Capabilities.Add(Capability.Shader);
-            module.ExtInstructionSets.Add(new TranspilerExtInstructionSet("GLSL.std.450"));
-            module.MemoryModel = MemoryModel.GLSL450;
-            module.AddressingModel = AddressingModel.Logical;
-
-            var voidType = module.GetTranspilerTypeFor(new SpirvVoidType());
-            var mainFunction = new TranspilerFunction("main", voidType);
-            mainFunction.Decorations.Add(Decorations.UserSemantic("SOMETHING"));
-            module.Functions.Add(mainFunction);
-
-            var context = new InstructionGenerator();
-            var spirvModule = new SpirvModule()
+            var assemblyDef = Mono.Cecil.AssemblyDefinition.ReadAssembly(assembly.Location, new Mono.Cecil.ReaderParameters()
             {
-                Instructions = module.GenerateInstructions(context).ToArray(),
-                Bound = context.Bound
-            };
-            spirvModule.Write(new FileStream("test.spv", FileMode.Create), mapID: context.MapFromTemporaryID);
+                ReadSymbols = true
+            });
+
+            var moduleTypeDef = assemblyDef.MainModule.Types.FirstOrDefault(
+                t => t.GetCustomAttributes<ModuleAttributeBase>(exactType: false).Any());
+            if (moduleTypeDef == null)
+                throw new InvalidDataException("Could not find a module class");
+
+            var entryPoints = moduleTypeDef.Methods.Where(
+                method => method.GetCustomAttributes<EntryPointAttribute>().Any())
+                .ToArray();
+            if (!entryPoints.Any())
+                throw new InvalidDataException($"Module class {moduleTypeDef.FullName} has no entry point");
+
+            var unit = new TranspilerUnit(entryPoints[0]);
+            unit.ExtractModuleAttributes();
         }
     }
 }
