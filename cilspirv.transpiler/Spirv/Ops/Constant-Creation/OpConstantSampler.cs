@@ -50,8 +50,9 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = (uint)SamplerAddressingMode;
             codes[i++] = Param.Value;
             codes[i++] = (uint)SamplerFilterMode;
-            foreach (var o in ExtraOperands)
-                o.Write(codes, ref i, mapID);
+            if (!ExtraOperands.IsDefaultOrEmpty)
+                foreach (var o in ExtraOperands)
+                    o.Write(codes, ref i, mapID);
         }
     }
 }

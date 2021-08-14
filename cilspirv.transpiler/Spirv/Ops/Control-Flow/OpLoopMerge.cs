@@ -41,8 +41,9 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(MergeBlock);
             codes[i++] = mapID(ContinueTarget);
             codes[i++] = (uint)LoopControl;
-            foreach (var o in ExtraOperands)
-                o.Write(codes, ref i, mapID);
+            if (!ExtraOperands.IsDefaultOrEmpty)
+                foreach (var o in ExtraOperands)
+                    o.Write(codes, ref i, mapID);
         }
     }
 }

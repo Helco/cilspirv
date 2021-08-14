@@ -230,8 +230,9 @@ namespace cilspirv.SourceGen
                         yield return "            }";
                 }
 
-                yield return "            foreach (var o in ExtraOperands)";
-                yield return "                o.Write(codes, ref i, mapID);";
+                yield return "            if (!ExtraOperands.IsDefaultOrEmpty)";
+                yield return "                foreach (var o in ExtraOperands)";
+                yield return "                    o.Write(codes, ref i, mapID);";
 
                 yield return "        }";
             }

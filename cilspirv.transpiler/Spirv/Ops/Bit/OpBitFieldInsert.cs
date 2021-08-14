@@ -53,8 +53,9 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Insert);
             codes[i++] = mapID(Offset);
             codes[i++] = mapID(Count);
-            foreach (var o in ExtraOperands)
-                o.Write(codes, ref i, mapID);
+            if (!ExtraOperands.IsDefaultOrEmpty)
+                foreach (var o in ExtraOperands)
+                    o.Write(codes, ref i, mapID);
         }
     }
 }

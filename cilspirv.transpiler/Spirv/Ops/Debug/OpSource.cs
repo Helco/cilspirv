@@ -62,8 +62,9 @@ namespace cilspirv.Spirv.Ops
             {
                 Source.Value.Write(codes, ref i);
             }
-            foreach (var o in ExtraOperands)
-                o.Write(codes, ref i, mapID);
+            if (!ExtraOperands.IsDefaultOrEmpty)
+                foreach (var o in ExtraOperands)
+                    o.Write(codes, ref i, mapID);
         }
     }
 }

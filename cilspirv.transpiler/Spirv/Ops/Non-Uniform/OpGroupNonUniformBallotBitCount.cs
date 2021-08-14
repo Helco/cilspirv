@@ -50,8 +50,9 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Execution);
             codes[i++] = (uint)Operation;
             codes[i++] = mapID(Value);
-            foreach (var o in ExtraOperands)
-                o.Write(codes, ref i, mapID);
+            if (!ExtraOperands.IsDefaultOrEmpty)
+                foreach (var o in ExtraOperands)
+                    o.Write(codes, ref i, mapID);
         }
     }
 }

@@ -41,8 +41,9 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(File);
             codes[i++] = Line.Value;
             codes[i++] = Column.Value;
-            foreach (var o in ExtraOperands)
-                o.Write(codes, ref i, mapID);
+            if (!ExtraOperands.IsDefaultOrEmpty)
+                foreach (var o in ExtraOperands)
+                    o.Write(codes, ref i, mapID);
         }
     }
 }

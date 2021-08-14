@@ -53,8 +53,9 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Coordinate);
             codes[i++] = mapID(Dref);
             codes[i++] = (uint)ImageOperands;
-            foreach (var o in ExtraOperands)
-                o.Write(codes, ref i, mapID);
+            if (!ExtraOperands.IsDefaultOrEmpty)
+                foreach (var o in ExtraOperands)
+                    o.Write(codes, ref i, mapID);
         }
     }
 }

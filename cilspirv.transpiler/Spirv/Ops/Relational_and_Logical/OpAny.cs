@@ -43,8 +43,9 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(ResultType);
             codes[i++] = mapID(Result);
             codes[i++] = mapID(Vector);
-            foreach (var o in ExtraOperands)
-                o.Write(codes, ref i, mapID);
+            if (!ExtraOperands.IsDefaultOrEmpty)
+                foreach (var o in ExtraOperands)
+                    o.Write(codes, ref i, mapID);
         }
     }
 }

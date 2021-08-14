@@ -59,8 +59,9 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Pointer);
             codes[i++] = mapID(PacketSize);
             codes[i++] = mapID(PacketAlignment);
-            foreach (var o in ExtraOperands)
-                o.Write(codes, ref i, mapID);
+            if (!ExtraOperands.IsDefaultOrEmpty)
+                foreach (var o in ExtraOperands)
+                    o.Write(codes, ref i, mapID);
         }
     }
 }

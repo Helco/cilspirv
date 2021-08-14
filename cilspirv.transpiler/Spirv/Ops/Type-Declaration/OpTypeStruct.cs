@@ -54,8 +54,9 @@ namespace cilspirv.Spirv.Ops
             {
                 codes[i++] = mapID(x);
             }
-            foreach (var o in ExtraOperands)
-                o.Write(codes, ref i, mapID);
+            if (!ExtraOperands.IsDefaultOrEmpty)
+                foreach (var o in ExtraOperands)
+                    o.Write(codes, ref i, mapID);
         }
     }
 }

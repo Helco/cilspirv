@@ -42,8 +42,9 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(StructType);
             codes[i++] = Member.Value;
             codes[i++] = (uint)Decoration;
-            foreach (var o in ExtraOperands)
-                o.Write(codes, ref i, mapID);
+            if (!ExtraOperands.IsDefaultOrEmpty)
+                foreach (var o in ExtraOperands)
+                    o.Write(codes, ref i, mapID);
         }
     }
 }

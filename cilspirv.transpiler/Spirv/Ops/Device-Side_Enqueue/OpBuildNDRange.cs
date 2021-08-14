@@ -50,8 +50,9 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(GlobalWorkSize);
             codes[i++] = mapID(LocalWorkSize);
             codes[i++] = mapID(GlobalWorkOffset);
-            foreach (var o in ExtraOperands)
-                o.Write(codes, ref i, mapID);
+            if (!ExtraOperands.IsDefaultOrEmpty)
+                foreach (var o in ExtraOperands)
+                    o.Write(codes, ref i, mapID);
         }
     }
 }

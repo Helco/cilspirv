@@ -53,8 +53,9 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Param);
             codes[i++] = mapID(ParamSize);
             codes[i++] = mapID(ParamAlign);
-            foreach (var o in ExtraOperands)
-                o.Write(codes, ref i, mapID);
+            if (!ExtraOperands.IsDefaultOrEmpty)
+                foreach (var o in ExtraOperands)
+                    o.Write(codes, ref i, mapID);
         }
     }
 }

@@ -53,8 +53,9 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Memory);
             codes[i++] = mapID(Semantics);
             codes[i++] = mapID(Value);
-            foreach (var o in ExtraOperands)
-                o.Write(codes, ref i, mapID);
+            if (!ExtraOperands.IsDefaultOrEmpty)
+                foreach (var o in ExtraOperands)
+                    o.Write(codes, ref i, mapID);
         }
     }
 }

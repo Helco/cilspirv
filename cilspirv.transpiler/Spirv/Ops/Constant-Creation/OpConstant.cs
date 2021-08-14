@@ -43,8 +43,9 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(ResultType);
             codes[i++] = mapID(Result);
             Value.Select(v => v.Value).ToArray().CopyTo(codes.Slice(i)); i += Value.Length;
-            foreach (var o in ExtraOperands)
-                o.Write(codes, ref i, mapID);
+            if (!ExtraOperands.IsDefaultOrEmpty)
+                foreach (var o in ExtraOperands)
+                    o.Write(codes, ref i, mapID);
         }
     }
 }

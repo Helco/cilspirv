@@ -50,8 +50,9 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = PacketSize.Value;
             codes[i++] = PacketAlignment.Value;
             codes[i++] = Capacity.Value;
-            foreach (var o in ExtraOperands)
-                o.Write(codes, ref i, mapID);
+            if (!ExtraOperands.IsDefaultOrEmpty)
+                foreach (var o in ExtraOperands)
+                    o.Write(codes, ref i, mapID);
         }
     }
 }
