@@ -31,14 +31,14 @@ namespace cilspirv.Spirv.Ops
             Value = codes.Skip(i).Take(end - i).Select(n => (LiteralNumber)n).ToImmutableArray();
         }
 
-        public override void Write(Span<uint> codes)
+        public override void Write(Span<uint> codes, Func<ID, uint> mapID)
         {
             if (codes.Length < WordCount)
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = ResultType.Value;
-            codes[i++] = Result.Value;
+            codes[i++] = mapID(ResultType);
+            codes[i++] = mapID(Result);
             Value.Select(v => v.Value).ToArray().CopyTo(codes.Slice(i)); i += Value.Length;
         }
     }

@@ -62,27 +62,27 @@ namespace cilspirv.Spirv.Ops
                 .ToImmutableArray();
         }
 
-        public override void Write(Span<uint> codes)
+        public override void Write(Span<uint> codes, Func<ID, uint> mapID)
         {
             if (codes.Length < WordCount)
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = ResultType.Value;
-            codes[i++] = Result.Value;
-            codes[i++] = Queue.Value;
-            codes[i++] = Flags.Value;
-            codes[i++] = NDRange.Value;
-            codes[i++] = NumEvents.Value;
-            codes[i++] = WaitEvents.Value;
-            codes[i++] = RetEvent.Value;
-            codes[i++] = Invoke.Value;
-            codes[i++] = Param.Value;
-            codes[i++] = ParamSize.Value;
-            codes[i++] = ParamAlign.Value;
+            codes[i++] = mapID(ResultType);
+            codes[i++] = mapID(Result);
+            codes[i++] = mapID(Queue);
+            codes[i++] = mapID(Flags);
+            codes[i++] = mapID(NDRange);
+            codes[i++] = mapID(NumEvents);
+            codes[i++] = mapID(WaitEvents);
+            codes[i++] = mapID(RetEvent);
+            codes[i++] = mapID(Invoke);
+            codes[i++] = mapID(Param);
+            codes[i++] = mapID(ParamSize);
+            codes[i++] = mapID(ParamAlign);
             foreach (var x in LocalSize)
             {
-                codes[i++] = x.Value;
+                codes[i++] = mapID(x);
             }
         }
     }

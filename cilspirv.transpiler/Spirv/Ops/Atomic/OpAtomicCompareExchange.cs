@@ -41,20 +41,20 @@ namespace cilspirv.Spirv.Ops
             Comparator = new ID(codes[i++]);
         }
 
-        public override void Write(Span<uint> codes)
+        public override void Write(Span<uint> codes, Func<ID, uint> mapID)
         {
             if (codes.Length < WordCount)
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = ResultType.Value;
-            codes[i++] = Result.Value;
-            codes[i++] = Pointer.Value;
-            codes[i++] = Memory.Value;
-            codes[i++] = Equal.Value;
-            codes[i++] = Unequal.Value;
-            codes[i++] = Value.Value;
-            codes[i++] = Comparator.Value;
+            codes[i++] = mapID(ResultType);
+            codes[i++] = mapID(Result);
+            codes[i++] = mapID(Pointer);
+            codes[i++] = mapID(Memory);
+            codes[i++] = mapID(Equal);
+            codes[i++] = mapID(Unequal);
+            codes[i++] = mapID(Value);
+            codes[i++] = mapID(Comparator);
         }
     }
 }

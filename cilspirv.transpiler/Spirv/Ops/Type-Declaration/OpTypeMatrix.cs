@@ -31,14 +31,14 @@ namespace cilspirv.Spirv.Ops
             ColumnCount = (LiteralNumber)codes[i++];
         }
 
-        public override void Write(Span<uint> codes)
+        public override void Write(Span<uint> codes, Func<ID, uint> mapID)
         {
             if (codes.Length < WordCount)
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = Result.Value;
-            codes[i++] = ColumnType.Value;
+            codes[i++] = mapID(Result);
+            codes[i++] = mapID(ColumnType);
             codes[i++] = ColumnCount.Value;
         }
     }

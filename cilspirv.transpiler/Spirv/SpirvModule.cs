@@ -13,7 +13,7 @@ namespace cilspirv.Spirv
         public const uint SwappedMagic = 0x03022307;
 
         public uint Magic { get; init; } = DefaultMagic;
-        public Version SpirvVersion { get; init; } = new Version(1, 3);
+        public Version SpirvVersion { get; init; } = new Version(1, 4);
         public ushort GeneratorToolID { get; init; } = 42; // TODO: Register actual tool ID at Khronos
         public Version GeneratorVersion { get; init; } = typeof(SpirvModule).Assembly.GetName().Version ?? new Version(0, 1);
         public uint Bound { get; init; } = BoundNotSet;
@@ -74,7 +74,7 @@ namespace cilspirv.Spirv
             Instructions = instructions;
         }
 
-        public void Write(Stream stream, bool leaveOpen = false)
+        public void Write(Stream stream, bool leaveOpen = false, Func<ID, uint>? mapID = null)
         {
             using var writer = new BinaryWriter(stream, System.Text.Encoding.Default, leaveOpen);
             writer.Write(Magic);
@@ -99,7 +99,7 @@ namespace cilspirv.Spirv
                     Array.Resize(ref uintBuffer, instruction.WordCount);
                     byteBuffer = MemoryMarshal.AsBytes(uintBuffer.AsSpan());
                 }
-                instruction.Write(uintBuffer.AsSpan());
+                instruction.Write(uintBuffer.AsSpan(), mapID ?? (x => x.Value));
                 writer.Write(byteBuffer.Slice(0, instruction.WordCount * sizeof(uint)));
             }
         }

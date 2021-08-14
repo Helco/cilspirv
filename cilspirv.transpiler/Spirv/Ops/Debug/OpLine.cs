@@ -29,13 +29,13 @@ namespace cilspirv.Spirv.Ops
             Column = (LiteralNumber)codes[i++];
         }
 
-        public override void Write(Span<uint> codes)
+        public override void Write(Span<uint> codes, Func<ID, uint> mapID)
         {
             if (codes.Length < WordCount)
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = File.Value;
+            codes[i++] = mapID(File);
             codes[i++] = Line.Value;
             codes[i++] = Column.Value;
         }

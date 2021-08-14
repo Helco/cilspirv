@@ -28,14 +28,14 @@ namespace cilspirv.Spirv.Ops
             ImageType = new ID(codes[i++]);
         }
 
-        public override void Write(Span<uint> codes)
+        public override void Write(Span<uint> codes, Func<ID, uint> mapID)
         {
             if (codes.Length < WordCount)
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = Result.Value;
-            codes[i++] = ImageType.Value;
+            codes[i++] = mapID(Result);
+            codes[i++] = mapID(ImageType);
         }
     }
 }

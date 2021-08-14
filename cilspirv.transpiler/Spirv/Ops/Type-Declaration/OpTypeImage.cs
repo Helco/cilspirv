@@ -43,14 +43,14 @@ namespace cilspirv.Spirv.Ops
                 AccessQualifier = (AccessQualifier)codes[i++];
         }
 
-        public override void Write(Span<uint> codes)
+        public override void Write(Span<uint> codes, Func<ID, uint> mapID)
         {
             if (codes.Length < WordCount)
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = Result.Value;
-            codes[i++] = SampledType.Value;
+            codes[i++] = mapID(Result);
+            codes[i++] = mapID(SampledType);
             codes[i++] = (uint)Dim;
             codes[i++] = Depth.Value;
             codes[i++] = Arrayed.Value;

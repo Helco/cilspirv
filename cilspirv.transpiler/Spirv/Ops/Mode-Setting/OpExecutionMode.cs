@@ -27,13 +27,13 @@ namespace cilspirv.Spirv.Ops
             Mode = (ExecutionMode)codes[i++];
         }
 
-        public override void Write(Span<uint> codes)
+        public override void Write(Span<uint> codes, Func<ID, uint> mapID)
         {
             if (codes.Length < WordCount)
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = EntryPoint.Value;
+            codes[i++] = mapID(EntryPoint);
             codes[i++] = (uint)Mode;
         }
     }

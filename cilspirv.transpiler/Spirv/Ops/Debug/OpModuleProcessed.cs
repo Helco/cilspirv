@@ -25,7 +25,7 @@ namespace cilspirv.Spirv.Ops
             Process = new LiteralString(codes, ref i);
         }
 
-        public override void Write(Span<uint> codes)
+        public override void Write(Span<uint> codes, Func<ID, uint> mapID)
         {
             if (codes.Length < WordCount)
                 throw new ArgumentException("Output span too small", nameof(codes));

@@ -38,18 +38,18 @@ namespace cilspirv.Spirv.Ops
             RetEvent = new ID(codes[i++]);
         }
 
-        public override void Write(Span<uint> codes)
+        public override void Write(Span<uint> codes, Func<ID, uint> mapID)
         {
             if (codes.Length < WordCount)
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = ResultType.Value;
-            codes[i++] = Result.Value;
-            codes[i++] = Queue.Value;
-            codes[i++] = NumEvents.Value;
-            codes[i++] = WaitEvents.Value;
-            codes[i++] = RetEvent.Value;
+            codes[i++] = mapID(ResultType);
+            codes[i++] = mapID(Result);
+            codes[i++] = mapID(Queue);
+            codes[i++] = mapID(NumEvents);
+            codes[i++] = mapID(WaitEvents);
+            codes[i++] = mapID(RetEvent);
         }
     }
 }

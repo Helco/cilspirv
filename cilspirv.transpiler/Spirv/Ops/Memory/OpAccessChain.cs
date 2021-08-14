@@ -43,18 +43,18 @@ namespace cilspirv.Spirv.Ops
                 .ToImmutableArray();
         }
 
-        public override void Write(Span<uint> codes)
+        public override void Write(Span<uint> codes, Func<ID, uint> mapID)
         {
             if (codes.Length < WordCount)
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = ResultType.Value;
-            codes[i++] = Result.Value;
-            codes[i++] = Base.Value;
+            codes[i++] = mapID(ResultType);
+            codes[i++] = mapID(Result);
+            codes[i++] = mapID(Base);
             foreach (var x in Indexes)
             {
-                codes[i++] = x.Value;
+                codes[i++] = mapID(x);
             }
         }
     }

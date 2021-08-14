@@ -36,17 +36,17 @@ namespace cilspirv.Spirv.Ops
             GlobalWorkOffset = new ID(codes[i++]);
         }
 
-        public override void Write(Span<uint> codes)
+        public override void Write(Span<uint> codes, Func<ID, uint> mapID)
         {
             if (codes.Length < WordCount)
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = ResultType.Value;
-            codes[i++] = Result.Value;
-            codes[i++] = GlobalWorkSize.Value;
-            codes[i++] = LocalWorkSize.Value;
-            codes[i++] = GlobalWorkOffset.Value;
+            codes[i++] = mapID(ResultType);
+            codes[i++] = mapID(Result);
+            codes[i++] = mapID(GlobalWorkSize);
+            codes[i++] = mapID(LocalWorkSize);
+            codes[i++] = mapID(GlobalWorkOffset);
         }
     }
 }

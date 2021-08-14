@@ -32,16 +32,16 @@ namespace cilspirv.Spirv.Ops
             PacketAlignment = new ID(codes[i++]);
         }
 
-        public override void Write(Span<uint> codes)
+        public override void Write(Span<uint> codes, Func<ID, uint> mapID)
         {
             if (codes.Length < WordCount)
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = Pipe.Value;
-            codes[i++] = ReserveId.Value;
-            codes[i++] = PacketSize.Value;
-            codes[i++] = PacketAlignment.Value;
+            codes[i++] = mapID(Pipe);
+            codes[i++] = mapID(ReserveId);
+            codes[i++] = mapID(PacketSize);
+            codes[i++] = mapID(PacketAlignment);
         }
     }
 }

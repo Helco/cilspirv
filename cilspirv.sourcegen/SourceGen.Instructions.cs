@@ -190,7 +190,7 @@ namespace cilspirv.SourceGen
 
             IEnumerable<string> Write()
             {
-                yield return $"        public override void Write(Span<uint> codes)";
+                yield return $"        public override void Write(Span<uint> codes, Func<ID, uint> mapID)";
                 yield return "        {";
                 yield return "            if (codes.Length < WordCount)";
                 yield return "                throw new ArgumentException(\"Output span too small\", nameof(codes));";
@@ -331,8 +331,10 @@ namespace cilspirv.SourceGen
                 "LiteralInteger" => $"codes[i++] = {value}.Value;",
                 "LiteralString" => $"{value}.Write(codes, ref i);",
                 "LiteralContextDependentNumber" => $"{value}.Select(v => v.Value).ToArray().CopyTo(codes.Slice(i)); i += {value}.Length;",
-                _ when operand.kind.StartsWith("Pair") => $"codes[i++] = {value}.Item1.Value; codes[i++] = {value}.Item2.Value;",
-                _ when operand.kind.StartsWith("Id") => $"codes[i++] = {value}.Value;",
+                "PairLiteralIntegerIdRef" => $"codes[i++] = {value}.Item1.Value; codes[i++] = mapID({value}.Item2);",
+                "PairIdRefLiteralInteger" => $"codes[i++] = mapID({value}.Item1); codes[i++] = {value}.Item2.Value;",
+                "PairIdRefIdRef" => $"codes[i++] = mapID({value}.Item1); codes[i++] = mapID({value}.Item2);",
+                _ when operand.kind.StartsWith("Id") => $"codes[i++] = mapID({value});",
                 _ => $"codes[i++] = (uint){value};"
             };
         }

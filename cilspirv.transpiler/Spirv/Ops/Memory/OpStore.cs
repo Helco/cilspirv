@@ -30,14 +30,14 @@ namespace cilspirv.Spirv.Ops
                 MemoryAccess = (MemoryAccess)codes[i++];
         }
 
-        public override void Write(Span<uint> codes)
+        public override void Write(Span<uint> codes, Func<ID, uint> mapID)
         {
             if (codes.Length < WordCount)
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = Pointer.Value;
-            codes[i++] = Object.Value;
+            codes[i++] = mapID(Pointer);
+            codes[i++] = mapID(Object);
             if (MemoryAccess.HasValue)
             {
                 codes[i++] = (uint)MemoryAccess.Value;

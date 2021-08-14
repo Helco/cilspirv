@@ -40,19 +40,19 @@ namespace cilspirv.Spirv.Ops
             ParamAlign = new ID(codes[i++]);
         }
 
-        public override void Write(Span<uint> codes)
+        public override void Write(Span<uint> codes, Func<ID, uint> mapID)
         {
             if (codes.Length < WordCount)
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = ResultType.Value;
-            codes[i++] = Result.Value;
-            codes[i++] = SubgroupCount.Value;
-            codes[i++] = Invoke.Value;
-            codes[i++] = Param.Value;
-            codes[i++] = ParamSize.Value;
-            codes[i++] = ParamAlign.Value;
+            codes[i++] = mapID(ResultType);
+            codes[i++] = mapID(Result);
+            codes[i++] = mapID(SubgroupCount);
+            codes[i++] = mapID(Invoke);
+            codes[i++] = mapID(Param);
+            codes[i++] = mapID(ParamSize);
+            codes[i++] = mapID(ParamAlign);
         }
     }
 }

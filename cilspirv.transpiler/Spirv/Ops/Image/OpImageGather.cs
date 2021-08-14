@@ -39,17 +39,17 @@ namespace cilspirv.Spirv.Ops
                 ImageOperands = (ImageOperands)codes[i++];
         }
 
-        public override void Write(Span<uint> codes)
+        public override void Write(Span<uint> codes, Func<ID, uint> mapID)
         {
             if (codes.Length < WordCount)
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = ResultType.Value;
-            codes[i++] = Result.Value;
-            codes[i++] = SampledImage.Value;
-            codes[i++] = Coordinate.Value;
-            codes[i++] = Component.Value;
+            codes[i++] = mapID(ResultType);
+            codes[i++] = mapID(Result);
+            codes[i++] = mapID(SampledImage);
+            codes[i++] = mapID(Coordinate);
+            codes[i++] = mapID(Component);
             if (ImageOperands.HasValue)
             {
                 codes[i++] = (uint)ImageOperands.Value;

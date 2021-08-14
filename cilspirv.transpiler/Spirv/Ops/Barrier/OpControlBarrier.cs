@@ -29,15 +29,15 @@ namespace cilspirv.Spirv.Ops
             Semantics = new ID(codes[i++]);
         }
 
-        public override void Write(Span<uint> codes)
+        public override void Write(Span<uint> codes, Func<ID, uint> mapID)
         {
             if (codes.Length < WordCount)
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
-            codes[i++] = Execution.Value;
-            codes[i++] = Memory.Value;
-            codes[i++] = Semantics.Value;
+            codes[i++] = mapID(Execution);
+            codes[i++] = mapID(Memory);
+            codes[i++] = mapID(Semantics);
         }
     }
 }

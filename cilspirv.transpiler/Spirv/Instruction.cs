@@ -25,7 +25,7 @@ namespace cilspirv.Spirv
 
         public abstract OpCode OpCode { get; }
 
-        public abstract void Write(Span<uint> code);
+        public abstract void Write(Span<uint> code, Func<ID, uint> mapID);
 
         public virtual IEnumerable<ID> AllIDs => Array.Empty<ID>();
 
