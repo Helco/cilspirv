@@ -6,7 +6,7 @@ using cilspirv.Spirv.Ops;
 
 namespace cilspirv.Transpiler
 {
-    internal class TranspilerParameter : IDecoratableInstructionGeneratable
+    internal class TranspilerParameter : IDecoratableInstructionGeneratable, IDebugInstructionGeneratable
     {
         public string Name { get; }
         public SpirvType Type { get; }
@@ -20,6 +20,15 @@ namespace cilspirv.Transpiler
             {
                 Result = context.CreateIDFor(this),
                 ResultType = context.IDOf(Type)
+            };
+        }
+
+        public IEnumerator<Instruction> GenerateDebugInfo(IInstructionGeneratorContext context)
+        {
+            yield return new OpName()
+            {
+                Target = context.IDOf(this),
+                Name = Name
             };
         }
     }

@@ -56,7 +56,7 @@ namespace cilspirv.Transpiler
         }
 
         public IEnumerable<T> OfType<T>() where T : IInstructionGeneratable =>
-            tempIDs.Keys.OfType<T>();
+            permIDs.Keys.OfType<T>().ToArray().Concat(tempIDs.Keys.OfType<T>());
 
         public uint MapFromTemporaryID(ID id) => IsTemporaryID(id)
             ? idRemap.TryGetValue(id, out var permId) ? permId.Value : throw new InvalidOperationException("ID was never remapped")

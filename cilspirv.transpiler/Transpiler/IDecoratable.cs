@@ -25,12 +25,15 @@ namespace cilspirv.Transpiler
                 var idOperands = entry.ExtraOperands.Where(o => o.Kind == ExtraOperandKind.ID).ToImmutableArray();
                 var numericOperands = entry.ExtraOperands.Except(stringOperands.Concat(idOperands)).ToImmutableArray();
 
-                yield return new OpDecorate()
+                if (numericOperands.Any() || (!idOperands.Any() && !stringOperands.Any()))
                 {
-                    Target = id,
-                    Decoration = entry.Kind,
-                    ExtraOperands = numericOperands
-                };
+                    yield return new OpDecorate()
+                    {
+                        Target = id,
+                        Decoration = entry.Kind,
+                        ExtraOperands = numericOperands
+                    };
+                }
 
                 if (idOperands.Any())
                 {

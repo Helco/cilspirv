@@ -21,6 +21,26 @@ namespace cilspirv.Transpiler
             (this as IDecoratableInstructionGeneratable).BaseGenerateDecorations(context).Concat(
                 Members.SelectMany((member, memberI) =>
                     member.GenerateDecorations(context, context.IDOf(this), memberI)));
+
+        public override IEnumerator<Instruction> GenerateDebugInfo(IInstructionGeneratorContext context)
+        {
+            var structID = context.IDOf(this);
+            if (Name != null)
+                yield return new OpName()
+                {
+                    Target = structID,
+                    Name = Name
+                };
+
+            var memberInstructions = Members.Select((member, memberI) => new OpMemberName()
+            {
+                Type = structID,
+                Member = memberI,
+                Name = member.Name
+            });
+            foreach (var instr in memberInstructions)
+                yield return instr;
+        }
     }
 
     internal class TranspilerMember : IDecoratable

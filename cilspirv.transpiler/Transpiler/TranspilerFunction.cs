@@ -7,7 +7,7 @@ using cilspirv.Spirv.Ops;
 
 namespace cilspirv.Transpiler
 {
-    internal class TranspilerFunction : IDecoratableInstructionGeneratable
+    internal class TranspilerFunction : IDecoratableInstructionGeneratable, IDebugInstructionGeneratable
     {
         public string Name { get; }
         public TranspilerType ReturnType { get; set; }
@@ -37,6 +37,15 @@ namespace cilspirv.Transpiler
             .GetEnumerator();           
 
         protected virtual IEnumerable<Instruction> GenerateBody(IInstructionGeneratorContext context) => Enumerable.Empty<Instruction>();
+
+        public IEnumerator<Instruction> GenerateDebugInfo(IInstructionGeneratorContext context)
+        {
+            yield return new OpName()
+            {
+                Target = context.IDOf(this),
+                Name = Name
+            };
+        }
     }
 
     internal class TranspilerDefinedFunction : TranspilerFunction
