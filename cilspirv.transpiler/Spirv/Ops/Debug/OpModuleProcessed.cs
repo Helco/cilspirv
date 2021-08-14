@@ -12,7 +12,7 @@ namespace cilspirv.Spirv.Ops
         public LiteralString Process { get; init; }
 
         public override OpCode OpCode => OpCode.OpModuleProcessed;
-        public override int WordCount => 1 + Process.WordCount;
+        public override int WordCount => 1 + Process.WordCount + ExtraWordCount;
 
 
         public OpModuleProcessed() {}
@@ -23,6 +23,9 @@ namespace cilspirv.Spirv.Ops
             end += start;
             var i = start;
             Process = new LiteralString(codes, ref i);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -32,6 +35,8 @@ namespace cilspirv.Spirv.Ops
             var i = 0;
             codes[i++] = InstructionCode;
             Process.Write(codes, ref i);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

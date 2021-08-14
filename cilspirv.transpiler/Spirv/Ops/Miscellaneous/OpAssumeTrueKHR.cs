@@ -12,9 +12,9 @@ namespace cilspirv.Spirv.Ops
         public ID Condition { get; init; }
 
         public override OpCode OpCode => OpCode.OpAssumeTrueKHR;
-        public override int WordCount => 1 + 1;
+        public override int WordCount => 1 + 1 + ExtraWordCount;
 
-        public override IEnumerable<ID> AllIDs => new[] { Condition };
+        public override IEnumerable<ID> AllIDs => new[] { Condition }.Concat(ExtraIDs);
 
         public OpAssumeTrueKHR() {}
 
@@ -24,6 +24,9 @@ namespace cilspirv.Spirv.Ops
             end += start;
             var i = start;
             Condition = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -33,6 +36,8 @@ namespace cilspirv.Spirv.Ops
             var i = 0;
             codes[i++] = InstructionCode;
             codes[i++] = mapID(Condition);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

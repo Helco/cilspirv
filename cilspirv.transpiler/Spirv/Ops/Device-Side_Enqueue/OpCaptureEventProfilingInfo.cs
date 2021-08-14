@@ -14,9 +14,9 @@ namespace cilspirv.Spirv.Ops
         public ID Value { get; init; }
 
         public override OpCode OpCode => OpCode.OpCaptureEventProfilingInfo;
-        public override int WordCount => 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + ExtraWordCount;
 
-        public override IEnumerable<ID> AllIDs => new[] { Event, ProfilingInfo, Value };
+        public override IEnumerable<ID> AllIDs => new[] { Event, ProfilingInfo, Value }.Concat(ExtraIDs);
 
         public OpCaptureEventProfilingInfo() {}
 
@@ -28,6 +28,9 @@ namespace cilspirv.Spirv.Ops
             Event = new ID(codes[i++]);
             ProfilingInfo = new ID(codes[i++]);
             Value = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -39,6 +42,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Event);
             codes[i++] = mapID(ProfilingInfo);
             codes[i++] = mapID(Value);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

@@ -12,9 +12,9 @@ namespace cilspirv.Spirv.Ops
         public ID Event { get; init; }
 
         public override OpCode OpCode => OpCode.OpReleaseEvent;
-        public override int WordCount => 1 + 1;
+        public override int WordCount => 1 + 1 + ExtraWordCount;
 
-        public override IEnumerable<ID> AllIDs => new[] { Event };
+        public override IEnumerable<ID> AllIDs => new[] { Event }.Concat(ExtraIDs);
 
         public OpReleaseEvent() {}
 
@@ -24,6 +24,9 @@ namespace cilspirv.Spirv.Ops
             end += start;
             var i = start;
             Event = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -33,6 +36,8 @@ namespace cilspirv.Spirv.Ops
             var i = 0;
             codes[i++] = InstructionCode;
             codes[i++] = mapID(Event);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

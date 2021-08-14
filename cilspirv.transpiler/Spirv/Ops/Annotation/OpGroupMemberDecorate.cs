@@ -12,13 +12,14 @@ namespace cilspirv.Spirv.Ops
         public ImmutableArray<(ID, LiteralNumber)> Targets { get; init; }
 
         public override OpCode OpCode => OpCode.OpGroupMemberDecorate;
-        public override int WordCount => 1 + 1 + 2 * Targets.Length;
+        public override int WordCount => 1 + 1 + 2 * Targets.Length + ExtraWordCount;
 
         public override IEnumerable<ID> AllIDs
         {
             get
             {
-                var result = Enumerable.Empty<ID>();
+                var result = ExtraIDs;
+                result = result.Concat(new[] { DecorationGroup });
                 result = result.Concat(Targets.Select(x => x.Item1));
                 return result;
             }
@@ -35,6 +36,10 @@ namespace cilspirv.Spirv.Ops
             Targets = Enumerable.Repeat(0, (end - i) / 2)
                 .Select(_ => (new ID(codes[i++]), new LiteralNumber(codes[i++])))
                 .ToImmutableArray();
+            i = end;
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -48,6 +53,8 @@ namespace cilspirv.Spirv.Ops
             {
                 codes[i++] = mapID(x.Item1); codes[i++] = x.Item2.Value;
             }
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

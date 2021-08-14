@@ -18,11 +18,11 @@ namespace cilspirv.Spirv.Ops
         public ID ParamAlign { get; init; }
 
         public override OpCode OpCode => OpCode.OpGetKernelLocalSizeForSubgroupCount;
-        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, SubgroupCount, Invoke, Param, ParamSize, ParamAlign };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, SubgroupCount, Invoke, Param, ParamSize, ParamAlign }.Concat(ExtraIDs);
 
         public OpGetKernelLocalSizeForSubgroupCount() {}
 
@@ -38,6 +38,9 @@ namespace cilspirv.Spirv.Ops
             Param = new ID(codes[i++]);
             ParamSize = new ID(codes[i++]);
             ParamAlign = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -53,6 +56,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Param);
             codes[i++] = mapID(ParamSize);
             codes[i++] = mapID(ParamAlign);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

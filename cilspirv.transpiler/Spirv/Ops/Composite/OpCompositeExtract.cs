@@ -14,11 +14,11 @@ namespace cilspirv.Spirv.Ops
         public ImmutableArray<LiteralNumber> Indexes { get; init; }
 
         public override OpCode OpCode => OpCode.OpCompositeExtract;
-        public override int WordCount => 1 + 1 + 1 + 1 + Indexes.Length;
+        public override int WordCount => 1 + 1 + 1 + 1 + Indexes.Length + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Composite };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Composite }.Concat(ExtraIDs);
 
         public OpCompositeExtract() {}
 
@@ -32,6 +32,10 @@ namespace cilspirv.Spirv.Ops
             Composite = new ID(codes[i++]);
             Indexes = codes.Skip(i).Take(end - i)
                 .Select(x => (LiteralNumber)x)
+                .ToImmutableArray();
+            i = end;
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
                 .ToImmutableArray();
         }
 
@@ -48,6 +52,8 @@ namespace cilspirv.Spirv.Ops
             {
                 codes[i++] = x.Value;
             }
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

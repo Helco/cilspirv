@@ -17,11 +17,11 @@ namespace cilspirv.Spirv.Ops
         public ID RetEvent { get; init; }
 
         public override OpCode OpCode => OpCode.OpEnqueueMarker;
-        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Queue, NumEvents, WaitEvents, RetEvent };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Queue, NumEvents, WaitEvents, RetEvent }.Concat(ExtraIDs);
 
         public OpEnqueueMarker() {}
 
@@ -36,6 +36,9 @@ namespace cilspirv.Spirv.Ops
             NumEvents = new ID(codes[i++]);
             WaitEvents = new ID(codes[i++]);
             RetEvent = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -50,6 +53,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(NumEvents);
             codes[i++] = mapID(WaitEvents);
             codes[i++] = mapID(RetEvent);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

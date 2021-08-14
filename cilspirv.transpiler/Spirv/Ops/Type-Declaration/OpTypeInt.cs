@@ -13,10 +13,10 @@ namespace cilspirv.Spirv.Ops
         public LiteralNumber Signedness { get; init; }
 
         public override OpCode OpCode => OpCode.OpTypeInt;
-        public override int WordCount => 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
 
-        public override IEnumerable<ID> AllIDs => new[] { Result };
+        public override IEnumerable<ID> AllIDs => new[] { Result }.Concat(ExtraIDs);
 
         public OpTypeInt() {}
 
@@ -28,6 +28,9 @@ namespace cilspirv.Spirv.Ops
             Result = new ID(codes[i++]);
             Width = (LiteralNumber)codes[i++];
             Signedness = (LiteralNumber)codes[i++];
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -39,6 +42,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Result);
             codes[i++] = Width.Value;
             codes[i++] = Signedness.Value;
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

@@ -18,11 +18,11 @@ namespace cilspirv.Spirv.Ops
         public ID Comparator { get; init; }
 
         public override OpCode OpCode => OpCode.OpAtomicCompareExchange;
-        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Pointer, Memory, Equal, Unequal, Value, Comparator };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Pointer, Memory, Equal, Unequal, Value, Comparator }.Concat(ExtraIDs);
 
         public OpAtomicCompareExchange() {}
 
@@ -39,6 +39,9 @@ namespace cilspirv.Spirv.Ops
             Unequal = new ID(codes[i++]);
             Value = new ID(codes[i++]);
             Comparator = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -55,6 +58,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Unequal);
             codes[i++] = mapID(Value);
             codes[i++] = mapID(Comparator);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

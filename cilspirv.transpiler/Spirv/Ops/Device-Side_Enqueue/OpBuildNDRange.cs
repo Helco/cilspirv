@@ -16,11 +16,11 @@ namespace cilspirv.Spirv.Ops
         public ID GlobalWorkOffset { get; init; }
 
         public override OpCode OpCode => OpCode.OpBuildNDRange;
-        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, GlobalWorkSize, LocalWorkSize, GlobalWorkOffset };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, GlobalWorkSize, LocalWorkSize, GlobalWorkOffset }.Concat(ExtraIDs);
 
         public OpBuildNDRange() {}
 
@@ -34,6 +34,9 @@ namespace cilspirv.Spirv.Ops
             GlobalWorkSize = new ID(codes[i++]);
             LocalWorkSize = new ID(codes[i++]);
             GlobalWorkOffset = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -47,6 +50,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(GlobalWorkSize);
             codes[i++] = mapID(LocalWorkSize);
             codes[i++] = mapID(GlobalWorkOffset);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

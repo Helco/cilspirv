@@ -16,7 +16,7 @@ namespace cilspirv.Spirv.Ops
         public ImmutableArray<ID> Indexes { get; init; }
 
         public override OpCode OpCode => OpCode.OpInBoundsPtrAccessChain;
-        public override int WordCount => 1 + 1 + 1 + 1 + 1 + Indexes.Length;
+        public override int WordCount => 1 + 1 + 1 + 1 + 1 + Indexes.Length + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
@@ -24,7 +24,8 @@ namespace cilspirv.Spirv.Ops
         {
             get
             {
-                var result = Enumerable.Empty<ID>();
+                var result = ExtraIDs;
+                result = result.Concat(new[] { ResultType, Result, Base, Element });
                 result = result.Concat(Indexes);
                 return result;
             }
@@ -44,6 +45,10 @@ namespace cilspirv.Spirv.Ops
             Indexes = codes.Skip(i).Take(end - i)
                 .Select(x => new ID(x))
                 .ToImmutableArray();
+            i = end;
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -60,6 +65,8 @@ namespace cilspirv.Spirv.Ops
             {
                 codes[i++] = mapID(x);
             }
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

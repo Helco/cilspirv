@@ -10,7 +10,7 @@ namespace cilspirv.Spirv.Ops
     {
 
         public override OpCode OpCode => OpCode.OpFunctionEnd;
-        public override int WordCount => 1;
+        public override int WordCount => 1 + ExtraWordCount;
 
 
         public OpFunctionEnd() {}
@@ -20,6 +20,9 @@ namespace cilspirv.Spirv.Ops
             var (start, end) = range.GetOffsetAndLength(codes.Count);
             end += start;
             var i = start;
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -28,6 +31,8 @@ namespace cilspirv.Spirv.Ops
                 throw new ArgumentException("Output span too small", nameof(codes));
             var i = 0;
             codes[i++] = InstructionCode;
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

@@ -16,13 +16,25 @@ namespace cilspirv.Spirv
 
     public readonly struct ExtraOperand : IEquatable<ExtraOperand>
     {
-        private readonly ExtraOperandKind kind;
+        public ExtraOperandKind Kind { get; }
         private readonly ImmutableArray<LiteralNumber> numeric;
         private readonly LiteralString textual;
         private readonly Type? enumType;
         private readonly uint rawValue;
 
-        public int WordCount => kind switch
+        public ImmutableArray<LiteralNumber> Numeric => Kind == ExtraOperandKind.Numeric
+            ? numeric
+            : throw new InvalidOperationException($"ExtraOperand is not numeric, it is {Kind}");
+
+        public LiteralString String => Kind == ExtraOperandKind.String
+            ? textual
+            : throw new InvalidOperationException($"ExtraOperand is not a string, it is {Kind}");
+
+        public ID ID => Kind == ExtraOperandKind.ID
+            ? new ID(rawValue)
+            : throw new InvalidOperationException($"ExtraOperand is not an ID, it is {Kind}");
+
+        public int WordCount => Kind switch
         {
             ExtraOperandKind.Numeric => numeric.Length,
             ExtraOperandKind.String => textual.WordCount,
@@ -31,7 +43,7 @@ namespace cilspirv.Spirv
 
         public ExtraOperand(uint rawValue)
         {
-            kind = ExtraOperandKind.Unknown;
+            Kind = ExtraOperandKind.Unknown;
             numeric = default;
             textual = default;
             enumType = default;
@@ -40,7 +52,7 @@ namespace cilspirv.Spirv
 
         public ExtraOperand(LiteralNumber number)
         {
-            kind = ExtraOperandKind.Numeric;
+            Kind = ExtraOperandKind.Numeric;
             numeric = ImmutableArray.Create(number);
             textual = default;
             enumType = default;
@@ -49,7 +61,7 @@ namespace cilspirv.Spirv
 
         public ExtraOperand(ImmutableArray<LiteralNumber> number)
         {
-            kind = ExtraOperandKind.Numeric;
+            Kind = ExtraOperandKind.Numeric;
             numeric = number;
             textual = default;
             enumType = default;
@@ -58,7 +70,7 @@ namespace cilspirv.Spirv
 
         public ExtraOperand(ID id)
         {
-            kind = ExtraOperandKind.ID;
+            Kind = ExtraOperandKind.ID;
             numeric = default;
             textual = default;
             enumType = default;
@@ -67,7 +79,7 @@ namespace cilspirv.Spirv
 
         public ExtraOperand(Enum @enum)
         {
-            kind = ExtraOperandKind.Enum;
+            Kind = ExtraOperandKind.Enum;
             numeric = default;
             textual = default;
             enumType = @enum.GetType();
@@ -76,7 +88,7 @@ namespace cilspirv.Spirv
 
         public ExtraOperand(LiteralString text)
         {
-            kind = ExtraOperandKind.String;
+            Kind = ExtraOperandKind.String;
             numeric = default;
             textual = text;
             enumType = default;
@@ -98,7 +110,7 @@ namespace cilspirv.Spirv
 
         public void Write(Span<uint> code, ref int i, Func<ID, uint> mapID)
         {
-            switch (kind)
+            switch (Kind)
             {
                 case ExtraOperandKind.Numeric:
                     foreach (var number in numeric)
@@ -118,29 +130,29 @@ namespace cilspirv.Spirv
                     code[i++] = rawValue;
                     break;
 
-                default: throw new NotSupportedException($"Unsupported extra operand type {kind}");
+                default: throw new NotSupportedException($"Unsupported extra operand type {Kind}");
             }
         }
 
-        public override string ToString() => kind switch
+        public override string ToString() => Kind switch
         {
             ExtraOperandKind.Numeric => StrOf(numeric),
             ExtraOperandKind.ID => new ID(rawValue).ToString(),
             ExtraOperandKind.String => textual.ToString(),
             ExtraOperandKind.Unknown => rawValue.ToString("X8"),
             ExtraOperandKind.Enum => Enum.GetName(enumType!, rawValue) ?? $"<unknown {enumType}>",
-            _ => throw new NotSupportedException($"Unsupported extra operand type {kind}")
+            _ => throw new NotSupportedException($"Unsupported extra operand type {Kind}")
         };
 
         public bool Equals(ExtraOperand other) =>
-            kind == other.kind &&
+            Kind == other.Kind &&
             numeric.SequenceEqual(other.numeric) &&
             textual == other.textual &&
             enumType == other.enumType &&
             rawValue == other.rawValue;
 
         public override int GetHashCode() =>
-            HashCode.Combine(kind, numeric, textual, enumType, rawValue);
+            HashCode.Combine(Kind, numeric, textual, enumType, rawValue);
 
         public override bool Equals(object? obj) => obj is ExtraOperand operand && Equals(operand);
         public static bool operator ==(ExtraOperand left, ExtraOperand right) => left.Equals(right);

@@ -14,9 +14,9 @@ namespace cilspirv.Spirv.Ops
         public ID EventsList { get; init; }
 
         public override OpCode OpCode => OpCode.OpGroupWaitEvents;
-        public override int WordCount => 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + ExtraWordCount;
 
-        public override IEnumerable<ID> AllIDs => new[] { Execution, NumEvents, EventsList };
+        public override IEnumerable<ID> AllIDs => new[] { Execution, NumEvents, EventsList }.Concat(ExtraIDs);
 
         public OpGroupWaitEvents() {}
 
@@ -28,6 +28,9 @@ namespace cilspirv.Spirv.Ops
             Execution = new ID(codes[i++]);
             NumEvents = new ID(codes[i++]);
             EventsList = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -39,6 +42,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Execution);
             codes[i++] = mapID(NumEvents);
             codes[i++] = mapID(EventsList);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

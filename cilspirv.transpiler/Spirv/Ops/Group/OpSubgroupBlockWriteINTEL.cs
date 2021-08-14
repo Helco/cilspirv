@@ -13,9 +13,9 @@ namespace cilspirv.Spirv.Ops
         public ID Data { get; init; }
 
         public override OpCode OpCode => OpCode.OpSubgroupBlockWriteINTEL;
-        public override int WordCount => 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + ExtraWordCount;
 
-        public override IEnumerable<ID> AllIDs => new[] { Ptr, Data };
+        public override IEnumerable<ID> AllIDs => new[] { Ptr, Data }.Concat(ExtraIDs);
 
         public OpSubgroupBlockWriteINTEL() {}
 
@@ -26,6 +26,9 @@ namespace cilspirv.Spirv.Ops
             var i = start;
             Ptr = new ID(codes[i++]);
             Data = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -36,6 +39,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = InstructionCode;
             codes[i++] = mapID(Ptr);
             codes[i++] = mapID(Data);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

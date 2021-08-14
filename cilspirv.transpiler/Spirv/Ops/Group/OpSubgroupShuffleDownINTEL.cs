@@ -16,11 +16,11 @@ namespace cilspirv.Spirv.Ops
         public ID Delta { get; init; }
 
         public override OpCode OpCode => OpCode.OpSubgroupShuffleDownINTEL;
-        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Current, Next, Delta };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Current, Next, Delta }.Concat(ExtraIDs);
 
         public OpSubgroupShuffleDownINTEL() {}
 
@@ -34,6 +34,9 @@ namespace cilspirv.Spirv.Ops
             Current = new ID(codes[i++]);
             Next = new ID(codes[i++]);
             Delta = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -47,6 +50,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Current);
             codes[i++] = mapID(Next);
             codes[i++] = mapID(Delta);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

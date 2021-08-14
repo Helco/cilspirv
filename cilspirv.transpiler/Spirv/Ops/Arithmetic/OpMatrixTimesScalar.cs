@@ -15,11 +15,11 @@ namespace cilspirv.Spirv.Ops
         public ID Scalar { get; init; }
 
         public override OpCode OpCode => OpCode.OpMatrixTimesScalar;
-        public override int WordCount => 1 + 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Matrix, Scalar };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Matrix, Scalar }.Concat(ExtraIDs);
 
         public OpMatrixTimesScalar() {}
 
@@ -32,6 +32,9 @@ namespace cilspirv.Spirv.Ops
             Result = new ID(codes[i++]);
             Matrix = new ID(codes[i++]);
             Scalar = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -44,6 +47,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Result);
             codes[i++] = mapID(Matrix);
             codes[i++] = mapID(Scalar);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

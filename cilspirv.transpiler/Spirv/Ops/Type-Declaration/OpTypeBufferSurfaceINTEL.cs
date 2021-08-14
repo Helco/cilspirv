@@ -13,10 +13,10 @@ namespace cilspirv.Spirv.Ops
         public AccessQualifier AccessQualifier { get; init; }
 
         public override OpCode OpCode => OpCode.OpTypeBufferSurfaceINTEL;
-        public override int WordCount => 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
 
-        public override IEnumerable<ID> AllIDs => new[] { Result };
+        public override IEnumerable<ID> AllIDs => new[] { Result }.Concat(ExtraIDs);
 
         public OpTypeBufferSurfaceINTEL() {}
 
@@ -27,6 +27,9 @@ namespace cilspirv.Spirv.Ops
             var i = start;
             Result = new ID(codes[i++]);
             AccessQualifier = (AccessQualifier)codes[i++];
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -37,6 +40,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = InstructionCode;
             codes[i++] = mapID(Result);
             codes[i++] = (uint)AccessQualifier;
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

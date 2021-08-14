@@ -15,11 +15,11 @@ namespace cilspirv.Spirv.Ops
         public ImmutableArray<LiteralNumber> Components { get; init; }
 
         public override OpCode OpCode => OpCode.OpVectorShuffle;
-        public override int WordCount => 1 + 1 + 1 + 1 + 1 + Components.Length;
+        public override int WordCount => 1 + 1 + 1 + 1 + 1 + Components.Length + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Vector1, Vector2 };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Vector1, Vector2 }.Concat(ExtraIDs);
 
         public OpVectorShuffle() {}
 
@@ -34,6 +34,10 @@ namespace cilspirv.Spirv.Ops
             Vector2 = new ID(codes[i++]);
             Components = codes.Skip(i).Take(end - i)
                 .Select(x => (LiteralNumber)x)
+                .ToImmutableArray();
+            i = end;
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
                 .ToImmutableArray();
         }
 
@@ -51,6 +55,8 @@ namespace cilspirv.Spirv.Ops
             {
                 codes[i++] = x.Value;
             }
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

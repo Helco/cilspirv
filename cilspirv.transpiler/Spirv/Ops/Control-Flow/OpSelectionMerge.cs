@@ -12,9 +12,9 @@ namespace cilspirv.Spirv.Ops
         public SelectionControl SelectionControl { get; init; }
 
         public override OpCode OpCode => OpCode.OpSelectionMerge;
-        public override int WordCount => 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + ExtraWordCount;
 
-        public override IEnumerable<ID> AllIDs => new[] { MergeBlock };
+        public override IEnumerable<ID> AllIDs => new[] { MergeBlock }.Concat(ExtraIDs);
 
         public OpSelectionMerge() {}
 
@@ -25,6 +25,9 @@ namespace cilspirv.Spirv.Ops
             var i = start;
             MergeBlock = new ID(codes[i++]);
             SelectionControl = (SelectionControl)codes[i++];
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -35,6 +38,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = InstructionCode;
             codes[i++] = mapID(MergeBlock);
             codes[i++] = (uint)SelectionControl;
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

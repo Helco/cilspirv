@@ -79,7 +79,8 @@ namespace cilspirv.SourceGen
 
                 var wordCount = string.Join(" + ", instruction.operands
                     .Select(MapOperandWordCount)
-                    .Prepend("1"));
+                    .Prepend("1")
+                    .Append("ExtraWordCount"));
                 yield return $"        public override int WordCount => {wordCount};";
 
                 var resultOperand = instruction.operands.FirstOrDefault(o => o.kind == "IdResult");
@@ -96,11 +97,12 @@ namespace cilspirv.SourceGen
                 var idOps = instruction.operands.Where(o => o.kind.StartsWith("Id"));
                 var pairOps = instruction.operands.Where(o => o.kind.StartsWith("Pair")).ToArray();
                 var fixedOps = idOps.Where(o => o.quantifier == null).ToArray();
+                var fixedPairOps = pairOps.Where(o => o.quantifier == null).ToArray();
                 var listOps = idOps.Where(o => o.quantifier == "*").ToArray();
                 var pairListOps = pairOps.Where(o => o.quantifier == "*").ToArray();
                 var optOps = idOps.Where(o => o.quantifier == "?").ToArray();
                 var optPairOps = pairOps.Where(o => o.quantifier == "?").ToArray();
-                var hasFixed = pairOps.Any() || fixedOps.Any();
+                var hasFixed = fixedPairOps.Any() || fixedOps.Any();
                 var hasList = listOps.Any() || pairListOps.Any();
                 var hasOpt = optOps.Any() || optPairOps.Any();
 
@@ -108,11 +110,11 @@ namespace cilspirv.SourceGen
                     yield break;
                 var fixedIds = fixedOps
                     .Select(MapOperandName)
-                    .Concat(pairOps.SelectMany(GetPairIDs));
+                    .Concat(fixedPairOps.SelectMany(GetPairIDs));
                 var fixedIdArray = $"new[] {{ {string.Join(", ", fixedIds)} }}";
                 if (!hasList && !hasOpt)
                 {
-                    yield return $"        public override IEnumerable<ID> AllIDs => {fixedIdArray};";
+                    yield return $"        public override IEnumerable<ID> AllIDs => {fixedIdArray}.Concat(ExtraIDs);";
                     yield break;
                 }
 
@@ -120,7 +122,10 @@ namespace cilspirv.SourceGen
                 yield return "        {";
                 yield return "            get";
                 yield return "            {";
-                yield return "                var result = Enumerable.Empty<ID>();";
+                yield return "                var result = ExtraIDs;";
+
+                if (hasFixed)
+                    yield return $"                result = result.Concat({fixedIdArray});";
 
                 foreach (var listOp in listOps)
                     yield return $"                result = result.Concat({MapOperandName(listOp)});";
@@ -176,14 +181,19 @@ namespace cilspirv.SourceGen
                         yield return $"{space}{name} = Enumerable.Repeat(0, (end - i) / 2)";
                         yield return $"{space}    .Select(_ => {ConvertFromRaw(operand, "codes[i++]")})";
                         yield return $"{space}    .ToImmutableArray();";
+                        yield return $"{space}i = end;";
                     }
                     else
                     {
                         yield return $"{space}{name} = codes.Skip(i).Take(end - i)";
                         yield return $"{space}    .Select(x => {ConvertFromRaw(operand, "x")})";
                         yield return $"{space}    .ToImmutableArray();";
+                        yield return $"{space}i = end;";
                     }
                 }
+                yield return "            ExtraOperands = codes.Skip(i).Take(end - i)";
+                yield return "                .Select(x => new ExtraOperand(x))";
+                yield return "                .ToImmutableArray();";
 
                 yield return "        }";
             }
@@ -219,6 +229,9 @@ namespace cilspirv.SourceGen
                     if (operand.quantifier != null)
                         yield return "            }";
                 }
+
+                yield return "            foreach (var o in ExtraOperands)";
+                yield return "                o.Write(codes, ref i, mapID);";
 
                 yield return "        }";
             }
@@ -316,7 +329,7 @@ namespace cilspirv.SourceGen
             {
                 "LiteralInteger" => "(LiteralNumber)" + rawValue,
                 "LiteralString" => "new LiteralString(codes, ref i)",
-                "LiteralContextDependentNumber" => "codes.Skip(i).Take(end - i).Select(n => (LiteralNumber)n).ToImmutableArray()",
+                "LiteralContextDependentNumber" => "ReadContextDependentNumber(codes, ref i, end)",
                 "LiteralExtInstInteger" => rawValue,
                 "LiteralSpecConstantOpInteger" => $"(OpCode){rawValue}",
                 "PairLiteralIntegerIdRef" => $"(new LiteralNumber({rawValue}), new ID({rawValue}))",

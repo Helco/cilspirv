@@ -16,11 +16,11 @@ namespace cilspirv.Spirv.Ops
         public ID Id { get; init; }
 
         public override OpCode OpCode => OpCode.OpGroupNonUniformShuffle;
-        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Execution, Value, Id };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Execution, Value, Id }.Concat(ExtraIDs);
 
         public OpGroupNonUniformShuffle() {}
 
@@ -34,6 +34,9 @@ namespace cilspirv.Spirv.Ops
             Execution = new ID(codes[i++]);
             Value = new ID(codes[i++]);
             Id = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -47,6 +50,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Execution);
             codes[i++] = mapID(Value);
             codes[i++] = mapID(Id);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

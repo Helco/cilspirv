@@ -15,11 +15,11 @@ namespace cilspirv.Spirv.Ops
         public ID Object2 { get; init; }
 
         public override OpCode OpCode => OpCode.OpSelect;
-        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Condition, Object1, Object2 };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Condition, Object1, Object2 }.Concat(ExtraIDs);
 
         public OpSelect() {}
 
@@ -33,6 +33,9 @@ namespace cilspirv.Spirv.Ops
             Condition = new ID(codes[i++]);
             Object1 = new ID(codes[i++]);
             Object2 = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -46,6 +49,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Condition);
             codes[i++] = mapID(Object1);
             codes[i++] = mapID(Object2);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

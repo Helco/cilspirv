@@ -14,7 +14,7 @@ namespace cilspirv.Spirv.Ops
         public ID? Initializer { get; init; }
 
         public override OpCode OpCode => OpCode.OpVariable;
-        public override int WordCount => 1 + 1 + 1 + 1 + (Initializer.HasValue ? 1 : 0);
+        public override int WordCount => 1 + 1 + 1 + 1 + (Initializer.HasValue ? 1 : 0) + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
@@ -22,7 +22,8 @@ namespace cilspirv.Spirv.Ops
         {
             get
             {
-                var result = Enumerable.Empty<ID>();
+                var result = ExtraIDs;
+                result = result.Concat(new[] { ResultType, Result });
                 result = result.Concat(new[] { Initializer }
                     .Where(o => o.HasValue)
                     .Select(o => o!.Value));
@@ -42,6 +43,9 @@ namespace cilspirv.Spirv.Ops
             StorageClass = (StorageClass)codes[i++];
             if (i < end)
                 Initializer = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -57,6 +61,8 @@ namespace cilspirv.Spirv.Ops
             {
                 codes[i++] = mapID(Initializer.Value);
             }
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

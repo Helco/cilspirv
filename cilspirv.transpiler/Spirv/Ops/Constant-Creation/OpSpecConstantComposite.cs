@@ -13,7 +13,7 @@ namespace cilspirv.Spirv.Ops
         public ImmutableArray<ID> Constituents { get; init; }
 
         public override OpCode OpCode => OpCode.OpSpecConstantComposite;
-        public override int WordCount => 1 + 1 + 1 + Constituents.Length;
+        public override int WordCount => 1 + 1 + 1 + Constituents.Length + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
@@ -21,7 +21,8 @@ namespace cilspirv.Spirv.Ops
         {
             get
             {
-                var result = Enumerable.Empty<ID>();
+                var result = ExtraIDs;
+                result = result.Concat(new[] { ResultType, Result });
                 result = result.Concat(Constituents);
                 return result;
             }
@@ -39,6 +40,10 @@ namespace cilspirv.Spirv.Ops
             Constituents = codes.Skip(i).Take(end - i)
                 .Select(x => new ID(x))
                 .ToImmutableArray();
+            i = end;
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -53,6 +58,8 @@ namespace cilspirv.Spirv.Ops
             {
                 codes[i++] = mapID(x);
             }
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

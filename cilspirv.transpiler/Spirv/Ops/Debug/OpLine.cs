@@ -13,9 +13,9 @@ namespace cilspirv.Spirv.Ops
         public LiteralNumber Column { get; init; }
 
         public override OpCode OpCode => OpCode.OpLine;
-        public override int WordCount => 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + ExtraWordCount;
 
-        public override IEnumerable<ID> AllIDs => new[] { File };
+        public override IEnumerable<ID> AllIDs => new[] { File }.Concat(ExtraIDs);
 
         public OpLine() {}
 
@@ -27,6 +27,9 @@ namespace cilspirv.Spirv.Ops
             File = new ID(codes[i++]);
             Line = (LiteralNumber)codes[i++];
             Column = (LiteralNumber)codes[i++];
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -38,6 +41,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(File);
             codes[i++] = Line.Value;
             codes[i++] = Column.Value;
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

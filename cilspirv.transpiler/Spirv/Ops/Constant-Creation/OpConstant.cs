@@ -13,11 +13,11 @@ namespace cilspirv.Spirv.Ops
         public ImmutableArray<LiteralNumber> Value { get; init; }
 
         public override OpCode OpCode => OpCode.OpConstant;
-        public override int WordCount => 1 + 1 + 1 + Value.Length;
+        public override int WordCount => 1 + 1 + 1 + Value.Length + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result }.Concat(ExtraIDs);
 
         public OpConstant() {}
 
@@ -28,7 +28,10 @@ namespace cilspirv.Spirv.Ops
             var i = start;
             ResultType = new ID(codes[i++]);
             Result = new ID(codes[i++]);
-            Value = codes.Skip(i).Take(end - i).Select(n => (LiteralNumber)n).ToImmutableArray();
+            Value = ReadContextDependentNumber(codes, ref i, end);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -40,6 +43,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(ResultType);
             codes[i++] = mapID(Result);
             Value.Select(v => v.Value).ToArray().CopyTo(codes.Slice(i)); i += Value.Length;
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

@@ -16,11 +16,11 @@ namespace cilspirv.Spirv.Ops
         public ID Value { get; init; }
 
         public override OpCode OpCode => OpCode.OpAtomicXor;
-        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Pointer, Memory, Semantics, Value };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Pointer, Memory, Semantics, Value }.Concat(ExtraIDs);
 
         public OpAtomicXor() {}
 
@@ -35,6 +35,9 @@ namespace cilspirv.Spirv.Ops
             Memory = new ID(codes[i++]);
             Semantics = new ID(codes[i++]);
             Value = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -49,6 +52,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Memory);
             codes[i++] = mapID(Semantics);
             codes[i++] = mapID(Value);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

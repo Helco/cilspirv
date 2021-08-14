@@ -11,7 +11,7 @@ namespace cilspirv.Spirv.Ops
         public LiteralString Extension { get; init; }
 
         public override OpCode OpCode => OpCode.OpSourceExtension;
-        public override int WordCount => 1 + Extension.WordCount;
+        public override int WordCount => 1 + Extension.WordCount + ExtraWordCount;
 
 
         public OpSourceExtension() {}
@@ -22,6 +22,9 @@ namespace cilspirv.Spirv.Ops
             end += start;
             var i = start;
             Extension = new LiteralString(codes, ref i);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -31,6 +34,8 @@ namespace cilspirv.Spirv.Ops
             var i = 0;
             codes[i++] = InstructionCode;
             Extension.Write(codes, ref i);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

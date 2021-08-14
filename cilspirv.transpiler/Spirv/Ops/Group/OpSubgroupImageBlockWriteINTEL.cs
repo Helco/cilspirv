@@ -14,9 +14,9 @@ namespace cilspirv.Spirv.Ops
         public ID Data { get; init; }
 
         public override OpCode OpCode => OpCode.OpSubgroupImageBlockWriteINTEL;
-        public override int WordCount => 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + ExtraWordCount;
 
-        public override IEnumerable<ID> AllIDs => new[] { Image, Coordinate, Data };
+        public override IEnumerable<ID> AllIDs => new[] { Image, Coordinate, Data }.Concat(ExtraIDs);
 
         public OpSubgroupImageBlockWriteINTEL() {}
 
@@ -28,6 +28,9 @@ namespace cilspirv.Spirv.Ops
             Image = new ID(codes[i++]);
             Coordinate = new ID(codes[i++]);
             Data = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -39,6 +42,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Image);
             codes[i++] = mapID(Coordinate);
             codes[i++] = mapID(Data);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

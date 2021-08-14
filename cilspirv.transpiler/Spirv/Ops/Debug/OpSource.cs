@@ -14,13 +14,13 @@ namespace cilspirv.Spirv.Ops
         public LiteralString? Source { get; init; }
 
         public override OpCode OpCode => OpCode.OpSource;
-        public override int WordCount => 1 + 1 + 1 + (File.HasValue ? 1 : 0) + (Source.HasValue ? Source.Value.WordCount : 0);
+        public override int WordCount => 1 + 1 + 1 + (File.HasValue ? 1 : 0) + (Source.HasValue ? Source.Value.WordCount : 0) + ExtraWordCount;
 
         public override IEnumerable<ID> AllIDs
         {
             get
             {
-                var result = Enumerable.Empty<ID>();
+                var result = ExtraIDs;
                 result = result.Concat(new[] { File }
                     .Where(o => o.HasValue)
                     .Select(o => o!.Value));
@@ -41,6 +41,9 @@ namespace cilspirv.Spirv.Ops
                 File = new ID(codes[i++]);
             if (i < end)
                 Source = new LiteralString(codes, ref i);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -59,6 +62,8 @@ namespace cilspirv.Spirv.Ops
             {
                 Source.Value.Write(codes, ref i);
             }
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

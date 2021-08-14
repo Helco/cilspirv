@@ -12,7 +12,7 @@ namespace cilspirv.Spirv.Ops
         public MemoryModel MemoryModel { get; init; }
 
         public override OpCode OpCode => OpCode.OpMemoryModel;
-        public override int WordCount => 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + ExtraWordCount;
 
 
         public OpMemoryModel() {}
@@ -24,6 +24,9 @@ namespace cilspirv.Spirv.Ops
             var i = start;
             AddressingModel = (AddressingModel)codes[i++];
             MemoryModel = (MemoryModel)codes[i++];
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -34,6 +37,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = InstructionCode;
             codes[i++] = (uint)AddressingModel;
             codes[i++] = (uint)MemoryModel;
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

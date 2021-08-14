@@ -17,11 +17,11 @@ namespace cilspirv.Spirv.Ops
         public ImageOperands ImageOperands { get; init; }
 
         public override OpCode OpCode => OpCode.OpImageSampleProjDrefExplicitLod;
-        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, SampledImage, Coordinate, Dref };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, SampledImage, Coordinate, Dref }.Concat(ExtraIDs);
 
         public OpImageSampleProjDrefExplicitLod() {}
 
@@ -36,6 +36,9 @@ namespace cilspirv.Spirv.Ops
             Coordinate = new ID(codes[i++]);
             Dref = new ID(codes[i++]);
             ImageOperands = (ImageOperands)codes[i++];
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -50,6 +53,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Coordinate);
             codes[i++] = mapID(Dref);
             codes[i++] = (uint)ImageOperands;
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

@@ -13,9 +13,9 @@ namespace cilspirv.Spirv.Ops
         public MemoryAccess? MemoryAccess { get; init; }
 
         public override OpCode OpCode => OpCode.OpStore;
-        public override int WordCount => 1 + 1 + 1 + (MemoryAccess.HasValue ? 1 : 0);
+        public override int WordCount => 1 + 1 + 1 + (MemoryAccess.HasValue ? 1 : 0) + ExtraWordCount;
 
-        public override IEnumerable<ID> AllIDs => new[] { Pointer, Object };
+        public override IEnumerable<ID> AllIDs => new[] { Pointer, Object }.Concat(ExtraIDs);
 
         public OpStore() {}
 
@@ -28,6 +28,9 @@ namespace cilspirv.Spirv.Ops
             Object = new ID(codes[i++]);
             if (i < end)
                 MemoryAccess = (MemoryAccess)codes[i++];
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -42,6 +45,8 @@ namespace cilspirv.Spirv.Ops
             {
                 codes[i++] = (uint)MemoryAccess.Value;
             }
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

@@ -14,9 +14,9 @@ namespace cilspirv.Spirv.Ops
         public Decoration Decoration { get; init; }
 
         public override OpCode OpCode => OpCode.OpMemberDecorateString;
-        public override int WordCount => 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + ExtraWordCount;
 
-        public override IEnumerable<ID> AllIDs => new[] { StructType };
+        public override IEnumerable<ID> AllIDs => new[] { StructType }.Concat(ExtraIDs);
 
         public OpMemberDecorateString() {}
 
@@ -28,6 +28,9 @@ namespace cilspirv.Spirv.Ops
             StructType = new ID(codes[i++]);
             Member = (LiteralNumber)codes[i++];
             Decoration = (Decoration)codes[i++];
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -39,6 +42,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(StructType);
             codes[i++] = Member.Value;
             codes[i++] = (uint)Decoration;
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

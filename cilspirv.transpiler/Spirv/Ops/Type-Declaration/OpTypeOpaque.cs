@@ -13,10 +13,10 @@ namespace cilspirv.Spirv.Ops
         public LiteralString TypeName { get; init; }
 
         public override OpCode OpCode => OpCode.OpTypeOpaque;
-        public override int WordCount => 1 + 1 + TypeName.WordCount;
+        public override int WordCount => 1 + 1 + TypeName.WordCount + ExtraWordCount;
         public override ID? ResultID => Result;
 
-        public override IEnumerable<ID> AllIDs => new[] { Result };
+        public override IEnumerable<ID> AllIDs => new[] { Result }.Concat(ExtraIDs);
 
         public OpTypeOpaque() {}
 
@@ -27,6 +27,9 @@ namespace cilspirv.Spirv.Ops
             var i = start;
             Result = new ID(codes[i++]);
             TypeName = new LiteralString(codes, ref i);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -37,6 +40,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = InstructionCode;
             codes[i++] = mapID(Result);
             TypeName.Write(codes, ref i);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

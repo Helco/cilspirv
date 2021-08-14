@@ -13,10 +13,10 @@ namespace cilspirv.Spirv.Ops
         public LiteralNumber ComponentCount { get; init; }
 
         public override OpCode OpCode => OpCode.OpTypeVector;
-        public override int WordCount => 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
 
-        public override IEnumerable<ID> AllIDs => new[] { Result, ComponentType };
+        public override IEnumerable<ID> AllIDs => new[] { Result, ComponentType }.Concat(ExtraIDs);
 
         public OpTypeVector() {}
 
@@ -28,6 +28,9 @@ namespace cilspirv.Spirv.Ops
             Result = new ID(codes[i++]);
             ComponentType = new ID(codes[i++]);
             ComponentCount = (LiteralNumber)codes[i++];
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -39,6 +42,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Result);
             codes[i++] = mapID(ComponentType);
             codes[i++] = ComponentCount.Value;
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

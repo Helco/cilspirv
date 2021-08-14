@@ -14,10 +14,10 @@ namespace cilspirv.Spirv.Ops
         public LiteralNumber ColumnCount { get; init; }
 
         public override OpCode OpCode => OpCode.OpTypeMatrix;
-        public override int WordCount => 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
 
-        public override IEnumerable<ID> AllIDs => new[] { Result, ColumnType };
+        public override IEnumerable<ID> AllIDs => new[] { Result, ColumnType }.Concat(ExtraIDs);
 
         public OpTypeMatrix() {}
 
@@ -29,6 +29,9 @@ namespace cilspirv.Spirv.Ops
             Result = new ID(codes[i++]);
             ColumnType = new ID(codes[i++]);
             ColumnCount = (LiteralNumber)codes[i++];
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -40,6 +43,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Result);
             codes[i++] = mapID(ColumnType);
             codes[i++] = ColumnCount.Value;
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

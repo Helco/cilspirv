@@ -14,9 +14,9 @@ namespace cilspirv.Spirv.Ops
         public ImageOperands? ImageOperands { get; init; }
 
         public override OpCode OpCode => OpCode.OpImageWrite;
-        public override int WordCount => 1 + 1 + 1 + 1 + (ImageOperands.HasValue ? 1 : 0);
+        public override int WordCount => 1 + 1 + 1 + 1 + (ImageOperands.HasValue ? 1 : 0) + ExtraWordCount;
 
-        public override IEnumerable<ID> AllIDs => new[] { Image, Coordinate, Texel };
+        public override IEnumerable<ID> AllIDs => new[] { Image, Coordinate, Texel }.Concat(ExtraIDs);
 
         public OpImageWrite() {}
 
@@ -30,6 +30,9 @@ namespace cilspirv.Spirv.Ops
             Texel = new ID(codes[i++]);
             if (i < end)
                 ImageOperands = (ImageOperands)codes[i++];
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -45,6 +48,8 @@ namespace cilspirv.Spirv.Ops
             {
                 codes[i++] = (uint)ImageOperands.Value;
             }
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

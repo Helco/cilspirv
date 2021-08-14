@@ -12,11 +12,11 @@ namespace cilspirv.Spirv.Ops
         public ID Result { get; init; }
 
         public override OpCode OpCode => OpCode.OpConstantTrue;
-        public override int WordCount => 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result }.Concat(ExtraIDs);
 
         public OpConstantTrue() {}
 
@@ -27,6 +27,9 @@ namespace cilspirv.Spirv.Ops
             var i = start;
             ResultType = new ID(codes[i++]);
             Result = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -37,6 +40,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = InstructionCode;
             codes[i++] = mapID(ResultType);
             codes[i++] = mapID(Result);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

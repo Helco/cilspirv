@@ -17,7 +17,7 @@ namespace cilspirv.Spirv.Ops
         public ID? ClusterSize { get; init; }
 
         public override OpCode OpCode => OpCode.OpGroupNonUniformBitwiseAnd;
-        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + (ClusterSize.HasValue ? 1 : 0);
+        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + (ClusterSize.HasValue ? 1 : 0) + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
@@ -25,7 +25,8 @@ namespace cilspirv.Spirv.Ops
         {
             get
             {
-                var result = Enumerable.Empty<ID>();
+                var result = ExtraIDs;
+                result = result.Concat(new[] { ResultType, Result, Execution, Value });
                 result = result.Concat(new[] { ClusterSize }
                     .Where(o => o.HasValue)
                     .Select(o => o!.Value));
@@ -47,6 +48,9 @@ namespace cilspirv.Spirv.Ops
             Value = new ID(codes[i++]);
             if (i < end)
                 ClusterSize = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -64,6 +68,8 @@ namespace cilspirv.Spirv.Ops
             {
                 codes[i++] = mapID(ClusterSize.Value);
             }
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

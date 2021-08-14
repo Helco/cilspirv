@@ -16,11 +16,11 @@ namespace cilspirv.Spirv.Ops
         public SamplerFilterMode SamplerFilterMode { get; init; }
 
         public override OpCode OpCode => OpCode.OpConstantSampler;
-        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result }.Concat(ExtraIDs);
 
         public OpConstantSampler() {}
 
@@ -34,6 +34,9 @@ namespace cilspirv.Spirv.Ops
             SamplerAddressingMode = (SamplerAddressingMode)codes[i++];
             Param = (LiteralNumber)codes[i++];
             SamplerFilterMode = (SamplerFilterMode)codes[i++];
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -47,6 +50,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = (uint)SamplerAddressingMode;
             codes[i++] = Param.Value;
             codes[i++] = (uint)SamplerFilterMode;
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

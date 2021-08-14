@@ -16,11 +16,11 @@ namespace cilspirv.Spirv.Ops
         public ID X { get; init; }
 
         public override OpCode OpCode => OpCode.OpGroupUMaxNonUniformAMD;
-        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Execution, X };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Execution, X }.Concat(ExtraIDs);
 
         public OpGroupUMaxNonUniformAMD() {}
 
@@ -34,6 +34,9 @@ namespace cilspirv.Spirv.Ops
             Execution = new ID(codes[i++]);
             Operation = (GroupOperation)codes[i++];
             X = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -47,6 +50,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Execution);
             codes[i++] = (uint)Operation;
             codes[i++] = mapID(X);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

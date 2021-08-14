@@ -17,11 +17,11 @@ namespace cilspirv.Spirv.Ops
         public ID Height { get; init; }
 
         public override OpCode OpCode => OpCode.OpSubgroupImageMediaBlockReadINTEL;
-        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + 1;
+        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + 1 + ExtraWordCount;
         public override ID? ResultID => Result;
         public override ID? ResultTypeID => ResultType;
 
-        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Image, Coordinate, Width, Height };
+        public override IEnumerable<ID> AllIDs => new[] { ResultType, Result, Image, Coordinate, Width, Height }.Concat(ExtraIDs);
 
         public OpSubgroupImageMediaBlockReadINTEL() {}
 
@@ -36,6 +36,9 @@ namespace cilspirv.Spirv.Ops
             Coordinate = new ID(codes[i++]);
             Width = new ID(codes[i++]);
             Height = new ID(codes[i++]);
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -50,6 +53,8 @@ namespace cilspirv.Spirv.Ops
             codes[i++] = mapID(Coordinate);
             codes[i++] = mapID(Width);
             codes[i++] = mapID(Height);
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

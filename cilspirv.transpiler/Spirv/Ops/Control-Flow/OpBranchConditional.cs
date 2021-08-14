@@ -14,9 +14,9 @@ namespace cilspirv.Spirv.Ops
         public ImmutableArray<LiteralNumber> Branchweights { get; init; }
 
         public override OpCode OpCode => OpCode.OpBranchConditional;
-        public override int WordCount => 1 + 1 + 1 + 1 + Branchweights.Length;
+        public override int WordCount => 1 + 1 + 1 + 1 + Branchweights.Length + ExtraWordCount;
 
-        public override IEnumerable<ID> AllIDs => new[] { Condition, TrueLabel, FalseLabel };
+        public override IEnumerable<ID> AllIDs => new[] { Condition, TrueLabel, FalseLabel }.Concat(ExtraIDs);
 
         public OpBranchConditional() {}
 
@@ -30,6 +30,10 @@ namespace cilspirv.Spirv.Ops
             FalseLabel = new ID(codes[i++]);
             Branchweights = codes.Skip(i).Take(end - i)
                 .Select(x => (LiteralNumber)x)
+                .ToImmutableArray();
+            i = end;
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
                 .ToImmutableArray();
         }
 
@@ -46,6 +50,8 @@ namespace cilspirv.Spirv.Ops
             {
                 codes[i++] = x.Value;
             }
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }

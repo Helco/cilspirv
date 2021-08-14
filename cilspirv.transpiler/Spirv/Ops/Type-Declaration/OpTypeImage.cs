@@ -19,10 +19,10 @@ namespace cilspirv.Spirv.Ops
         public AccessQualifier? AccessQualifier { get; init; }
 
         public override OpCode OpCode => OpCode.OpTypeImage;
-        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + (AccessQualifier.HasValue ? 1 : 0);
+        public override int WordCount => 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + (AccessQualifier.HasValue ? 1 : 0) + ExtraWordCount;
         public override ID? ResultID => Result;
 
-        public override IEnumerable<ID> AllIDs => new[] { Result, SampledType };
+        public override IEnumerable<ID> AllIDs => new[] { Result, SampledType }.Concat(ExtraIDs);
 
         public OpTypeImage() {}
 
@@ -41,6 +41,9 @@ namespace cilspirv.Spirv.Ops
             ImageFormat = (ImageFormat)codes[i++];
             if (i < end)
                 AccessQualifier = (AccessQualifier)codes[i++];
+            ExtraOperands = codes.Skip(i).Take(end - i)
+                .Select(x => new ExtraOperand(x))
+                .ToImmutableArray();
         }
 
         public override void Write(Span<uint> codes, Func<ID, uint> mapID)
@@ -61,6 +64,8 @@ namespace cilspirv.Spirv.Ops
             {
                 codes[i++] = (uint)AccessQualifier.Value;
             }
+            foreach (var o in ExtraOperands)
+                o.Write(codes, ref i, mapID);
         }
     }
 }
