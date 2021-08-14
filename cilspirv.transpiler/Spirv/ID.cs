@@ -12,7 +12,7 @@ namespace cilspirv.Spirv
     /// </summary>
     [Serializable]
     [StructLayout(LayoutKind.Sequential)]
-    public struct ID : IEquatable<ID>
+    public readonly struct ID : IEquatable<ID>, IComparable<ID>
     {
         /// <summary>
         /// Return the invalid ID zero
@@ -24,37 +24,19 @@ namespace cilspirv.Spirv
         /// </summary>
         public readonly uint Value;
 
-        public bool Equals(ID other)
-        {
-            return Value == other.Value;
-        }
-
-        public override bool Equals(object? obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            return obj is ID && Equals((ID)obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return (int)Value;
-        }
-
-        public static bool operator ==(ID left, ID right)
-        {
-            return left.Equals(right);
-        }
-
-        public static bool operator !=(ID left, ID right)
-        {
-            return !left.Equals(right);
-        }
-
-        public ID(uint id)
-        {
-            Value = id;
-        }
+        public ID(uint id) => Value = id;
 
         public override string ToString() => "#" + Value;
+
+        public override int GetHashCode() => (int)Value;
+        public bool Equals(ID other) => Value == other.Value;
+        public override bool Equals(object? obj) => obj is ID id && Value == id.Value;
+        public int CompareTo(ID other) => Math.Sign(Value - other.Value);
+        public static bool operator ==(ID left, ID right) => left.Value == right.Value;
+        public static bool operator !=(ID left, ID right) => left.Value != right.Value;
+        public static bool operator <(ID left, ID right) => left.Value < right.Value;
+        public static bool operator <=(ID left, ID right) => left.Value <= right.Value;
+        public static bool operator >(ID left, ID right) => left.Value > right.Value;
+        public static bool operator >=(ID left, ID right) => left.Value >= right.Value;
     }
 }

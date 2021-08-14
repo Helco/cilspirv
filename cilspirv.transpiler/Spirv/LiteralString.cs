@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -16,7 +17,7 @@ namespace cilspirv.Spirv
     {
         public readonly string Value;
 
-        public int WordCount => (Value.Length + 3) / 4;
+        public int WordCount => Value.Length / 4 + 1;
 
         public void Write(Span<uint> code, ref int i)
         {
@@ -48,33 +49,16 @@ namespace cilspirv.Spirv
 
         public LiteralString(IReadOnlyList<uint> code, ref int i)
         {
-            // zero shortcut
-            if (code[i] == 0u)
-            {
-                ++i;
-                Value = "";
-                return;
-            }
+            var startI = i;
+            for (; i < code.Count && code[i] > 0x01000000; i++) ;
 
-            // restore bytes
-            var bytes = new List<byte>();
-            while (true)
-            {
-                var c = code[i];
-                bytes.AddRange(BitConverter.GetBytes(c));
-                if (bytes[bytes.Count - 4] == 0 ||
-                    bytes[bytes.Count - 3] == 0 ||
-                    bytes[bytes.Count - 2] == 0 ||
-                    bytes[bytes.Count - 1] == 0)
-                    break;
-                ++i;
-            }
-            // remove trailing zeros
-            while (bytes.Count > 0 && bytes[bytes.Count - 1] == 0)
-                bytes.RemoveAt(bytes.Count - 1);
-            
-            // decode string
-            Value = Encoding.UTF8.GetString(bytes.ToArray());
+            var uintBuffer = new uint[i - startI + 1];
+            for (i = startI; i < startI + uintBuffer.Length; i++)
+                uintBuffer[i - startI] = code[i];
+
+            var byteBuffer = MemoryMarshal.AsBytes(uintBuffer.AsSpan());
+            var byteLength = byteBuffer.IndexOf((byte)0);
+            Value = Encoding.UTF8.GetString(byteBuffer.Slice(0, byteLength));
         }
 
         public override string ToString() => string.Format("\"{0}\"({1} char{2})", Value, (Value?.Length ?? -1), (Value?.Length ?? -1) > 1 ? "s" : "");

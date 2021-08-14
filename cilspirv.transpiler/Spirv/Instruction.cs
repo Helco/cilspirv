@@ -61,12 +61,18 @@ namespace cilspirv.Spirv
             foreach (var type in instructionTypes)
             {
                 var defaultCtor = type.GetConstructor(Array.Empty<Type>());
-                var codeCtor = type.GetConstructor(BindingFlags.NonPublic, null, new[] { typeof(IReadOnlyList<uint>), typeof(Range) }, null);
+                var codeCtor = type.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(IReadOnlyList<uint>), typeof(Range) }, null);
                 if (defaultCtor == null || codeCtor == null)
                     throw new InvalidProgramException($"Invalid constructors for {type.Name}");
                 var obj = (Instruction)defaultCtor.Invoke(null);
 
-                ops.Add(obj.OpCode, new LayoutInfo(defaultCtor, codeCtor));
+                if (ops.TryGetValue(obj.OpCode, out var prevLayout))
+                {
+                    if (type.Name.Length < prevLayout.DefaultCtor.DeclaringType?.Name?.Length)
+                        ops[obj.OpCode] = new LayoutInfo(defaultCtor, codeCtor);
+                }
+                else
+                    ops.Add(obj.OpCode, new LayoutInfo(defaultCtor, codeCtor));
             }
             return ops;
         }
@@ -85,7 +91,7 @@ namespace cilspirv.Spirv
             var icode = codes[start++];
             var opcode = (OpCode)(icode & 0x0000FFFF);
             var wordCount = icode >> 16;
-            if (start + wordCount > codes.Count)
+            if (start + wordCount - 1 > codes.Count)
                 throw new FormatException("End of codes");
 
             var op = cachedOps.TryGetValue(opcode, out var info)
