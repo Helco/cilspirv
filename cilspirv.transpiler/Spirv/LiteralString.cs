@@ -13,7 +13,7 @@ namespace cilspirv.Spirv
     /// (i.e., the first octet is in the lowest-order 8-bits of the word). The final word contains the string’s nul-termination character(0),
     /// and all contents past the end of the string in the final word are padded with 0
     /// </summary>
-    public readonly struct LiteralString
+    public readonly struct LiteralString : IEquatable<LiteralString>
     {
         public readonly string Value;
 
@@ -61,6 +61,14 @@ namespace cilspirv.Spirv
             Value = Encoding.UTF8.GetString(byteBuffer.Slice(0, byteLength));
         }
 
+        public static implicit operator LiteralString(string str) => new LiteralString(str);
+
         public override string ToString() => string.Format("\"{0}\"({1} char{2})", Value, (Value?.Length ?? -1), (Value?.Length ?? -1) > 1 ? "s" : "");
+
+        public bool Equals(LiteralString other) => Value == other.Value;
+        public override int GetHashCode() => Value?.GetHashCode() ?? 0;
+        public override bool Equals(object? obj) => obj is LiteralString @string && Equals(@string);
+        public static bool operator ==(LiteralString left, LiteralString right) => left.Equals(right);
+        public static bool operator !=(LiteralString left, LiteralString right) => !(left == right);
     }
 }

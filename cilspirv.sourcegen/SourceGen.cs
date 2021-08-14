@@ -16,6 +16,7 @@ namespace cilspirv.SourceGen
             var coreGrammar = JsonSerializer.Deserialize<CoreGrammar.Rootobject>(coreGrammarReader.ReadToEnd());
 
             GenerateEnums(coreGrammar, "SpirvEnums.cs");
+            GenerateDecorations(coreGrammar, "Decorations.cs");
             GenerateInstructionClasses(coreGrammar, "InstructionClasses.cs");
             GenerateInstructionEnum(coreGrammar, "OpCode.cs");
             GenerateInstructions(coreGrammar, "Ops");

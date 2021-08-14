@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using cilspirv.Spirv.Ops;
@@ -20,6 +21,8 @@ namespace cilspirv.Spirv
         /// If non-null, this the result type ID of the op
         /// </summary>
         public virtual ID? ResultTypeID => null;
+
+        public ImmutableArray<ExtraOperand> ExtraOperands { get; init; }
 
         public abstract int WordCount { get; }
 
@@ -100,15 +103,5 @@ namespace cilspirv.Spirv
             start += (int)wordCount;
             return op;
         }
-
-        protected static string StrOf(ID id) => id.ToString();
-        protected static string StrOf(LiteralNumber nr) => nr.ToString();
-        protected static string StrOf(LiteralString str) => str.ToString();
-        protected static string StrOf(ID? id) => string.Format("<{0}>", id?.ToString() ?? "null");
-        protected static string StrOf(ID[] ids) => string.Format("[{0}]", ids == null ? "null" : ids.Length == 0 ? " " : ids.Select(i => i.ToString()).Aggregate((s1, s2) => s1 + ", " + s2));
-        protected static string StrOf(LiteralNumber[] nrs) => string.Format("[{0}]", nrs == null ? "null" : nrs.Length == 0 ? " " : nrs.Select(i => i.ToString()).Aggregate((s1, s2) => s1 + ", " + s2));
-        protected static string StrOf<T>(T e) where T : struct => e.ToString() ?? "null";
-        protected static string StrOf<T>(T[] es) => string.Format("[{0}]", es == null ? "null" : es.Length == 0 ? " " : es.Select(i => i?.ToString() ?? "null").Aggregate((s1, s2) => s1 + ", " + s2));
-        protected static string StrOf<U, V>((U, V)[] p) => string.Format("[{0}]", p == null ? "null" : p.Length == 0 ? " " : p.Select(i => i.ToString()).Aggregate((s1, s2) => s1 + ", " + s2));
     }
 }
