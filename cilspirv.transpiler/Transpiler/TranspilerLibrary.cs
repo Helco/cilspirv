@@ -19,6 +19,16 @@ namespace cilspirv.Transpiler
         TranspilerType? TryMapType(TypeReference ilTypeRef);
     }
 
+    internal interface IITranspilerLibraryScanner
+    {
+        StorageClass? TryScanStorageClass(FieldReference fieldRef);
+        StorageClass? TryScanStorageClass(ParameterReference parameterRef);
+        StorageClass? TryScanStorageClass(MethodReturnType returnType);
+        IEnumerable<DecorationEntry> TryScanDecorations(FieldReference fieldRef);
+        IEnumerable<DecorationEntry> TryScanDecorations(ParameterReference parameterRef);
+        IEnumerable<DecorationEntry> TryScanDecorations(MethodReturnType returnType);
+    }
+
     internal delegate IEnumerable<Instruction> GenerateCallDelegate(ITranspilerMethodContext context, IReadOnlyList<(ID id, SpirvType type)> parameters, out ID? resultId);
 
     internal class TranspilerLibrary 
@@ -33,7 +43,12 @@ namespace cilspirv.Transpiler
 
         public IList<ITranspilerLibraryMapper> Mappers { get; } = new List<ITranspilerLibraryMapper>()
         {
-            new CommonMapper()
+            new BuiltinTypeMapper()
+        };
+
+        public IList<IITranspilerLibraryScanner> Scanners { get; } = new List<IITranspilerLibraryScanner>()
+        {
+            new AttributeScanner()
         };
 
         public TranspilerLibrary(TranspilerModule module)
@@ -81,5 +96,33 @@ namespace cilspirv.Transpiler
 
         public TranspilerType MapType<T>() =>
             MapType(myAssembly.Value.MainModule.ImportReference(typeof(T)));
+
+        public TranspilerVariable MapVariable(FieldReference fieldRef)
+        {
+            var variable = module.GlobalVariables.FirstOrDefault(v => v.Name == fieldRef.Name);
+            if (variable != null)
+                return variable;
+
+            var fieldType = MapType(fieldRef.FieldType);
+            var storageClass = Scanners
+                .Select(scanner => scanner.TryScanStorageClass(fieldRef))
+                .FirstOrDefault(c => c.HasValue)
+                ?? throw new InvalidOperationException($"Could not scan storage class for field {fieldRef.FullName}");
+            var decorations = Scanners
+                .Select(scanner => scanner.TryScanDecorations(fieldRef))
+                .FirstOrDefault(c => c.Any())
+                ?? Enumerable.Empty<DecorationEntry>();
+
+            variable = new TranspilerVariable(fieldRef.Name, new SpirvPointerType()
+            {
+                Type = fieldType.Type,
+                StorageClass = storageClass,
+            });
+            foreach (var decoration in decorations)
+                variable.Decorations.Add(decoration);
+
+            module.GlobalVariables.Add(variable);
+            return variable;
+        }
     }
 }

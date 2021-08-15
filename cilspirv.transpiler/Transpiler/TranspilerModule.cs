@@ -78,11 +78,21 @@ namespace cilspirv.Transpiler
 
             // TODO: Execution modes
 
-            // For the rest we need lowest level, the function blocks generated, so that OfType has all references
-            var functionDefs = Functions.OfType<TranspilerDefinedFunction>();
-            var functionInstructions =
-                Functions.Except(functionDefs).SelectMany(f => f.GenerateInstructions(context))
-                .Concat(functionDefs.SelectMany(f => f.GenerateInstructions(context)))
+            // In order for the types to be complete and properly orderable we need to
+            // first generate all that could request such types
+            var functionInstructions = Functions
+                .OrderBy(f => f is TranspilerDefinedFunction ? 1 : -1) // declarations first
+                .SelectMany(f => f.GenerateInstructions(context))
+                .ToArray();
+
+            var globalVariables = GlobalVariables
+                .SelectMany(v => v.GenerateInstructions(context))
+                .ToArray();
+
+            var constants = context
+                .OfType<TranspilerConstant>()
+                .ToArray() // types requested by constants can change the collection
+                .SelectMany(c => c.GenerateInstructions(context))
                 .ToArray();
 
             var instructionSets = new List<IEnumerable<Instruction>>();
@@ -105,14 +115,9 @@ namespace cilspirv.Transpiler
                 .SelectMany(t => t.GenerateInstructions(context))
                 .ToArray());
 
-            instructionSets.Add(context
-                .OfType<TranspilerConstant>()
-                .SelectMany(c => c.GenerateInstructions(context))
-                .ToArray());
+            instructionSets.Add(constants);
 
-            instructionSets.Add(GlobalVariables
-                .SelectMany(v => v.GenerateInstructions(context))
-                .ToArray());
+            instructionSets.Add(globalVariables);
 
             instructionSets.Add(functionInstructions);
 

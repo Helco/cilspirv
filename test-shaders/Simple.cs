@@ -9,10 +9,13 @@ namespace test_shaders
     [MemoryModel(AddressingModel.Logical, MemoryModel.GLSL450)]
     public class Simple
     {
+        [Output, Location(0)]
+        private Vector4 output;
+
         [EntryPoint(ExecutionModel.Fragment)]
         public void Frag()
         {
-            new Vector4(0.1f, 0.3f, 0.7f, 1f);
+            output = new Vector4(0.1f, 0.3f, 0.7f, 1f);
         }
     }
 }

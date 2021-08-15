@@ -4,11 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-[assembly: System.Runtime.CompilerServices.InternalsVisibleToAttribute("cilspirv.testcli")]
-
 namespace cilspirv.Spirv
 {
-    internal static class DebugUtils
+    public static class DebugUtils
     {
         public static string StrOf(ID id) => id.ToString();
 

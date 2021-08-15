@@ -22,6 +22,7 @@ namespace cilspirv.Transpiler
 
         private void TranspileInstructions(TranspilerDefinedFunction function, MethodBody ilBody)
         {
+            var thisId = generatorContext.IDOf(function);
             var blocks = new Dictionary<int, (TranspilerBlock, List<StackEntry>)>();
             var curStack = new List<StackEntry>(ilBody.MaxStackSize);
             TranspilerBlock? curBlock = null;
@@ -94,6 +95,8 @@ namespace cilspirv.Transpiler
                     case (Code.Stloc_2): StoreLocal(2); break;
                     case (Code.Stloc_3): StoreLocal(3); break;
 
+                    case (Code.Stfld): StoreField((FieldReference)ilInstr.Operand); break;
+
                     case (Code.Newobj): Call((MethodReference)ilInstr.Operand, isCtor: true); break;
                     case (Code.Call): Call((MethodReference)ilInstr.Operand, isCtor: false); break;
 
@@ -109,6 +112,15 @@ namespace cilspirv.Transpiler
             SpirvType SpirvTypeOf<T>() => Library.MapType<T>().Type;
             ID TypeIdOf<T>() => generatorContext.IDOf(Library.MapType<T>());
 
+            ID IDOfGlobalVariable(FieldReference fieldRef)
+            {
+                var variable = Library.MapVariable(fieldRef);
+                if (function is TranspilerEntryFunction entryFunction &&
+                    (variable.StorageClass == StorageClass.Input || variable.StorageClass == StorageClass.Output))
+                    entryFunction.Interface.Add(variable);
+                return generatorContext.IDOf(variable);
+            }
+
             void PushID(ID id, SpirvType type) => curStack!.Add(new StackEntry()
             {
                 ID = id,
@@ -118,8 +130,19 @@ namespace cilspirv.Transpiler
             void PushObj(IInstructionGeneratable generatable, SpirvType type) =>
                 PushID(generatorContext.IDOf(generatable), type);
 
-            void PushArgument(int argI) =>
+            void PushArgument(int argI)
+            {
+                if (ilBody.Method.HasThis)
+                {
+                    if (argI == 0)
+                    {
+                        PushID(thisId, new SpirvVoidType());
+                        return;
+                    }
+                    argI--;
+                }
                 PushObj(function.Parameters[argI], function.Parameters[argI].Type);
+            }
 
             void PushConstant<T>(ImmutableArray<LiteralNumber> literal)
             {
@@ -173,6 +196,24 @@ namespace cilspirv.Transpiler
                     Object = curStack.Last().ID
                 });
                 curStack.RemoveAt(curStack.Count - 1);
+            }
+
+            void StoreField(FieldReference fieldRef)
+            {
+                if (curStack.Count < 2)
+                    throw new InvalidOperationException("Not enough entries on the stack to store in field");
+                var targetId = fieldRef switch
+                {
+                    _ when fieldRef.DeclaringType.FullName == ilBody.Method.DeclaringType.FullName => IDOfGlobalVariable(fieldRef),
+                    _ => throw new NotSupportedException("Unsupported field access")
+                };
+
+                curBlock.Instructions.Add(new OpStore()
+                {
+                    Pointer = targetId,
+                    Object = curStack.Last().ID
+                });
+                curStack.RemoveRange(curStack.Count - 2, 2);
             }
 
             void Call(MethodReference methodRef, bool isCtor)

@@ -5,7 +5,7 @@ using Mono.Cecil;
 
 namespace cilspirv.Library
 {
-    internal class CommonMapper : ITranspilerLibraryMapper
+    internal class BuiltinTypeMapper : ITranspilerLibraryMapper
     {
         private readonly ITranspilerLibraryMapper typeMapper = new TranspilerExternalTypeMapper()
         {

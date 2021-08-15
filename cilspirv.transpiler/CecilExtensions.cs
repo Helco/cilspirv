@@ -38,6 +38,20 @@ namespace cilspirv
             ? provider.CustomAttributes.Where(attr => attr.AttributeType.IsExact(type))
             : provider.CustomAttributes.Where(attr => attr.AttributeType.IsChildOf(type));
 
+        public static T Instantiate<T>(this ICustomAttribute attribute) where T : Attribute
+        {
+            var localType = typeof(T).Assembly.GetType(attribute.AttributeType.FullName);
+            if (localType == null)
+                throw new InvalidOperationException("Did not find specific attribute type");
+            var ctors = localType.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .Where(c => c.GetParameters().Length == attribute.ConstructorArguments.Count)
+                .ToArray();
+            if (ctors.Length != 1)
+                throw new InvalidOperationException("Could not find unambiguous attribute constructor");
+
+            return (T)ctors[0].Invoke(attribute.ConstructorArguments.Select(arg => arg.Value).ToArray());
+        }
+
         /// <summary>Returns the full name of the method in Cecil style</summary>param>
         public static string FullName(this MethodBase methodInfo) =>
             $"{FullNameOfReturnType(methodInfo)} {methodInfo.DeclaringType?.FullName}::{methodInfo.Name}" +
