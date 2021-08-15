@@ -10,23 +10,23 @@ namespace cilspirv.Library
 {
     internal class SystemNumericsMapper : ITranspilerLibraryMapper
     {
-        private static readonly SpirvType SpirvVector2 = new SpirvVectorType()
+        private static readonly SpirvVectorType SpirvVector2 = new SpirvVectorType()
         {
             ComponentType = new SpirvFloatingType() { Width = 32 },
             ComponentCount = 2
         };
-        private static readonly SpirvType SpirvVector3 = new SpirvVectorType()
+        private static readonly SpirvVectorType SpirvVector3 = new SpirvVectorType()
         {
             ComponentType = new SpirvFloatingType() { Width = 32 },
             ComponentCount = 3
         };
-        private static readonly SpirvType SpirvVector4 = new SpirvVectorType()
+        private static readonly SpirvVectorType SpirvVector4 = new SpirvVectorType()
         {
             ComponentType = new SpirvFloatingType() { Width = 32 },
             ComponentCount = 4
         };
-        private static readonly SpirvType SpirvQuaternion = SpirvVector4;
-        private static readonly SpirvType SpirvMatrix3x2 = new SpirvMatrixType()
+        private static readonly SpirvVectorType SpirvQuaternion = SpirvVector4;
+        private static readonly SpirvMatrixType SpirvMatrix3x2 = new SpirvMatrixType()
         {
             ColumnType = new SpirvVectorType()
             {
@@ -35,7 +35,7 @@ namespace cilspirv.Library
             },
             ColumnCount = 2
         };
-        private static readonly SpirvType SpirvMatrix4x4 = new SpirvMatrixType()
+        private static readonly SpirvMatrixType SpirvMatrix4x4 = new SpirvMatrixType()
         {
             ColumnType = new SpirvVectorType()
             {
@@ -58,17 +58,41 @@ namespace cilspirv.Library
         private readonly ITranspilerLibraryMapper methodMapper = new TranspilerExternalMethodMapper()
         {
             {
+                FullNameOfCtor<Vector2>(typeof(float)),
+                CallSingleValueComposite(SpirvVector2)
+            },
+            {
                 FullNameOfCtor<Vector2>(typeof(float), typeof(float)),
-                CallOpCompositeConstruct(SpirvVector4)
+                CallOpCompositeConstruct(SpirvVector2)
+            },
+            {
+                FullNameOfCtor<Vector3>(typeof(float)),
+                CallSingleValueComposite(SpirvVector3)
+            },
+            {
+                FullNameOfCtor<Vector3>(typeof(Vector2), typeof(float)),
+                CallReconstructComposite(SpirvVector3)
             },
             {
                 FullNameOfCtor<Vector3>(typeof(float), typeof(float), typeof(float)),
-                CallOpCompositeConstruct(SpirvVector4)
+                CallOpCompositeConstruct(SpirvVector3)
+            },
+            {
+                FullNameOfCtor<Vector4>(typeof(float)),
+                CallSingleValueComposite(SpirvVector4)
+            },
+            {
+                FullNameOfCtor<Vector4>(typeof(Vector3), typeof(float)),
+                CallReconstructComposite(SpirvVector4)
+            },
+            {
+                FullNameOfCtor<Vector4>(typeof(Vector2), typeof(float), typeof(float)),
+                CallReconstructComposite(SpirvVector4)
             },
             {
                 FullNameOfCtor<Vector4>(typeof(float), typeof(float), typeof(float), typeof(float)),
                 CallOpCompositeConstruct(SpirvVector4)
-            }
+            },
         };
 
         public TranspilerType? TryMapType(TypeReference ilTypeRef) => typeMapper.TryMapType(ilTypeRef);

@@ -59,5 +59,46 @@ namespace cilspirv.Transpiler
                 Constituents = parameters.Select(p => p.id).ToImmutableArray()
             }
         };
+
+        public static GenerateCallDelegate CallSingleValueComposite(SpirvVectorType resultType) => (ITranspilerMethodContext context, IReadOnlyList<(ID id, SpirvType)> parameters, out ID? resultId) => new[]
+        {
+            new OpCompositeConstruct()
+            {
+                Result = (resultId = context.CreateID()).Value,
+                ResultType = context.IDOf(resultType),
+                Constituents = Enumerable.Repeat(parameters.Single().id, resultType.ComponentCount).ToImmutableArray()
+            }
+        };
+
+        public static GenerateCallDelegate CallReconstructComposite(SpirvVectorType resultType) => (ITranspilerMethodContext context, IReadOnlyList<(ID id, SpirvType)> parameters, out ID? resultIdRef) =>
+        {
+            int additionalComponents = parameters.Count - 1;
+            int originalComponents = resultType.ComponentCount - additionalComponents;
+            ID componentID = context.IDOf(resultType.ComponentType ?? throw new ArgumentNullException("Component type is not set"));
+            var resultId = (resultIdRef = context.CreateID()).Value;
+            return Generate();
+
+            IEnumerable<Instruction> Generate()
+            {
+                var originalIDs = new ID[originalComponents];
+                for (int i = 0; i < originalComponents; i++)
+                    yield return new OpCompositeExtract()
+                    {
+                        Result = originalIDs[i] = context.CreateID(),
+                        ResultType = componentID,
+                        Composite = parameters.First().id,
+                        Indexes = ImmutableArray.Create<LiteralNumber>(i)
+                    };
+
+                yield return new OpCompositeConstruct()
+                {
+                    Result = resultId,
+                    ResultType = context.IDOf(resultType),
+                    Constituents = originalIDs
+                        .Concat(parameters.Skip(1).Select(p => p.id))
+                        .ToImmutableArray()
+                };
+            }
+        };
     }
 }
