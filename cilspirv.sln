@@ -18,6 +18,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "cilspirv.transpiler", "cils
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "cilspirv.sourcegen", "cilspirv.sourcegen\cilspirv.sourcegen.csproj", "{6E489C78-7A10-45B3-B104-F4B965F58215}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cilspirv.test.veldrid", "cilspirv.test.veldrid\cilspirv.test.veldrid.csproj", "{C3299A28-E743-4948-9C6F-4BB7BE8A86E6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,6 +46,10 @@ Global
 		{6E489C78-7A10-45B3-B104-F4B965F58215}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6E489C78-7A10-45B3-B104-F4B965F58215}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6E489C78-7A10-45B3-B104-F4B965F58215}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3299A28-E743-4948-9C6F-4BB7BE8A86E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3299A28-E743-4948-9C6F-4BB7BE8A86E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3299A28-E743-4948-9C6F-4BB7BE8A86E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3299A28-E743-4948-9C6F-4BB7BE8A86E6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -51,6 +57,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{0E0124B7-0666-462E-8608-254F4C4E6ADF} = {57C636FA-ECC2-4C3A-8E19-28077730C0D4}
 		{62C67682-125C-48AB-BC02-076C9FC24E53} = {57C636FA-ECC2-4C3A-8E19-28077730C0D4}
+		{C3299A28-E743-4948-9C6F-4BB7BE8A86E6} = {57C636FA-ECC2-4C3A-8E19-28077730C0D4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2B024749-525F-4E65-85F1-1B6C86744634}
