@@ -11,15 +11,15 @@ namespace cilspirv.Transpiler
     {
         private const uint TemporaryIDThreshold = 0xA0000000;
 
-        private readonly Dictionary<IInstructionGeneratable, ID> permIDs = new Dictionary<IInstructionGeneratable, ID>(new ReferenceComparer<IInstructionGeneratable>());
-        private readonly Dictionary<IInstructionGeneratable, ID> tempIDs = new Dictionary<IInstructionGeneratable, ID>(new ReferenceComparer<IInstructionGeneratable>());
+        private readonly Dictionary<IInstructionGeneratable, ID> permIDs = new Dictionary<IInstructionGeneratable, ID>();
+        private readonly Dictionary<IInstructionGeneratable, ID> tempIDs = new Dictionary<IInstructionGeneratable, ID>();
         private readonly IDictionary<ID, ID> idRemap = new Dictionary<ID, ID>();
         private uint nextID = 1;
         private uint nextTemporaryID = uint.MaxValue;
 
         public uint Bound => nextID;
 
-        public bool ShouldGenerateDebugInfo { get; set; } = true;
+        public TranspilerOptions Options { get; set; } = new TranspilerOptions();
 
         public ID CreateID()
         {
@@ -30,6 +30,8 @@ namespace cilspirv.Transpiler
 
         public ID CreateIDFor(IInstructionGeneratable generatable)
         {
+            if (generatable is IWrapperInstructionGeneratable wrapper)
+                return CreateIDFor(wrapper.WrappedGeneratable);
             if (permIDs.ContainsKey(generatable))
                 throw new InvalidOperationException("Generatable already has an permanent ID");
             if (tempIDs.TryGetValue(generatable, out var tempID))
@@ -44,6 +46,8 @@ namespace cilspirv.Transpiler
 
         public ID IDOf(IInstructionGeneratable generatable)
         {
+            if (generatable is IWrapperInstructionGeneratable wrapper)
+                return IDOf(wrapper.WrappedGeneratable);
             if (permIDs.TryGetValue(generatable, out var permID))
                 return permID;
             if (tempIDs.TryGetValue(generatable, out var tempID))
@@ -56,7 +60,10 @@ namespace cilspirv.Transpiler
         }
 
         public IEnumerable<T> OfType<T>() where T : IInstructionGeneratable =>
-            permIDs.Keys.OfType<T>().ToArray().Concat(tempIDs.Keys.OfType<T>());
+            permIDs.Keys.OfType<T>().ToArray()
+            .Concat(tempIDs
+                .Where(p => !idRemap.ContainsKey(p.Value) && p.Key is T)
+                .Select(p => (T)p.Key));
 
         public uint MapFromTemporaryID(ID id) => IsTemporaryID(id)
             ? idRemap.TryGetValue(id, out var permId) ? permId.Value : throw new InvalidOperationException("ID was never remapped")

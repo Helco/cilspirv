@@ -6,5 +6,6 @@ namespace cilspirv.Transpiler
     {
         public bool DebugInfo { get; init; } = true;
         public bool SkipUnusedFunctions { get; init; } = true;
+        public int NativeIntWidth { get; init; } = 32;
     }
 }

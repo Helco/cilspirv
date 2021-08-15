@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Mono.Cecil;
-using Mono.Cecil.Rocks;
+
+using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 
 namespace cilspirv
 {
@@ -35,5 +37,13 @@ namespace cilspirv
         public static IEnumerable<CustomAttribute> GetCustomAttributes(this ICustomAttributeProvider provider, Type type, bool exactType = true) => exactType
             ? provider.CustomAttributes.Where(attr => attr.AttributeType.IsExact(type))
             : provider.CustomAttributes.Where(attr => attr.AttributeType.IsChildOf(type));
+
+        /// <summary>Returns the full name of the method in Cecil style</summary>param>
+        public static string FullName(this MethodBase methodInfo) =>
+            $"{FullNameOfReturnType(methodInfo)} {methodInfo.DeclaringType?.FullName}::{methodInfo.Name}" +
+            $"({string.Join(",", methodInfo.GetParameters().Select(p => p.ParameterType.FullName))})";
+
+        private static string FullNameOfReturnType(MethodBase methodBase) =>
+            (methodBase as MethodInfo)?.ReturnType?.FullName ?? typeof(void).FullName!;
     }
 }

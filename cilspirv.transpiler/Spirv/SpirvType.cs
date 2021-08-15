@@ -9,6 +9,7 @@ namespace cilspirv.Spirv
 {
     internal abstract record SpirvType : IInstructionGeneratable
     {
+        public virtual IEnumerable<SpirvType> Dependencies => Enumerable.Empty<SpirvType>();
         public abstract IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context);
     }
 
@@ -74,6 +75,7 @@ namespace cilspirv.Spirv
         public int ComponentCount { get; init; }
 
         public override string ToString() => $"{ComponentType}Vec{ComponentCount}";
+        public override IEnumerable<SpirvType> Dependencies => new[] { ComponentType! }; // scalar types have no further dependencies
         public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypeVector()
@@ -93,6 +95,7 @@ namespace cilspirv.Spirv
         public SpirvScalarType? ComponentType => ColumnType?.ComponentType;
 
         public override string ToString() => $"{ComponentType}Matrix{RowCount}x{ColumnCount}";
+        public override IEnumerable<SpirvType> Dependencies => new SpirvType[] { ColumnType!, ComponentType! };
         public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypeMatrix()
@@ -110,6 +113,7 @@ namespace cilspirv.Spirv
         public int Length { get; init; }
 
         public override string ToString() => $"{ElementType}[{Length}]";
+        public override IEnumerable<SpirvType> Dependencies => new[] { ElementType! }.Concat(ElementType!.Dependencies);
         public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             var lengthId = context.CreateID();
@@ -137,6 +141,7 @@ namespace cilspirv.Spirv
         public SpirvType? ElementType { get; init; }
 
         public override string ToString() => $"{ElementType}[]";
+        public override IEnumerable<SpirvType> Dependencies => new[] { ElementType! }.Concat(ElementType!.Dependencies);
         public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypeRuntimeArray()
@@ -152,6 +157,7 @@ namespace cilspirv.Spirv
         public ImmutableArray<SpirvType> Members { get; init; }
 
         public override string ToString() => $"{{{string.Join(", ", Members)}}}";
+        public override IEnumerable<SpirvType> Dependencies => Members.Concat(Members.SelectMany(m => m.Dependencies));
         public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypeStruct()
@@ -196,6 +202,8 @@ namespace cilspirv.Spirv
             + (tags.Any() ? $",{string.Join(',', tags)})" : ")");
         }
 
+        public override IEnumerable<SpirvType> Dependencies => new[] { SampledType! };
+
         public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypeImage()
@@ -239,6 +247,7 @@ namespace cilspirv.Spirv
     {
         public SpirvImageType? ImageType { get; init; }
         public override string ToString() => "Sampled" + ImageType?.ToString();
+        public override IEnumerable<SpirvType> Dependencies => new[] { ImageType! }.Concat(ImageType!.Dependencies);
         public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypeSampledImage()
@@ -253,7 +262,8 @@ namespace cilspirv.Spirv
     {
         public SpirvType? Type { get; init; }
         public StorageClass StorageClass { get; init; }
-        public override string ToString() => $"{StorageClass}<{Type}>";
+        public override string ToString() => $"Ptr<{Type}>({StorageClass})";
+        public override IEnumerable<SpirvType> Dependencies => new[] { Type! }.Concat(Type!.Dependencies);
         public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypePointer()
@@ -270,6 +280,13 @@ namespace cilspirv.Spirv
         public SpirvType? ReturnType { get; init; }
         public ImmutableArray<SpirvType> ParameterTypes { get; init; }
         public override string ToString() => $"{ReturnType}({string.Join(", ", ParameterTypes)})";
+
+        public override IEnumerable<SpirvType> Dependencies =>
+            new[] { ReturnType! }
+            .Concat(ReturnType!.Dependencies)
+            .Concat(ParameterTypes)
+            .Concat(ParameterTypes.SelectMany(p => p.Dependencies));
+
         public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpTypeFunction()

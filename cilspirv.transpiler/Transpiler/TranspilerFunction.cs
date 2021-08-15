@@ -51,14 +51,29 @@ namespace cilspirv.Transpiler
     internal class TranspilerDefinedFunction : TranspilerFunction
     {
         public IList<TranspilerBlock> Blocks { get; } = new List<TranspilerBlock>();
+        public IList<TranspilerVariable> Variables { get; } = new List<TranspilerVariable>();
 
         public TranspilerDefinedFunction(string name, TranspilerType returnType) : base(name, returnType) { }
 
-        protected override IEnumerable<Instruction> GenerateBody(IInstructionGeneratorContext context) =>
-            Blocks.SelectMany(b => b.GenerateInstructions(context));
+        protected override IEnumerable<Instruction> GenerateBody(IInstructionGeneratorContext context)
+        {
+            var instructions = Blocks.SelectMany(b => b.GenerateInstructions(context));
+            if (Variables.Any())
+                instructions =
+                    Variables.SelectMany(v => v.GenerateInstructions(context))
+                    .Prepend(new OpLabel()
+                    {
+                        Result = context.CreateID()
+                    })
+                    .Append(new OpBranch()
+                    {
+                        TargetLabel = context.IDOf(Blocks.First())
+                    }).Concat(instructions);
+            return instructions;
+        }
     }
 
-    internal class TranspilerEntryFunction : TranspilerFunction
+    internal class TranspilerEntryFunction : TranspilerDefinedFunction
     {
         public ExecutionModel ExecutionModel { get; }
         public ISet<TranspilerVariable> Interface { get; } = new HashSet<TranspilerVariable>();

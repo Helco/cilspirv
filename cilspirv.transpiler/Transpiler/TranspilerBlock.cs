@@ -8,10 +8,7 @@ namespace cilspirv.Transpiler
 {
     internal class TranspilerBlock : IInstructionGeneratable
     {
-        public TranspilerFunction Parent { get; }
-        public IList<Instruction> Instructions { get; } = new List<Instruction>();
-
-        public TranspilerBlock(TranspilerFunction parent) => Parent = parent;
+        public List<Instruction> Instructions { get; } = new List<Instruction>();
 
         public IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context) =>
             Instructions.Prepend(new OpLabel()

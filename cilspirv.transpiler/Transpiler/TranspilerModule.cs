@@ -11,16 +11,13 @@ namespace cilspirv.Transpiler
     internal class TranspilerModule
     {
         private readonly ObservableHashSet<Capability> capabilities = new ObservableHashSet<Capability>();
-        private readonly ObservableHashSet<TranspilerType> types = new ObservableHashSet<TranspilerType>();
         private readonly HashSet<Capability> allCapabilities = new HashSet<Capability>();
-        private Dictionary<SpirvType, TranspilerType> spirvToTranspilerType = new Dictionary<SpirvType, TranspilerType>();
 
         public AddressingModel AddressingModel { get; set; }
         public MemoryModel MemoryModel { get; set; }
         public ISet<Capability> Capabilities => capabilities;
         public ISet<string> Extensions { get; } = new HashSet<string>();
         public ISet<TranspilerExtInstructionSet> ExtInstructionSets { get; } = new HashSet<TranspilerExtInstructionSet>();
-        public ISet<TranspilerType> Types => types;
         public ISet<TranspilerFunction> Functions { get; } = new HashSet<TranspilerFunction>();
         public IEnumerable<TranspilerEntryFunction> EntryPoints => Functions.OfType<TranspilerEntryFunction>();
         public ISet<TranspilerVariable> GlobalVariables { get; } = new HashSet<TranspilerVariable>();
@@ -51,18 +48,6 @@ namespace cilspirv.Transpiler
                 }
                 return allCapabilities;
             }
-        }
-
-        public TranspilerType GetTranspilerTypeFor(SpirvType spirvType)
-        {
-            if (types.ResetHasChanged())
-                spirvToTranspilerType = Types.ToDictionary(t => t.Type);
-            if (spirvToTranspilerType.TryGetValue(spirvType, out var transpilerType))
-                return transpilerType;
-
-            transpilerType = new TranspilerType(name: null, spirvType);
-            types.Add(transpilerType);
-            return transpilerType;
         }
 
         public IEnumerable<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
@@ -102,7 +87,7 @@ namespace cilspirv.Transpiler
 
             var instructionSets = new List<IEnumerable<Instruction>>();
 
-            if (context.ShouldGenerateDebugInfo)
+            if (context.Options.DebugInfo)
             {
                 instructionSets.Add(context
                     .OfType<IDebugInstructionGeneratable>()
@@ -115,11 +100,14 @@ namespace cilspirv.Transpiler
                 .SelectMany(d => d.GenerateDecorations(context))
                 .ToArray());
 
-            instructionSets.Add(context
-                .OfType<SpirvType>()
-                .Concat(context.OfType<TranspilerType>().Select(t => t.Type))
-                .Distinct()
+            var rootTypes = context.OfType<SpirvType>().ToArray();
+            instructionSets.Add(GetOrderedTypeList(context)
                 .SelectMany(t => t.GenerateInstructions(context))
+                .ToArray());
+
+            instructionSets.Add(context
+                .OfType<TranspilerConstant>()
+                .SelectMany(c => c.GenerateInstructions(context))
                 .ToArray());
 
             instructionSets.Add(GlobalVariables
@@ -130,6 +118,28 @@ namespace cilspirv.Transpiler
 
             foreach (var instr in instructionSets.SelectMany())
                 yield return instr;
+        }
+
+        private IEnumerable<SpirvType> GetOrderedTypeList(IInstructionGeneratorContext context)
+        {
+            var rootTypes = context.OfType<SpirvType>();
+            var remainingTypes = rootTypes
+                .Concat(rootTypes.SelectMany(t => t.Dependencies))
+                .ToHashSet();
+
+            var typeList = new List<SpirvType>();
+            while (remainingTypes.Any())
+            {
+                var ready = remainingTypes
+                    .Where(t => t.Dependencies.All(typeList.Contains))
+                    .ToArray();
+                if (ready.Length == 0)
+                    throw new InvalidOperationException("Some type dependency is missing");
+                typeList.AddRange(ready);
+                foreach (var r in ready)
+                    remainingTypes.Remove(r);
+            }
+            return typeList;
         }
     }
 }

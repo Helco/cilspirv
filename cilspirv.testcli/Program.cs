@@ -29,8 +29,12 @@ namespace cilspirv.testcli
             if (!entryPoints.Any())
                 throw new InvalidDataException($"Module class {moduleTypeDef.FullName} has no entry point");
 
-            var unit = new TranspilerUnit(entryPoints[0]);
+            var unit = new Transpiler.Transpiler(entryPoints[0]);
+            unit.Library.Mappers.Add(new SystemNumericsMapper());
             unit.ExtractModuleAttributes();
+            unit.TranspileMethod(unit.ILEntryPoint);
+            unit.TranspileAllMethodBodies();
+            unit.WriteSpirvModule(new FileStream("test.spv", FileMode.Create));
         }
     }
 }

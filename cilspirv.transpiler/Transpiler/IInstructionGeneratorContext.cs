@@ -4,9 +4,10 @@ using cilspirv.Spirv;
 
 namespace cilspirv.Transpiler
 {
+
     internal interface IInstructionGeneratorContext
     {
-        bool ShouldGenerateDebugInfo { get; }
+        TranspilerOptions Options { get; }
 
         ID CreateID();
         ID CreateIDFor(IInstructionGeneratable generatable);
@@ -17,6 +18,11 @@ namespace cilspirv.Transpiler
     internal interface IInstructionGeneratable
     {
         IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context);
+    }
+
+    internal interface IWrapperInstructionGeneratable : IInstructionGeneratable
+    {
+        IInstructionGeneratable WrappedGeneratable { get; }
     }
 
     internal interface IDebugInstructionGeneratable : IInstructionGeneratable
