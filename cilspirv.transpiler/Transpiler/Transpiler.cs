@@ -16,8 +16,7 @@ namespace cilspirv.Transpiler
             new Queue<(TranspilerDefinedFunction function, MethodBody ilBody)>();
         private TranspilerOptions options = new TranspilerOptions();
 
-        public TypeDefinition ILType => ILEntryPoint.DeclaringType;
-        public MethodDefinition ILEntryPoint { get; }
+        public TypeDefinition ILModuleType { get; }
         public TranspilerModule Module { get; } = new TranspilerModule();
         public TranspilerLibrary Library { get; }
         public TranspilerOptions Options
@@ -30,9 +29,9 @@ namespace cilspirv.Transpiler
             }
         }
 
-        public Transpiler(MethodDefinition entryPoint)
+        public Transpiler(TypeDefinition moduleType)
         {
-            ILEntryPoint = entryPoint;
+            ILModuleType = moduleType;
             Library = new TranspilerLibrary(Module);
         }
 
@@ -43,14 +42,17 @@ namespace cilspirv.Transpiler
             SpirvVersion = new Version(1, 3)
         }.Write(stream, leaveOpen, generatorContext.MapFromTemporaryID);
 
-        public TranspilerFunction TranspileMethod(MethodDefinition ilMethod)
+        public TranspilerFunction TranspileEntryPoint(MethodDefinition ilMethod) =>
+            TranspileMethod(ilMethod, isEntryPoint: true);
+
+        private TranspilerFunction TranspileMethod(MethodDefinition ilMethod, bool isEntryPoint)
         {
-            if (ilMethod == ILEntryPoint && !ilMethod.HasBody)
+            if (!ilMethod.HasBody)
                 throw new InvalidOperationException("An entry point method has to have a body");
 
             var returnType = Library.MapType(ilMethod.ReturnType);
             var function =
-                ilMethod == ILEntryPoint ? new TranspilerEntryFunction(ilMethod.Name, returnType, ExtractExecutionModel())
+                isEntryPoint ? new TranspilerEntryFunction(ilMethod.Name, returnType, ExtractExecutionModel(ilMethod))
                 : ilMethod.HasBody ? new TranspilerDefinedFunction(ilMethod.Name, returnType)
                 : new TranspilerFunction(ilMethod.Name, returnType);
 
@@ -94,34 +96,34 @@ namespace cilspirv.Transpiler
             }
         }
 
-        private ExecutionModel ExtractExecutionModel()
+        private ExecutionModel ExtractExecutionModel(MethodDefinition ilMethod)
         {
-            var attr = ILEntryPoint.GetCustomAttributes<EntryPointAttribute>().SingleOrDefault();
+            var attr = ilMethod.GetCustomAttributes<EntryPointAttribute>().SingleOrDefault();
             if (attr == null)
-                throw new InvalidOperationException($"Entry point method {ILEntryPoint.FullName} does not have an EntryPointAttribute");
+                throw new InvalidOperationException($"Entry point method {ilMethod.FullName} does not have an EntryPointAttribute");
 
             return (ExecutionModel)attr.ConstructorArguments.Single().Value;
         }
 
         public void ExtractModuleAttributes()
         {
-            var capabilities = ILType
+            var capabilities = ILModuleType
                 .GetCustomAttributes<CapabilityAttribute>()
                 .SelectMany(attr => (CustomAttributeArgument[])attr.ConstructorArguments.Single().Value)
                 .Select(arg => (Capability)arg.Value);
             foreach (var capability in capabilities)
                 Module.Capabilities.Add(capability);
 
-            var extensions = ILType
+            var extensions = ILModuleType
                 .GetCustomAttributes<ExtensionAttribute>()
                 .SelectMany(attr => (CustomAttributeArgument[])attr.ConstructorArguments.Single().Value)
                 .Select(arg => (string)arg.Value);
             foreach (var extension in extensions)
                 Module.Extensions.Add(extension);
 
-            var memoryModelAttr = ILType.GetCustomAttributes<MemoryModelAttribute>().FirstOrDefault();
+            var memoryModelAttr = ILModuleType.GetCustomAttributes<MemoryModelAttribute>().FirstOrDefault();
             if (memoryModelAttr == null)
-                throw new InvalidOperationException($"Module type {ILType.FullName} does not have a memory model");
+                throw new InvalidOperationException($"Module type {ILModuleType.FullName} does not have a memory model");
             Module.AddressingModel = (AddressingModel)memoryModelAttr.ConstructorArguments[0].Value;
             Module.MemoryModel = (MemoryModel)memoryModelAttr.ConstructorArguments[1].Value;
         }

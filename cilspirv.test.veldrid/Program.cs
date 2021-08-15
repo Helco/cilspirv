@@ -102,11 +102,11 @@ void main()
 
             ShaderDescription vertexShaderDesc = new ShaderDescription(
                 ShaderStages.Vertex,
-                File.ReadAllBytes("Simple.Vert.spv"),
+                File.ReadAllBytes("Simple.spv"),
                 "Vert");
             ShaderDescription fragmentShaderDesc = new ShaderDescription(
                 ShaderStages.Fragment,
-                File.ReadAllBytes("Simple.Frag.spv"),
+                File.ReadAllBytes("Simple.spv"),
                 "Frag");
 
             //_shaders = factory.CreateFromSpirv(vertexShaderDesc, fragmentShaderDesc);
