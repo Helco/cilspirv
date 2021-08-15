@@ -12,10 +12,10 @@ namespace cilspirv.Library
     {
         public StorageClass? TryScanStorageClass(ICustomAttributeProvider element)
         {
-            var attr = element.GetCustomAttributes<StorageClassAttributeBase>(exactType: false).SingleOrDefault();
+            var attr = element.GetCustomAttributes<StorageClassAttribute>(exactType: false).SingleOrDefault();
             if (attr == null)
                 return null;
-            return attr.Instantiate<StorageClassAttributeBase>().StorageClass;
+            return attr.Instantiate<StorageClassAttribute>().StorageClass;
         }
 
         public IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider element) => element

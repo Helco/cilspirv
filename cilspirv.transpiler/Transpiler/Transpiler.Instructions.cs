@@ -95,6 +95,7 @@ namespace cilspirv.Transpiler
                     case (Code.Stloc_2): StoreLocal(2); break;
                     case (Code.Stloc_3): StoreLocal(3); break;
 
+                    case (Code.Ldfld): LoadField((FieldReference)ilInstr.Operand); break;
                     case (Code.Stfld): StoreField((FieldReference)ilInstr.Operand); break;
 
                     case (Code.Newobj): Call((MethodReference)ilInstr.Operand, isCtor: true); break;
@@ -112,8 +113,11 @@ namespace cilspirv.Transpiler
             SpirvType SpirvTypeOf<T>() => Library.MapType<T>().Type;
             ID TypeIdOf<T>() => generatorContext.IDOf(Library.MapType<T>());
 
-            ID IDOfGlobalVariable(FieldReference fieldRef)
+            ID IDOfGlobalVariable(FieldReference fieldRef, ID sourceId)
             {
+                if (sourceId != thisId)
+                    throw new InvalidOperationException("Global variables can only be read from the own module instance");
+
                 var variable = Library.MapVariable(fieldRef);
                 if (function is TranspilerEntryFunction entryFunction &&
                     (variable.StorageClass == StorageClass.Input || variable.StorageClass == StorageClass.Output))
@@ -198,13 +202,39 @@ namespace cilspirv.Transpiler
                 curStack.RemoveAt(curStack.Count - 1);
             }
 
+            void LoadField(FieldReference fieldRef)
+            {
+                if (!curStack.Any())
+                    throw new InvalidOperationException("Not enough entries on the stack to load a field");
+                var pointerId = fieldRef switch
+                {
+                    _ when fieldRef.DeclaringType.FullName == ilBody.Method.DeclaringType.FullName => IDOfGlobalVariable(fieldRef, curStack.Last().ID),
+                    _ => throw new NotSupportedException("Unsupported field access")
+                };
+
+                var fieldType = Library.MapType(fieldRef.FieldType);
+                var resultId = generatorContext.CreateID();
+                curBlock.Instructions.Add(new OpLoad()
+                {
+                    Result = resultId,
+                    ResultType = generatorContext.IDOf(fieldType),
+                    Pointer = pointerId
+                });
+                curStack.RemoveAt(curStack.Count - 1);
+                curStack.Add(new StackEntry()
+                {
+                    ID = resultId,
+                    Type = fieldType.Type
+                });
+            }
+
             void StoreField(FieldReference fieldRef)
             {
                 if (curStack.Count < 2)
                     throw new InvalidOperationException("Not enough entries on the stack to store in field");
                 var targetId = fieldRef switch
                 {
-                    _ when fieldRef.DeclaringType.FullName == ilBody.Method.DeclaringType.FullName => IDOfGlobalVariable(fieldRef),
+                    _ when fieldRef.DeclaringType.FullName == ilBody.Method.DeclaringType.FullName => IDOfGlobalVariable(fieldRef, curStack.TakeLast(2).First().ID),
                     _ => throw new NotSupportedException("Unsupported field access")
                 };
 

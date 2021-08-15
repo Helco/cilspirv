@@ -3,19 +3,23 @@ using cilspirv.Spirv;
 
 namespace cilspirv.Library
 {
-    public abstract class StorageClassAttributeBase : Attribute
-    {
-        public abstract StorageClass StorageClass { get; }
-    }
-
     [AttributeUsage(AttributeTargets.ReturnValue | AttributeTargets.Field, AllowMultiple = false)]
-    public sealed class OutputAttribute : StorageClassAttributeBase
+    public class StorageClassAttribute : Attribute
+    {
+        public virtual StorageClass StorageClass { get; init; }
+    }
+    
+    public sealed class OutputAttribute : StorageClassAttribute
     {
         public override StorageClass StorageClass => StorageClass.Output;
     }
 
-    [AttributeUsage(AttributeTargets.ReturnValue | AttributeTargets.Field, AllowMultiple = false)]
-    public sealed class UniformAttribute : StorageClassAttributeBase
+    public sealed class InputAttribute : StorageClassAttribute
+    {
+        public override StorageClass StorageClass => StorageClass.Input;
+    }
+
+    public sealed class UniformAttribute : StorageClassAttribute
     {
         public override StorageClass StorageClass => StorageClass.Uniform;
     }
