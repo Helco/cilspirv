@@ -96,6 +96,7 @@ namespace cilspirv.Transpiler
                     case (Code.Stloc_3): StoreLocal(3); break;
 
                     case (Code.Ldfld): LoadField((FieldReference)ilInstr.Operand); break;
+                    case (Code.Ldflda): LoadFieldAddress((FieldReference)ilInstr.Operand); break;
                     case (Code.Stfld): StoreField((FieldReference)ilInstr.Operand); break;
 
                     case (Code.Newobj): Call((MethodReference)ilInstr.Operand, isCtor: true); break;
@@ -113,7 +114,7 @@ namespace cilspirv.Transpiler
             SpirvType SpirvTypeOf<T>() => Library.MapType<T>().Type;
             ID TypeIdOf<T>() => generatorContext.IDOf(Library.MapType<T>());
 
-            ID IDOfGlobalVariable(FieldReference fieldRef, ID sourceId)
+            (ID, StorageClass) GetGlobalVariable(FieldReference fieldRef, ID sourceId)
             {
                 if (sourceId != thisId)
                     throw new InvalidOperationException("Global variables can only be read from the own module instance");
@@ -122,7 +123,7 @@ namespace cilspirv.Transpiler
                 if (function is TranspilerEntryFunction entryFunction &&
                     (variable.StorageClass == StorageClass.Input || variable.StorageClass == StorageClass.Output))
                     entryFunction.Interface.Add(variable);
-                return generatorContext.IDOf(variable);
+                return (generatorContext.IDOf(variable), variable.StorageClass);
             }
 
             void PushID(ID id, SpirvType type) => curStack!.Add(new StackEntry()
@@ -162,12 +163,16 @@ namespace cilspirv.Transpiler
             void PushR4(float value) => PushConstant<float>(LiteralNumber.ArrayFor(value));
             void PushR8(double value) => PushConstant<double>(LiteralNumber.ArrayFor(value));
 
-            void Pop()
+            StackEntry Pop()
             {
-                if (!curStack.Any())
-                    throw new InvalidOperationException("Stack is empty, cannot pop");
+                var result = Peek();
                 curStack.RemoveAt(curStack.Count - 1);
+                return result;
             }
+
+            StackEntry Peek() => curStack.Any()
+                ? curStack.Last()
+                : throw new InvalidOperationException("Stack is empty, cannot pop");
 
             void LoadLocal(int variableI)
             {
@@ -197,21 +202,33 @@ namespace cilspirv.Transpiler
                 curBlock.Instructions.Add(new OpStore()
                 {
                     Pointer = generatorContext.IDOf(variable),
-                    Object = curStack.Last().ID
+                    Object = Pop().ID
                 });
-                curStack.RemoveAt(curStack.Count - 1);
+            }
+
+            (ID, StorageClass) PopFieldPointer(FieldReference fieldRef)
+            {
+                if (!curStack.Any())
+                    throw new InvalidOperationException("Not enough entries on the stack to load a field");
+
+                var fieldType = Library.MapType(fieldRef.FieldType);
+                var parentType = Library.TryMapType(fieldRef.DeclaringType);
+                var result = fieldRef switch
+                {
+                    _ when fieldType is TranspilerStructType structType && !structType.IsRealStruct => (ID.Invalid, StorageClass.CodeSectionINTEL),
+                    _ when fieldRef.DeclaringType.FullName == ilBody.Method.DeclaringType.FullName => GetGlobalVariable(fieldRef, Peek().ID),
+                    _ when parentType is TranspilerStructType structType => structType.IsRealStruct
+                        ? throw new NotSupportedException("Unsupported real member access")
+                        : GetGlobalVariable(fieldRef, thisId),
+                    _ => throw new NotSupportedException("Unsupported field access")
+                };
+                Pop();
+                return result;
             }
 
             void LoadField(FieldReference fieldRef)
             {
-                if (!curStack.Any())
-                    throw new InvalidOperationException("Not enough entries on the stack to load a field");
-                var pointerId = fieldRef switch
-                {
-                    _ when fieldRef.DeclaringType.FullName == ilBody.Method.DeclaringType.FullName => IDOfGlobalVariable(fieldRef, curStack.Last().ID),
-                    _ => throw new NotSupportedException("Unsupported field access")
-                };
-
+                var (pointerId, _) = PopFieldPointer(fieldRef);
                 var fieldType = Library.MapType(fieldRef.FieldType);
                 var resultId = generatorContext.CreateID();
                 curBlock.Instructions.Add(new OpLoad()
@@ -220,7 +237,6 @@ namespace cilspirv.Transpiler
                     ResultType = generatorContext.IDOf(fieldType),
                     Pointer = pointerId
                 });
-                curStack.RemoveAt(curStack.Count - 1);
                 curStack.Add(new StackEntry()
                 {
                     ID = resultId,
@@ -228,22 +244,33 @@ namespace cilspirv.Transpiler
                 });
             }
 
+            void LoadFieldAddress(FieldReference fieldRef)
+            {
+                var (pointerId, storageClass) = PopFieldPointer(fieldRef);
+                var fieldType = Library.MapType(fieldRef.FieldType);
+                curStack.Add(new StackEntry()
+                {
+                    ID = generatorContext.CreateID(),
+                    Type = new SpirvPointerType()
+                    {
+                        Type = fieldType.Type,
+                        StorageClass = storageClass
+                    }
+                });
+            }
+
             void StoreField(FieldReference fieldRef)
             {
                 if (curStack.Count < 2)
                     throw new InvalidOperationException("Not enough entries on the stack to store in field");
-                var targetId = fieldRef switch
-                {
-                    _ when fieldRef.DeclaringType.FullName == ilBody.Method.DeclaringType.FullName => IDOfGlobalVariable(fieldRef, curStack.TakeLast(2).First().ID),
-                    _ => throw new NotSupportedException("Unsupported field access")
-                };
+                var valueId = Pop().ID;
+                var (targetId, _) = PopFieldPointer(fieldRef);
 
                 curBlock.Instructions.Add(new OpStore()
                 {
                     Pointer = targetId,
-                    Object = curStack.Last().ID
+                    Object = valueId
                 });
-                curStack.RemoveRange(curStack.Count - 2, 2);
             }
 
             void Call(MethodReference methodRef, bool isCtor)

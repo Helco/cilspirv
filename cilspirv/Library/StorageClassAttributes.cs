@@ -3,7 +3,12 @@ using cilspirv.Spirv;
 
 namespace cilspirv.Library
 {
-    [AttributeUsage(AttributeTargets.ReturnValue | AttributeTargets.Field, AllowMultiple = false)]
+    [AttributeUsage(
+        AttributeTargets.ReturnValue |
+        AttributeTargets.Field |
+        AttributeTargets.Parameter |
+        AttributeTargets.Struct,
+        AllowMultiple = false)]
     public class StorageClassAttribute : Attribute
     {
         public virtual StorageClass StorageClass { get; init; }

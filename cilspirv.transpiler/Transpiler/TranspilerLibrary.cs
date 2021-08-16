@@ -21,12 +21,8 @@ namespace cilspirv.Transpiler
 
     internal interface IITranspilerLibraryScanner
     {
-        StorageClass? TryScanStorageClass(FieldReference fieldRef);
-        StorageClass? TryScanStorageClass(ParameterReference parameterRef);
-        StorageClass? TryScanStorageClass(MethodReturnType returnType);
-        IEnumerable<DecorationEntry> TryScanDecorations(FieldReference fieldRef);
-        IEnumerable<DecorationEntry> TryScanDecorations(ParameterReference parameterRef);
-        IEnumerable<DecorationEntry> TryScanDecorations(MethodReturnType returnType);
+        StorageClass? TryScanStorageClass(ICustomAttributeProvider fieldDef);
+        IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider fieldDef);
     }
 
     internal delegate IEnumerable<Instruction> GenerateCallDelegate(ITranspilerMethodContext context, IReadOnlyList<(ID id, SpirvType type)> parameters, out ID? resultId);
@@ -37,9 +33,10 @@ namespace cilspirv.Transpiler
         private readonly TranspilerModule module;
         private readonly Dictionary<string, GenerateCallDelegate> mappedMethods = new Dictionary<string, GenerateCallDelegate>();
         private readonly Dictionary<string, TranspilerType> mappedTypes = new Dictionary<string, TranspilerType>();
+        private readonly TranspilerStructMapper structMapper;
 
-        // TODO: used later to add module-defined mappings
-        private IEnumerable<ITranspilerLibraryMapper> AllMappers => Mappers;
+        public IEnumerable<ITranspilerLibraryMapper> AllMappers => Mappers.Reverse().Append(structMapper);
+        public IEnumerable<IITranspilerLibraryScanner> AllScanners => Scanners.Reverse();
 
         public IList<ITranspilerLibraryMapper> Mappers { get; } = new List<ITranspilerLibraryMapper>()
         {
@@ -54,6 +51,7 @@ namespace cilspirv.Transpiler
         public TranspilerLibrary(TranspilerModule module)
         {
             this.module = module;
+            structMapper = new TranspilerStructMapper(this, module);
             myAssembly = new Lazy<AssemblyDefinition>(
                 () => AssemblyDefinition.ReadAssembly(typeof(Transpiler).Assembly.Location));
         }
@@ -99,21 +97,21 @@ namespace cilspirv.Transpiler
 
         public TranspilerVariable MapVariable(FieldReference fieldRef)
         {
-            var variable = module.GlobalVariables.FirstOrDefault(v => v.Name == fieldRef.Name);
+            var variable = module.GlobalVariables.FirstOrDefault(v => v.Name == fieldRef.FullName);
             if (variable != null)
                 return variable;
 
             var fieldType = MapType(fieldRef.FieldType);
-            var storageClass = Scanners
-                .Select(scanner => scanner.TryScanStorageClass(fieldRef))
+            var storageClass = AllScanners
+                .Select(scanner => scanner.TryScanStorageClass(fieldRef.Resolve()))
                 .FirstOrDefault(c => c.HasValue)
                 ?? throw new InvalidOperationException($"Could not scan storage class for field {fieldRef.FullName}");
-            var decorations = Scanners
-                .Select(scanner => scanner.TryScanDecorations(fieldRef))
+            var decorations = AllScanners
+                .Select(scanner => scanner.TryScanDecorations(fieldRef.Resolve()))
                 .FirstOrDefault(c => c.Any())
                 ?? Enumerable.Empty<DecorationEntry>();
 
-            variable = new TranspilerVariable(fieldRef.Name, new SpirvPointerType()
+            variable = new TranspilerVariable(fieldRef.FullName, new SpirvPointerType()
             {
                 Type = fieldType.Type,
                 StorageClass = storageClass,
