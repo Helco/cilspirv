@@ -23,11 +23,14 @@ namespace cilspirv.Transpiler
         public virtual bool Equals(SpirvType? other) =>
             other is not null &&
             EqualityContract == other.EqualityContract &&
-            Name == other.Name &&
+            (this is not SpirvAggregateType || Name == other.Name) &&
             Decorations.SetEquals(other.Decorations);
 
-        public override int GetHashCode() =>
-            Decorations.Aggregate(HashCode.Combine(Name, EqualityContract), HashCode.Combine);
+        public override int GetHashCode() => Decorations.Aggregate(
+            HashCode.Combine(
+                this is SpirvAggregateType ? Name : "",
+                EqualityContract),
+            HashCode.Combine);
 
         IEnumerator<Instruction> IInstructionGeneratable.GenerateInstructions(IInstructionGeneratorContext context) => GenerateInstructions(context);
         internal abstract IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context);
