@@ -141,6 +141,10 @@ namespace cilspirv.Transpiler
                         default: throw new NotSupportedException($"Unsupported opcode {ilInstr.OpCode}");
                     }
                 }
+
+                Function.Blocks.Clear();
+                foreach (var kv in blocks.OrderBy(kv => kv.Key))
+                    Function.Blocks.Add(kv.Value.block);
             }
 
             private void LeaveBlock() => _currentBlockInfo = null;
