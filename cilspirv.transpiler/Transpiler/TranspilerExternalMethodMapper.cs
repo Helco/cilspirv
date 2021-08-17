@@ -13,7 +13,7 @@ namespace cilspirv.Transpiler
     {
         private readonly Dictionary<string, GenerateCallDelegate> methods = new Dictionary<string, GenerateCallDelegate>();
 
-        public TranspilerType? TryMapType(TypeReference ilTypeRef) => null;
+        public IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => null;
 
         public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) =>
             methods.TryGetValue(methodRef.FullName, out var method)

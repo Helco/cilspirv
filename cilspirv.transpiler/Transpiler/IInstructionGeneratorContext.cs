@@ -20,11 +20,6 @@ namespace cilspirv.Transpiler
         IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context);
     }
 
-    internal interface IWrapperInstructionGeneratable : IInstructionGeneratable
-    {
-        IInstructionGeneratable WrappedGeneratable { get; }
-    }
-
     internal interface IDebugInstructionGeneratable : IInstructionGeneratable
     {
         IEnumerator<Instruction> GenerateDebugInfo(IInstructionGeneratorContext context);

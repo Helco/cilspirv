@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Mono.Cecil;
-using cilspirv.Library;
 using cilspirv.Spirv;
-using System.Runtime.InteropServices;
+
 
 namespace cilspirv.Transpiler
 {
     internal class TranspilerStructMapper : ITranspilerLibraryMapper
     {
-        private static readonly ISet<Decoration> CollapsingDecorations = new HashSet<Decoration>()
+        private static readonly ISet<Decoration> GlobalDecorations = new HashSet<Decoration>()
         {
             Decoration.SpecId,
             Decoration.Block,
@@ -23,7 +23,7 @@ namespace cilspirv.Transpiler
             Decoration.Offset
         };
 
-        private readonly Dictionary<string, TranspilerStructType> structures = new Dictionary<string, TranspilerStructType>();
+        private readonly Dictionary<string, IMappedFromCILType> structures = new Dictionary<string, IMappedFromCILType>();
         private readonly TranspilerLibrary library;
         private readonly TranspilerModule module;
 
@@ -35,7 +35,7 @@ namespace cilspirv.Transpiler
 
         public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => null;
 
-        public TranspilerType? TryMapType(TypeReference ilTypeRef)
+        public IMappedFromCILType? TryMapType(TypeReference ilTypeRef)
         {
             if (structures.TryGetValue(ilTypeRef.FullName, out var prevMapped))
                 return prevMapped;
@@ -49,31 +49,31 @@ namespace cilspirv.Transpiler
             var fieldDecorations = ilTypeDef.Fields
                 .SelectMany(field => ScanDecorations(field).Select(decoration => (field, decoration)))
                 .ToLookup(t => t.field, t => t.decoration);
-            var structure = IsCollapsingStruct()
-                ? MapCollapsingStruct()
-                : MapRealStruct();
 
-            AddAllDecorations();
+            var structureDecorations = ScanDecorations(ilTypeDef);
+            IMappedFromCILType structure = IsVariableGroup()
+                ? MapVarGroup()
+                : MapStructure();
 
             structures.Add(ilTypeDef.FullName, structure);
             return structure;
 
-            bool IsCollapsingStruct()
+            bool IsVariableGroup()
             {
                 var countStorageFields = fieldStorageClasses.Count(kv => kv.Value.HasValue);
-                var countCollapsingFields = fieldDecorations.Count(
-                    group => group.Any(e => CollapsingDecorations.Contains(e.Kind)));
+                var countGlobalFields = fieldDecorations.Count(
+                    group => group.Any(e => GlobalDecorations.Contains(e.Kind)));
                 var countMemberFields = fieldDecorations.Count(
                     group => group.Any(e => MemberDecorations.Contains(e.Kind)));
 
-                var shouldBeCollapsing = countStorageFields > 0 || countCollapsingFields > 0;
+                var shouldBeGroup = countStorageFields > 0 || countGlobalFields > 0;
                 var shouldBeReal = countMemberFields > 0;
-                if (shouldBeCollapsing && shouldBeReal)
+                if (shouldBeGroup && shouldBeReal)
                     throw new InvalidOperationException($"Type \"{ilTypeDef.FullName}\" is ambiguous whether it contains global variables or members");
-                return shouldBeCollapsing; // so no decorations at all is still a real struct
+                return shouldBeGroup; // so no decorations at all is still a real struct
             }
 
-            TranspilerStructType MapCollapsingStruct()
+            TranspilerVarGroup MapVarGroup()
             {
                 var structStorageClass = ScanStorageClass(ilTypeDef);
                 var missingStorageClassFields = fieldStorageClasses.Where(kv => !kv.Value.HasValue);
@@ -81,55 +81,48 @@ namespace cilspirv.Transpiler
                     throw new InvalidOperationException($"Global variable type \"{ilTypeDef.FullName}\" missing storage classes for " +
                         string.Join(", ", missingStorageClassFields.Select(kv => kv.Key.Name)));
 
-                var structure = new TranspilerStructType(isReal: false, ilTypeDef.FullName)
-                {
-                    DefaultStorageClass = structStorageClass
-                };
+                var varGroup = new TranspilerVarGroup(ilTypeDef.Name, ilTypeDef);
                 foreach (var field in ilTypeDef.Fields)
                 {
                     var fieldType = library.MapType(field.FieldType);
+                    if (fieldType is TranspilerVarGroup subVarGroup)
+                    {
+                        varGroup.Variables.AddRange(subVarGroup.Variables);
+                        continue;
+                    }
+                    if (fieldType is not SpirvType fieldSpirvType)
+                        throw new InvalidOperationException("Invalid field type in variable group structure");
+
                     var variable = new TranspilerVariable(field.FullName, new SpirvPointerType()
                     {
-                        Type = fieldType.Type,
-                        StorageClass = (fieldStorageClasses[field] ?? structStorageClass)!.Value
+                        Type = fieldSpirvType,
+                        StorageClass = (fieldStorageClasses[field] ?? structStorageClass)!.Value,
+                        Decorations = fieldDecorations[field]
+                            .Concat(structureDecorations)
+                            .GroupBy(d => d.Kind)
+                            .Select(g => g.First())
+                            .ToImmutableHashSet()
                     });
-                    var member = new TranspilerMember(field.Name, fieldType.Type)
-                    {
-                        GlobalVariable = variable
-                    };
-                    structure.Members.Add(member);
+                    varGroup.Variables.Add(variable);
                     module.GlobalVariables.Add(variable);
                 }
 
-                return structure;
+                return varGroup;
             }
 
-            TranspilerStructType MapRealStruct()
+            SpirvStructType MapStructure() => new SpirvStructType()
             {
-                var structure = new TranspilerStructType(isReal: true, ilTypeDef.FullName);
-                foreach (var field in ilTypeDef.Fields)
-                    structure.Members.Add(new TranspilerMember(
-                        field.Name,
-                        library.MapType(field.FieldType).Type));
-                return structure;
-            }
+                UserName = ilTypeDef.Name,
+                Decorations = structureDecorations.ToHashSet(),
+                Members = ilTypeDef.Fields.Select(MapStructureMember).ToImmutableArray()
+            };
 
-            void AddAllDecorations()
-            {
-                var structureDecorations = ScanDecorations(ilTypeDef);
-                foreach (var decoration in structureDecorations)
-                    structure.Decorations.Add(decoration);
-                for (int i = 0; i < ilTypeDef.Fields.Count; i++)
-                {
-                    var member = structure.Members[i];
-                    var field = ilTypeDef.Fields[i];
-                    foreach (var decoration in fieldDecorations[field])
-                    {
-                        member.Decorations.Add(decoration);
-                        member.GlobalVariable?.Decorations.Add(decoration);
-                    }
-                }
-            }
+            SpirvMember MapStructureMember(FieldDefinition fieldDef, int index) => new SpirvMember(
+                index,
+                fieldDef.Name,
+                library.MapType(fieldDef.FieldType) as SpirvType ??
+                    throw new InvalidOperationException("A structure can only hold fields to other SPIRV types"),
+                fieldDecorations[fieldDef].ToImmutableHashSet());
         }
 
         private IEnumerable<DecorationEntry> ScanDecorations(ICustomAttributeProvider fieldDef) => library.AllScanners

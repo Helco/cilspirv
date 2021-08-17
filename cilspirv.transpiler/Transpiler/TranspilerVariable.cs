@@ -6,13 +6,13 @@ using cilspirv.Spirv.Ops;
 
 namespace cilspirv.Transpiler
 {
-    internal class TranspilerVariable : IDecoratableInstructionGeneratable
+    internal class TranspilerVariable : IDecoratableInstructionGeneratable, IMappedFromCILField
     {
         public string Name { get; }
         public SpirvPointerType PointerType { get; }
         public SpirvType ElementType => PointerType.Type ?? throw new InvalidOperationException("Element type is not set");
         public StorageClass StorageClass => PointerType.StorageClass;
-        public ISet<DecorationEntry> Decorations { get; } = new HashSet<DecorationEntry>();
+        public IReadOnlySet<DecorationEntry> Decorations { get; set; } = new HashSet<DecorationEntry>();
 
         public TranspilerVariable(string name, SpirvPointerType pointerType) =>
             (Name, PointerType) = (name, pointerType);

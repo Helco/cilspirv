@@ -16,7 +16,7 @@ namespace cilspirv.Transpiler
     internal interface ITranspilerLibraryMapper
     {
         GenerateCallDelegate? TryMapMethod(MethodReference methodRef);
-        TranspilerType? TryMapType(TypeReference ilTypeRef);
+        IMappedFromCILType? TryMapType(TypeReference ilTypeRef);
     }
 
     internal interface IITranspilerLibraryScanner
@@ -27,12 +27,16 @@ namespace cilspirv.Transpiler
 
     internal delegate IEnumerable<Instruction> GenerateCallDelegate(ITranspilerMethodContext context, IReadOnlyList<(ID id, SpirvType type)> parameters, out ID? resultId);
 
+    internal interface IMappedFromCILType { }
+    internal interface IMappedFromCILField { }
+
     internal class TranspilerLibrary 
     {
-        private readonly Lazy<AssemblyDefinition> myAssembly;
+        private readonly TypeDefinition ilModuleType;
         private readonly TranspilerModule module;
         private readonly Dictionary<string, GenerateCallDelegate> mappedMethods = new Dictionary<string, GenerateCallDelegate>();
-        private readonly Dictionary<string, TranspilerType> mappedTypes = new Dictionary<string, TranspilerType>();
+        private readonly Dictionary<string, IMappedFromCILType> mappedTypes = new Dictionary<string, IMappedFromCILType>();
+        private readonly Dictionary<string, IMappedFromCILField> mappedFields = new Dictionary<string, IMappedFromCILField>();
         private readonly TranspilerStructMapper structMapper;
 
         public IEnumerable<ITranspilerLibraryMapper> AllMappers => Mappers.Reverse().Append(structMapper);
@@ -48,15 +52,14 @@ namespace cilspirv.Transpiler
             new AttributeScanner()
         };
 
-        public TranspilerLibrary(TranspilerModule module)
+        public TranspilerLibrary(TypeDefinition ilModuleType, TranspilerModule module)
         {
+            this.ilModuleType = ilModuleType;
             this.module = module;
             structMapper = new TranspilerStructMapper(this, module);
-            myAssembly = new Lazy<AssemblyDefinition>(
-                () => AssemblyDefinition.ReadAssembly(typeof(Transpiler).Assembly.Location));
         }
 
-        public TranspilerType? TryMapType(TypeReference ilTypeRef)
+        public IMappedFromCILType? TryMapType(TypeReference ilTypeRef)
         {
             if (mappedTypes.TryGetValue(ilTypeRef.FullName, out var mappedType))
                 return mappedType;
@@ -89,38 +92,55 @@ namespace cilspirv.Transpiler
         public GenerateCallDelegate MapMethod(MethodReference ilMethodRef) => TryMapMethod(ilMethodRef)
             ?? throw new ArgumentException($"Cannot map method {ilMethodRef.FullName}");
 
-        public TranspilerType MapType(TypeReference ilTypeRef) => TryMapType(ilTypeRef)
+        public IMappedFromCILType MapType(TypeReference ilTypeRef) => TryMapType(ilTypeRef)
             ?? throw new ArgumentException($"Cannot map type {ilTypeRef.FullName}");
 
-        public TranspilerType MapType<T>() =>
-            MapType(myAssembly.Value.MainModule.ImportReference(typeof(T)));
-
-        public TranspilerVariable MapVariable(FieldReference fieldRef)
+        public IMappedFromCILField MapField(FieldReference fieldRef)
         {
-            var variable = module.GlobalVariables.FirstOrDefault(v => v.Name == fieldRef.FullName);
-            if (variable != null)
-                return variable;
+            if (mappedFields.TryGetValue(fieldRef.FullName, out var prevMapped))
+                return prevMapped;
 
-            var fieldType = MapType(fieldRef.FieldType);
-            var storageClass = AllScanners
-                .Select(scanner => scanner.TryScanStorageClass(fieldRef.Resolve()))
-                .FirstOrDefault(c => c.HasValue)
-                ?? throw new InvalidOperationException($"Could not scan storage class for field {fieldRef.FullName}");
-            var decorations = AllScanners
-                .Select(scanner => scanner.TryScanDecorations(fieldRef.Resolve()))
-                .FirstOrDefault(c => c.Any())
-                ?? Enumerable.Empty<DecorationEntry>();
-
-            variable = new TranspilerVariable(fieldRef.FullName, new SpirvPointerType()
+            switch(MapType(fieldRef.FieldType))
             {
-                Type = fieldType.Type,
-                StorageClass = storageClass,
-            });
-            foreach (var decoration in decorations)
-                variable.Decorations.Add(decoration);
+                case TranspilerVarGroup varGroup:
+                    var variable = varGroup.Variables.First(v => v.Name == fieldRef.FullName);
+                    mappedFields.Add(fieldRef.FullName, variable);
+                    return variable;
 
-            module.GlobalVariables.Add(variable);
-            return variable;
+                case SpirvType realType when (fieldRef.DeclaringType.FullName == ilModuleType.FullName):
+                    return MapGlobalVariable(realType);
+
+                case SpirvType realType:
+                    var declaringType = MapType(fieldRef.DeclaringType);
+                    if (declaringType is not SpirvStructType declaringStructType)
+                        throw new InvalidOperationException("Unexpected parent type for real field");
+
+                    return declaringStructType.Members.First(m => m.Name == fieldRef.Name);
+
+                default: throw new NotSupportedException("Unsupported but mapped field type");
+            }
+
+            TranspilerVariable MapGlobalVariable(SpirvType realType)
+            {
+                var storageClass = AllScanners
+                    .Select(scanner => scanner.TryScanStorageClass(fieldRef.Resolve()))
+                    .FirstOrDefault(c => c.HasValue)
+                    ?? throw new InvalidOperationException($"Could not scan storage class for field {fieldRef.FullName}");
+                var decorations = AllScanners
+                    .Select(scanner => scanner.TryScanDecorations(fieldRef.Resolve()))
+                    .FirstOrDefault(c => c.Any())
+                    ?? Enumerable.Empty<DecorationEntry>();
+
+                var variable = new TranspilerVariable(fieldRef.FullName, new SpirvPointerType()
+                {
+                    Type = realType,
+                    StorageClass = storageClass,
+                    Decorations = decorations.ToHashSet()
+                });
+
+                module.GlobalVariables.Add(variable);
+                return variable;
+            }
         }
     }
 }

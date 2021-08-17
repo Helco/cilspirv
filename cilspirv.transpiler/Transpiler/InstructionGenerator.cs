@@ -30,8 +30,6 @@ namespace cilspirv.Transpiler
 
         public ID CreateIDFor(IInstructionGeneratable generatable)
         {
-            if (generatable is IWrapperInstructionGeneratable wrapper)
-                return CreateIDFor(wrapper.WrappedGeneratable);
             if (permIDs.ContainsKey(generatable))
                 throw new InvalidOperationException("Generatable already has an permanent ID");
             if (tempIDs.TryGetValue(generatable, out var tempID))
@@ -46,8 +44,6 @@ namespace cilspirv.Transpiler
 
         public ID IDOf(IInstructionGeneratable generatable)
         {
-            if (generatable is IWrapperInstructionGeneratable wrapper)
-                return IDOf(wrapper.WrappedGeneratable);
             if (permIDs.TryGetValue(generatable, out var permID))
                 return permID;
             if (tempIDs.TryGetValue(generatable, out var tempID))

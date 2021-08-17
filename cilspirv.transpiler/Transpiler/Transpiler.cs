@@ -32,7 +32,7 @@ namespace cilspirv.Transpiler
         public Transpiler(TypeDefinition moduleType)
         {
             ILModuleType = moduleType;
-            Library = new TranspilerLibrary(Module);
+            Library = new TranspilerLibrary(moduleType, Module);
         }
 
         public void WriteSpirvModule(System.IO.Stream stream, bool leaveOpen = false) => new SpirvModule()
@@ -51,10 +51,14 @@ namespace cilspirv.Transpiler
                 throw new InvalidOperationException("An entry point method has to have a body");
 
             var returnType = Library.MapType(ilMethod.ReturnType);
+            if (isEntryPoint && returnType is not SpirvVoidType && returnType is not TranspilerVarGroup)
+                throw new InvalidOperationException("An entry point can only return void or a variable group");
+            if (!isEntryPoint && returnType is not SpirvType)
+                throw new InvalidOperationException("A function can only return SPIRV types");
             var function =
-                isEntryPoint ? new TranspilerEntryFunction(ilMethod.Name, returnType, ExtractExecutionModel(ilMethod))
-                : ilMethod.HasBody ? new TranspilerDefinedFunction(ilMethod.Name, returnType)
-                : new TranspilerFunction(ilMethod.Name, returnType);
+                isEntryPoint ? new TranspilerEntryFunction(ilMethod.Name, ExtractExecutionModel(ilMethod))
+                : ilMethod.HasBody ? new TranspilerDefinedFunction(ilMethod.Name, (SpirvType)returnType)
+                : new TranspilerFunction(ilMethod.Name, (SpirvType)returnType);
 
             if (ilMethod.Parameters.Any())
                 throw new InvalidOperationException("Parameters are not supported yet");
@@ -76,7 +80,9 @@ namespace cilspirv.Transpiler
             {
                 var (definedFunction, ilBody) = missingBodies.Dequeue();
                 TranspileVariables(definedFunction, ilBody);
-                TranspileInstructions(definedFunction, ilBody);
+
+                var genInstructions = new GenInstructions(this, definedFunction, ilBody);
+                genInstructions.GenerateInstructions();
             }
         }
 
@@ -90,7 +96,7 @@ namespace cilspirv.Transpiler
                 var type = Library.MapType(ilVariable.VariableType);
                 definedFunction.Variables.Add(new TranspilerVariable(varName, new SpirvPointerType()
                 {
-                    Type = type.Type,
+                    Type = type as SpirvType ?? throw new InvalidOperationException("Local variables can only be SPIRV types"),
                     StorageClass = StorageClass.Function
                 }));
             }

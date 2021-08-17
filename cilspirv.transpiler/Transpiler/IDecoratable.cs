@@ -8,7 +8,7 @@ namespace cilspirv.Transpiler
 {
     internal interface IDecoratable
     {
-        ISet<DecorationEntry> Decorations { get; }
+        IReadOnlySet<DecorationEntry> Decorations { get; }
     }
 
     internal interface IDecoratableInstructionGeneratable : IInstructionGeneratable, IDecoratable

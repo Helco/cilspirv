@@ -7,34 +7,38 @@ using cilspirv.Spirv.Ops;
 
 namespace cilspirv.Transpiler
 {
-    internal class TranspilerStructType : TranspilerType, IDecoratableInstructionGeneratable
+    public record SpirvStructType : SpirvAggregateType, IDecoratableInstructionGeneratable
     {
-        /// <summary>
-        /// A real struct is one that is declared as a SPIRV structure.
-        /// Opposite of this are collapsing structures which actually are just a group of global variables (e.g. for input / output)
-        /// This is decided based on the decorations on the fields: any decoration that would require the field being a global variable
-        /// will cause the struct to be handled as collapsing and require such decorations for every field in the struct.
-        /// </summary>
-        public bool IsRealStruct { get; }
+        public ImmutableArray<SpirvMember> Members { get; init; }
 
-        public TranspilerStructType(bool isReal, string name) : base(name, null!)
+        public override string ToString() => $"{{{string.Join(", ", Members.Select(m => m.Type))}}}";
+
+        public override IEnumerable<SpirvType> Dependencies => Members.SelectMany(m => m.Type.Dependencies.Prepend(m.Type));
+
+        public virtual bool Equals(SpirvStructType? other) =>
+            base.Equals(other) &&
+            Members.ValueEquals(other.Members);
+
+        public override int GetHashCode() =>
+            Members.Aggregate(base.GetHashCode(), HashCode.Combine);
+
+        internal override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
-            IsRealStruct = isReal;
+            yield return new OpTypeStruct()
+            {
+                Result = context.CreateIDFor(this),
+                Members = Members
+                    .Select(m => context.IDOf(m.Type))
+                    .ToImmutableArray()
+            };
         }
-
-        public override SpirvType Type => new SpirvStructType()
-        {
-            Members = Members.Select(m => m.Type).ToImmutableArray()
-        };
-        public IList<TranspilerMember> Members { get; } = new List<TranspilerMember>();
-        public StorageClass? DefaultStorageClass { get; init; }
 
         IEnumerable<Instruction> IDecoratableInstructionGeneratable.GenerateDecorations(IInstructionGeneratorContext context) =>
             (this as IDecoratableInstructionGeneratable).BaseGenerateDecorations(context).Concat(
                 Members.SelectMany((member, memberI) =>
                     member.GenerateDecorations(context, context.IDOf(this), memberI)));
 
-        public override IEnumerator<Instruction> GenerateDebugInfo(IInstructionGeneratorContext context)
+        internal override IEnumerator<Instruction> GenerateDebugInfo(IInstructionGeneratorContext context)
         {
             var structID = context.IDOf(this);
             if (Name != null)
@@ -55,16 +59,34 @@ namespace cilspirv.Transpiler
         }
     }
 
-    internal class TranspilerMember : IDecoratable
+    public record SpirvMember : IDecoratable, IMappedFromCILField
     {
+        public int Index { get; }
         public string Name { get; }
         public SpirvType Type { get; }
-        public ISet<DecorationEntry> Decorations { get; } = new HashSet<DecorationEntry>();
-        public TranspilerVariable? GlobalVariable { get; init; } // only relevant for collapsing structures
+        public IReadOnlySet<DecorationEntry> Decorations { get; }
 
-        public TranspilerMember(string name, SpirvType type) => (Name, Type) = (name, type);
+        public SpirvMember(int index, string name, SpirvType type, IReadOnlySet<DecorationEntry>? decorations)
+        {
+            Index = index;
+            Name = name;
+            Type = type;
+            Decorations = decorations ?? new HashSet<DecorationEntry>();
+        }
 
-        public IEnumerable<Instruction> GenerateDecorations(IInstructionGeneratorContext context, ID structID, int memberI)
+        public virtual bool Equals(SpirvMember? other) =>
+            other != null &&
+            EqualityContract == other.EqualityContract &&
+            Index == other.Index &&
+            Name == other.Name &&
+            Type == other.Type &&
+            Decorations.SetEquals(other.Decorations);
+
+        public override int GetHashCode() => Decorations.Aggregate(
+            HashCode.Combine(EqualityContract, Index, Name, Type),
+            HashCode.Combine);
+
+        internal IEnumerable<Instruction> GenerateDecorations(IInstructionGeneratorContext context, ID structID, int memberI)
         {
             foreach (var entry in Decorations)
             {

@@ -95,7 +95,7 @@ namespace cilspirv.Library
             },
         };
 
-        public TranspilerType? TryMapType(TypeReference ilTypeRef) => typeMapper.TryMapType(ilTypeRef);
+        public IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => typeMapper.TryMapType(ilTypeRef);
         public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => methodMapper.TryMapMethod(methodRef);
     }
 }

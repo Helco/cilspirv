@@ -27,11 +27,22 @@ namespace cilspirv.Transpiler
         }
     }
 
-    internal sealed record TranspilerNumericConstant : TranspilerConstant
+    internal record TranspilerNumericConstant : TranspilerConstant
     {
         public ImmutableArray<LiteralNumber> Value { get; }
 
         public TranspilerNumericConstant(ImmutableArray<LiteralNumber> value, SpirvNumericType type) : base(type) => Value = value;
+        public TranspilerNumericConstant(int value) : base(new SpirvIntegerType() { Width = 32, IsSigned = true }) => Value = LiteralNumber.ArrayFor(value);
+        public TranspilerNumericConstant(long value) : base(new SpirvIntegerType() { Width = 64, IsSigned = true }) => Value = LiteralNumber.ArrayFor(value);
+        public TranspilerNumericConstant(float value) : base(new SpirvFloatingType() { Width = 32 }) => Value = LiteralNumber.ArrayFor(value);
+        public TranspilerNumericConstant(double value) : base(new SpirvFloatingType() { Width = 64 }) => Value = LiteralNumber.ArrayFor(value);
+
+        public virtual bool Equals(TranspilerNumericConstant? other) =>
+            base.Equals(other) &&
+            Value.ValueEquals(other.Value);
+
+        public override int GetHashCode() =>
+            Value.Aggregate(base.GetHashCode(), HashCode.Combine);
 
         public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {

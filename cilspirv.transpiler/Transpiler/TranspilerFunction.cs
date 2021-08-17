@@ -10,18 +10,18 @@ namespace cilspirv.Transpiler
     internal class TranspilerFunction : IDecoratableInstructionGeneratable, IDebugInstructionGeneratable
     {
         public string Name { get; }
-        public TranspilerType ReturnType { get; set; }
+        public SpirvType ReturnType { get; set; }
         public IList<TranspilerParameter> Parameters { get; } = new List<TranspilerParameter>();
-        public ISet<DecorationEntry> Decorations { get; } = new HashSet<DecorationEntry>();
+        public IReadOnlySet<DecorationEntry> Decorations { get; set; } = new HashSet<DecorationEntry>();
         public FunctionControl FunctionControl { get; set; }
 
         public SpirvFunctionType SpirvFunctionType => new SpirvFunctionType()
         {
-            ReturnType = ReturnType.Type,
+            ReturnType = ReturnType,
             ParameterTypes = Parameters.Select(p => p.Type).ToImmutableArray()
         };
 
-        public TranspilerFunction(string name, TranspilerType returnType) =>
+        public TranspilerFunction(string name, SpirvType returnType) =>
             (Name, ReturnType) = (name, returnType);
 
         public IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context) =>
@@ -29,7 +29,7 @@ namespace cilspirv.Transpiler
             .Prepend(new OpFunction()
             {
                 Result = context.CreateIDFor(this),
-                ResultType = context.IDOf(ReturnType.Type),
+                ResultType = context.IDOf(ReturnType),
                 FunctionType = context.IDOf(SpirvFunctionType),
                 FunctionControl = FunctionControl
             }).Concat(GenerateBody(context))
@@ -53,7 +53,7 @@ namespace cilspirv.Transpiler
         public IList<TranspilerBlock> Blocks { get; } = new List<TranspilerBlock>();
         public IList<TranspilerVariable> Variables { get; } = new List<TranspilerVariable>();
 
-        public TranspilerDefinedFunction(string name, TranspilerType returnType) : base(name, returnType) { }
+        public TranspilerDefinedFunction(string name, SpirvType returnType) : base(name, returnType) { }
 
         protected override IEnumerable<Instruction> GenerateBody(IInstructionGeneratorContext context)
         {
@@ -78,7 +78,7 @@ namespace cilspirv.Transpiler
         public ExecutionModel ExecutionModel { get; }
         public ISet<TranspilerVariable> Interface { get; } = new HashSet<TranspilerVariable>();
 
-        public TranspilerEntryFunction(string name, TranspilerType returnType, ExecutionModel model) : base(name, returnType)
+        public TranspilerEntryFunction(string name, ExecutionModel model) : base(name, new SpirvVoidType())
             => ExecutionModel = model;
 
         public Instruction GenerateEntryPoint(IInstructionGeneratorContext context) => new OpEntryPoint()

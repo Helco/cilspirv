@@ -16,13 +16,15 @@ namespace cilspirv.Transpiler
         {
             if (spirvType is SpirvStructType)
                 throw new ArgumentException("Struct types cannot be mapped as external type");
+            if (spirvType.UserName == null)
+                spirvType = spirvType with { UserName = ilType.FullName };
             mappedTypes.Add(ilType, spirvType);
             typeByName.Add(ilType.FullName ?? throw new ArgumentNullException("IL type does not have a name"), spirvType);
         }
 
-        public TranspilerType? TryMapType(TypeReference ilTypeRef) =>
+        public IMappedFromCILType? TryMapType(TypeReference ilTypeRef) =>
             typeByName.TryGetValue(ilTypeRef.FullName, out var spirvType)
-            ? new TranspilerType(name: null, spirvType)
+            ? spirvType
             : null;
 
         public IEnumerator<KeyValuePair<Type, SpirvType>> GetEnumerator() => mappedTypes.GetEnumerator();

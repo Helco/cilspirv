@@ -10,7 +10,7 @@ namespace cilspirv.Transpiler
     {
         public string Name { get; }
         public SpirvType Type { get; }
-        public ISet<DecorationEntry> Decorations { get; } = new HashSet<DecorationEntry>();
+        public IReadOnlySet<DecorationEntry> Decorations { get; set; } = new HashSet<DecorationEntry>();
 
         public TranspilerParameter(string name, SpirvType type) => (Name, Type) = (name, type);
 

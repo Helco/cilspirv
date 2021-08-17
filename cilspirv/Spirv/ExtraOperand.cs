@@ -147,13 +147,14 @@ namespace cilspirv.Spirv
 
         public bool Equals(ExtraOperand other) =>
             Kind == other.Kind &&
-            numeric == other.numeric &&
+            numeric.ValueEquals(other.numeric) &&
             textual == other.textual &&
             enumType == other.enumType &&
             rawValue == other.rawValue;
 
-        public override int GetHashCode() =>
-            HashCode.Combine(Kind, numeric, textual, enumType, rawValue);
+        public override int GetHashCode() => HashCode.Combine(
+            Kind, textual, enumType, rawValue,
+            numeric.IsDefaultOrEmpty ? 0 : numeric.Aggregate(0, HashCode.Combine));
 
         public override bool Equals(object? obj) => obj is ExtraOperand operand && Equals(operand);
         public static bool operator ==(ExtraOperand left, ExtraOperand right) => left.Equals(right);
