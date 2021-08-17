@@ -132,9 +132,11 @@ namespace cilspirv.Transpiler
                 var variable = new TranspilerVariable(fieldRef.FullName, new SpirvPointerType()
                 {
                     Type = realType,
-                    StorageClass = storageClass,
+                    StorageClass = storageClass
+                })
+                {
                     Decorations = decorations.ToHashSet()
-                });
+                };
 
                 module.GlobalVariables.Add(variable);
                 return variable;

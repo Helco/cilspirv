@@ -97,12 +97,14 @@ namespace cilspirv.Transpiler
                     {
                         Type = fieldSpirvType,
                         StorageClass = (fieldStorageClasses[field] ?? structStorageClass)!.Value,
+                    })
+                    {
                         Decorations = fieldDecorations[field]
                             .Concat(structureDecorations)
                             .GroupBy(d => d.Kind)
                             .Select(g => g.First())
                             .ToImmutableHashSet()
-                    });
+                    };
                     varGroup.Variables.Add(variable);
                     module.GlobalVariables.Add(variable);
                 }
