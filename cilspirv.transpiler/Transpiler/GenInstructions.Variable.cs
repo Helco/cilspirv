@@ -73,7 +73,7 @@ namespace cilspirv.Transpiler
                 var pseudo when pseudo.Tag is ThisModule => Library.MapField(fieldRef) switch
                 {
                     TranspilerVariable variable => GetGlobalVariablePtr(variable),
-                    TranspilerVarGroup varGroup => GetVariableFromGroupPtr(varGroup, fieldRef),
+                    TranspilerVarGroup varGroup => new StackEntry(varGroup),
                     _ => throw new NotSupportedException("Unsupported global field type")
                 },
                 var pseudo when pseudo.Tag is TranspilerVarGroup varGroup => GetVariableFromGroupPtr(varGroup, fieldRef),

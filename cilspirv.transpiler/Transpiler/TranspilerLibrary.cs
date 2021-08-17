@@ -97,28 +97,26 @@ namespace cilspirv.Transpiler
 
         public IMappedFromCILField MapField(FieldReference fieldRef)
         {
-            if (mappedFields.TryGetValue(fieldRef.FullName, out var prevMapped))
-                return prevMapped;
+            if (mappedFields.TryGetValue(fieldRef.FullName, out var mapped))
+                return mapped;
 
-            switch(MapType(fieldRef.FieldType))
+            mapped = MapType(fieldRef.FieldType) switch
             {
-                case TranspilerVarGroup varGroup:
-                    var variable = varGroup.Variables.First(v => v.Name == fieldRef.FullName);
-                    mappedFields.Add(fieldRef.FullName, variable);
-                    return variable;
+                TranspilerVarGroup varGroup => varGroup,
+                SpirvType realType when (fieldRef.DeclaringType.FullName == ilModuleType.FullName) => MapGlobalVariable(realType),
 
-                case SpirvType realType when (fieldRef.DeclaringType.FullName == ilModuleType.FullName):
-                    return MapGlobalVariable(realType);
+                SpirvType realType => MapType(fieldRef.DeclaringType) switch
+                {
+                    SpirvStructType declaringStructType => declaringStructType.Members.First(m => m.Name == fieldRef.Name),
+                    TranspilerVarGroup varGroup => varGroup.Variables.First(v => v.Name == fieldRef.FullName),
 
-                case SpirvType realType:
-                    var declaringType = MapType(fieldRef.DeclaringType);
-                    if (declaringType is not SpirvStructType declaringStructType)
-                        throw new InvalidOperationException("Unexpected parent type for real field");
+                    _ => throw new NotSupportedException("Unsupported field container type")
+                },
 
-                    return declaringStructType.Members.First(m => m.Name == fieldRef.Name);
-
-                default: throw new NotSupportedException("Unsupported but mapped field type");
-            }
+                _ => throw new NotSupportedException("Unsupported field type")
+            };
+            mappedFields[fieldRef.FullName] = mapped;
+            return mapped;
 
             TranspilerVariable MapGlobalVariable(SpirvType realType)
             {
