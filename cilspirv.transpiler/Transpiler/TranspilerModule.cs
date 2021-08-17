@@ -95,6 +95,10 @@ namespace cilspirv.Transpiler
                 .SelectMany(c => c.GenerateInstructions(context))
                 .ToArray();
 
+            var types = GetOrderedTypeList(context)
+                .SelectMany(t => t.GenerateInstructions(context))
+                .ToArray();
+
             var instructionSets = new List<IEnumerable<Instruction>>();
 
             if (context.Options.DebugInfo)
@@ -110,10 +114,7 @@ namespace cilspirv.Transpiler
                 .SelectMany(d => d.GenerateDecorations(context))
                 .ToArray());
 
-            var rootTypes = context.OfType<SpirvType>().ToArray();
-            instructionSets.Add(GetOrderedTypeList(context)
-                .SelectMany(t => t.GenerateInstructions(context))
-                .ToArray());
+            instructionSets.Add(types);
 
             instructionSets.Add(constants);
 

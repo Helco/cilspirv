@@ -35,11 +35,12 @@ namespace cilspirv.Transpiler
         IEnumerator<Instruction> IDebugInstructionGeneratable.GenerateDebugInfo(IInstructionGeneratorContext context) => GenerateDebugInfo(context);
         internal virtual IEnumerator<Instruction> GenerateDebugInfo(IInstructionGeneratorContext context)
         {
-            if (Name != null)
+            var relevantName = context.Options.DefaultTypeUserNames ? Name : UserName;
+            if (relevantName != null)
                 yield return new OpName()
                 {
                     Target = context.IDOf(this),
-                    Name = Name
+                    Name = relevantName
                 };
         }
     }
