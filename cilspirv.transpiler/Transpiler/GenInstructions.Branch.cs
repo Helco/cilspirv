@@ -15,6 +15,28 @@ namespace cilspirv.Transpiler
     {
         partial class GenInstructions
         {
+            private class MethodCallContext : ITranspilerMethodContext
+            {
+                private readonly GenInstructions gen;
+                private ID? resultID;
+
+                public TranspilerLibrary Library => gen.Library;
+                public TranspilerModule Module => gen.Module;
+                public TranspilerOptions Options => gen.Options;
+                public ID CreateID() => gen.context.CreateID();
+                public ID CreateIDFor(IInstructionGeneratable generatable) => gen.context.CreateIDFor(generatable);
+                public ID IDOf(IInstructionGeneratable generatable) => gen.context.IDOf(generatable);
+                public IEnumerable<T> OfType<T>() where T : IInstructionGeneratable => gen.context.OfType<T>();
+
+                public (ID, SpirvType)? This { get; init; }
+                public IReadOnlyList<(ID, SpirvType)> Parameters { get; init; } = Array.Empty<(ID, SpirvType)>();
+
+                public ID? ResultID => resultID;
+                ID ITranspilerMethodContext.ResultID => resultID ?? (resultID = CreateID()).Value;
+
+                public MethodCallContext(GenInstructions gen) => this.gen = gen;
+            }
+
             private void Call(MethodReference methodRef, bool isCtor)
             {
                 // TODO: Coercing
@@ -25,20 +47,26 @@ namespace cilspirv.Transpiler
                 if (Stack.Count < stackCount)
                     throw new InvalidOperationException($"Stack does not have all parameters");
                 var thiz = Stack[Stack.Count - stackCount] as ValueStackEntry; // calling a method on a VarGroup still has a null this pointer
-                var parameters = Stack
-                    .TakeLast(paramCount)
-                    .Select((e, i) => e as ValueStackEntry ?? throw new InvalidOperationException($"Parameter {i} is not a value entry"))
-                    .Select(e => (e.ID, e.Type))
-                    .ToArray();
-                Block.Instructions.AddRange(callMethod(this, parameters, out var resultId));
+                var context = new MethodCallContext(this)
+                {
+                    This = stackCount > paramCount && Stack[Stack.Count - stackCount] is ValueStackEntry thisValue
+                        ? (thisValue.ID, thisValue.Type)
+                        : null,
+                    Parameters = Stack
+                        .TakeLast(paramCount)
+                        .Select((e, i) => e as ValueStackEntry ?? throw new InvalidOperationException($"Parameter {i} is not a value entry"))
+                        .Select(e => (e.ID, e.Type))
+                        .ToArray()
+                };
+                Block.Instructions.AddRange(callMethod(context));
 
                 Stack.RemoveRange(Stack.Count - stackCount, stackCount);
-                if (resultId != null)
+                if (context.ResultID != null)
                 {
                     var returnType = (SpirvType)Library.MapType(isCtor
                         ? methodRef.DeclaringType
                         : methodRef.ReturnType);
-                    Stack.Add(new ValueStackEntry(methodRef, resultId.Value, returnType));
+                    Stack.Add(new ValueStackEntry(methodRef, context.ResultID.Value, returnType));
                 }
             }
 

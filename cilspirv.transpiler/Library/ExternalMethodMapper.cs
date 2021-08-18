@@ -5,11 +5,12 @@ using System.Collections.Immutable;
 using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
+using cilspirv.Transpiler;
 using Mono.Cecil;
 
-namespace cilspirv.Transpiler
+namespace cilspirv.Library
 {
-    internal class TranspilerExternalMethodMapper : ITranspilerLibraryMapper, IEnumerable<KeyValuePair<string, GenerateCallDelegate>>
+    internal partial class ExternalMethodMapper : ITranspilerLibraryMapper, IEnumerable<KeyValuePair<string, GenerateCallDelegate>>
     {
         private readonly Dictionary<string, GenerateCallDelegate> methods = new Dictionary<string, GenerateCallDelegate>();
 
@@ -63,35 +64,50 @@ namespace cilspirv.Transpiler
             Division,
             BitwiseAnd,
             BitwiseOr,
-            ExclusiveOr
+            ExclusiveOr,
+            OnesComplement,
+            Equality,
+            Inequality,
+            LessThan,
+            GreaterThan,
+            LessThanOrEqual,
+            GreaterThanOrEqual,
+            LeftShift,
+            RightShift,
+            Modulus,
+            Implicit,
+            Explicit,
+            True,
+            False
         }
+        public static string FullNameOfOp<T>(OperatorKind op, params Type[] parameters) =>
+            FullNameOf<T>($"op_{op}", parameters);
 
-        public static GenerateCallDelegate CallOpCompositeConstruct(SpirvType resultType) => (ITranspilerMethodContext context, IReadOnlyList<(ID id, SpirvType)> parameters, out ID? resultId) => new[]
+        public static GenerateCallDelegate CallOpCompositeConstruct(SpirvType resultType) => context => new[]
         {
             new OpCompositeConstruct()
             {
-                Result = (resultId = context.CreateID()).Value,
+                Result = context.ResultID,
                 ResultType = context.IDOf(resultType),
-                Constituents = parameters.Select(p => p.id).ToImmutableArray()
+                Constituents = context.Parameters.Select(p => p.id).ToImmutableArray()
             }
         };
 
-        public static GenerateCallDelegate CallSingleValueComposite(SpirvVectorType resultType) => (ITranspilerMethodContext context, IReadOnlyList<(ID id, SpirvType)> parameters, out ID? resultId) => new[]
+        public static GenerateCallDelegate CallSingleValueComposite(SpirvVectorType resultType) => context => new[]
         {
             new OpCompositeConstruct()
             {
-                Result = (resultId = context.CreateID()).Value,
+                Result = context.ResultID,
                 ResultType = context.IDOf(resultType),
-                Constituents = Enumerable.Repeat(parameters.Single().id, resultType.ComponentCount).ToImmutableArray()
+                Constituents = Enumerable.Repeat(context.Parameters.Single().id, resultType.ComponentCount).ToImmutableArray()
             }
         };
 
-        public static GenerateCallDelegate CallReconstructComposite(SpirvVectorType resultType) => (ITranspilerMethodContext context, IReadOnlyList<(ID id, SpirvType)> parameters, out ID? resultIdRef) =>
+        public static GenerateCallDelegate CallReconstructComposite(SpirvVectorType resultType) => context =>
         {
-            int additionalComponents = parameters.Count - 1;
+            int additionalComponents = context.Parameters.Count - 1;
             int originalComponents = resultType.ComponentCount - additionalComponents;
             ID componentID = context.IDOf(resultType.ComponentType ?? throw new ArgumentNullException("Component type is not set"));
-            var resultId = (resultIdRef = context.CreateID()).Value;
             return Generate();
 
             IEnumerable<Instruction> Generate()
@@ -102,16 +118,16 @@ namespace cilspirv.Transpiler
                     {
                         Result = originalIDs[i] = context.CreateID(),
                         ResultType = componentID,
-                        Composite = parameters.First().id,
+                        Composite = context.Parameters.First().id,
                         Indexes = ImmutableArray.Create<LiteralNumber>(i)
                     };
 
                 yield return new OpCompositeConstruct()
                 {
-                    Result = resultId,
+                    Result = context.ResultID,
                     ResultType = context.IDOf(resultType),
                     Constituents = originalIDs
-                        .Concat(parameters.Skip(1).Select(p => p.id))
+                        .Concat(context.Parameters.Skip(1).Select(p => p.id))
                         .ToImmutableArray()
                 };
             }

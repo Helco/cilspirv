@@ -7,7 +7,7 @@ namespace cilspirv.Library
 {
     internal class BuiltinTypeMapper : ITranspilerLibraryMapper
     {
-        private readonly ITranspilerLibraryMapper typeMapper = new TranspilerExternalTypeMapper()
+        private readonly ITranspilerLibraryMapper typeMapper = new ExternalTypeMapper()
         {
             { typeof(sbyte), new SpirvIntegerType() { Width = 8, IsSigned = true } },
             { typeof(byte), new SpirvIntegerType() { Width = 8, IsSigned = false } },

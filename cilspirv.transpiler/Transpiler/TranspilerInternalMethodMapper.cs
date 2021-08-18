@@ -32,14 +32,14 @@ namespace cilspirv.Transpiler
             return mapped;
         }
 
-        private GenerateCallDelegate GenerateCallFor(TranspilerFunction function) => (ITranspilerMethodContext context, IReadOnlyList<(ID id, SpirvType type)> parameters, out ID? resultId) => new[]
+        private GenerateCallDelegate GenerateCallFor(TranspilerFunction function) => context => new[]
         {
             new OpFunctionCall()
             {
-                Result = (resultId = context.CreateID()).Value,
+                Result = context.ResultID,
                 ResultType = context.IDOf(function.ReturnType),
                 Function = context.IDOf(function),
-                Arguments = parameters.Select(p => p.id).ToImmutableArray()
+                Arguments = context.Parameters.Select(p => p.id).ToImmutableArray()
             }
         };
     }

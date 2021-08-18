@@ -7,7 +7,7 @@ using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
 using Mono.Cecil;
 
-using static cilspirv.Transpiler.TranspilerExternalMethodMapper;
+using static cilspirv.Library.ExternalMethodMapper;
 
 namespace cilspirv.Library
 {
@@ -48,7 +48,7 @@ namespace cilspirv.Library
             ColumnCount = 4
         };
 
-        private readonly ITranspilerLibraryMapper typeMapper = new TranspilerExternalTypeMapper()
+        private readonly ITranspilerLibraryMapper typeMapper = new ExternalTypeMapper()
         {
             { typeof(Vector2), SpirvVector2 },
             { typeof(Vector3), SpirvVector3 },
@@ -58,7 +58,7 @@ namespace cilspirv.Library
             { typeof(Matrix4x4), SpirvMatrix4x4},
         };
 
-        private readonly ITranspilerLibraryMapper methodMapper = new TranspilerExternalMethodMapper()
+        private readonly ExternalMethodMapper methodMapper = new ExternalMethodMapper()
         {
             {
                 FullNameOfCtor<Vector2>(typeof(float)),
@@ -98,18 +98,25 @@ namespace cilspirv.Library
             },
             {
                 FullNameOf<Vector4>(nameof(Vector4.Transform), typeof(Vector4), typeof(Matrix4x4)),
-                (ITranspilerMethodContext context, IReadOnlyList<(ID, SpirvType)> parameters, out ID? resultId) => new[]
+                context => new[]
                 {
                     new OpMatrixTimesVector()
                     {
-                        Result = (resultId = context.CreateID()).Value,
+                        Result = context.ResultID,
                         ResultType = context.IDOf(SpirvVector4),
-                        Vector = parameters[0].Item1,
-                        Matrix = parameters[1].Item1
+                        Vector = context.Parameters[0].Item1,
+                        Matrix = context.Parameters[1].Item1
                     }
                 }
             }
         };
+
+        public SystemNumericsMapper()
+        {
+            methodMapper.AddAllOperators<Vector2>(SpirvVector2);
+            methodMapper.AddAllOperators<Vector3>(SpirvVector3);
+            methodMapper.AddAllOperators<Vector4>(SpirvVector4);
+        }
 
         public IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => typeMapper.TryMapType(ilTypeRef);
         public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => methodMapper.TryMapMethod(methodRef);

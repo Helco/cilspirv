@@ -3,11 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using cilspirv.Spirv;
+using cilspirv.Transpiler;
 using Mono.Cecil;
 
-namespace cilspirv.Transpiler
+namespace cilspirv.Library
 {
-    internal class TranspilerExternalTypeMapper : ITranspilerLibraryMapper, IEnumerable<KeyValuePair<Type, SpirvType>>
+    internal class ExternalTypeMapper : ITranspilerLibraryMapper, IEnumerable<KeyValuePair<Type, SpirvType>>
     {
         private readonly Dictionary<Type, SpirvType> mappedTypes = new Dictionary<Type, SpirvType>();
         private readonly Dictionary<string, SpirvType> typeByName = new Dictionary<string, SpirvType>();

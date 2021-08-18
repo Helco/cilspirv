@@ -22,7 +22,7 @@ namespace cilspirv.Transpiler
                 stack = initialStack ?? new List<StackEntry>();
         }
 
-        private partial class GenInstructions : ITranspilerMethodContext
+        private partial class GenInstructions
         {
             private readonly IInstructionGeneratorContext context;
             private readonly ID thisID;
@@ -246,11 +246,6 @@ namespace cilspirv.Transpiler
             private void LeaveBlock() => _currentBlockInfo = null;
 
             private void Add(SpirvInstruction instr) => Block.Instructions.Add(instr);
-
-            ID IInstructionGeneratorContext.CreateID() => context.CreateID();
-            ID IInstructionGeneratorContext.CreateIDFor(IInstructionGeneratable generatable) => context.CreateIDFor(generatable);
-            ID IInstructionGeneratorContext.IDOf(IInstructionGeneratable generatable) => context.IDOf(generatable);
-            IEnumerable<T> IInstructionGeneratorContext.OfType<T>() => context.OfType<T>();
         }
     }
 }

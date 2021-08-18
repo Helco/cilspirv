@@ -15,6 +15,9 @@ namespace cilspirv.Transpiler
     {
         TranspilerLibrary Library { get; }
         TranspilerModule Module { get; }
+        (ID id, SpirvType type)? This { get; }
+        IReadOnlyList<(ID id, SpirvType type)> Parameters { get; }
+        ID ResultID { get; }
     }
 
     internal interface ITranspilerLibraryMapper
@@ -29,7 +32,7 @@ namespace cilspirv.Transpiler
         IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider fieldDef);
     }
 
-    internal delegate IEnumerable<SpirvInstruction> GenerateCallDelegate(ITranspilerMethodContext context, IReadOnlyList<(ID id, SpirvType type)> parameters, out ID? resultId);
+    internal delegate IEnumerable<SpirvInstruction> GenerateCallDelegate(ITranspilerMethodContext context);
 
     internal interface IMappedFromCILType { }
     internal interface IMappedFromCILField { }
