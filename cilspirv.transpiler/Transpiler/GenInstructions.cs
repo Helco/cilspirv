@@ -19,7 +19,7 @@ namespace cilspirv.Transpiler
             public readonly List<StackEntry> stack;
 
             public BlockInfo(List<StackEntry>? initialStack = null) =>
-                this.stack = initialStack ?? new List<StackEntry>();
+                stack = initialStack ?? new List<StackEntry>();
         }
 
         private partial class GenInstructions : ITranspilerMethodContext
@@ -85,7 +85,10 @@ namespace cilspirv.Transpiler
                     {
                         case (Code.Nop): Add(new OpNop()); break;
                         case (Code.Pop): Pop(); break;
+                        case (Code.Dup): Dup(); break;
                         case (Code.Ret): Return(); break;
+                        case (Code.Newobj): Call((MethodReference)ilInstr.Operand, isCtor: true); break;
+                        case (Code.Call): Call((MethodReference)ilInstr.Operand, isCtor: false); break;
 
                         case (Code.Ldarga): // yes, currently no difference ldarga and larg
                         case (Code.Ldarg):
@@ -138,13 +141,98 @@ namespace cilspirv.Transpiler
                         case (Code.Ldobj): LoadObject(); break;
                         case (Code.Stobj): StoreObject(); break;
 
-                        case (Code.Newobj): Call((MethodReference)ilInstr.Operand, isCtor: true); break;
-                        case (Code.Call): Call((MethodReference)ilInstr.Operand, isCtor: false); break;
+                        case (Code.Conv_I):
+                        case (Code.Conv_Ovf_I):
+                        case (Code.Conv_Ovf_I_Un): ConvertToSigned(Options.NativeIntWidth); break;
+                        case (Code.Conv_I1):
+                        case (Code.Conv_Ovf_I1):
+                        case (Code.Conv_Ovf_I1_Un): ConvertToSigned(8); break;
+                        case (Code.Conv_I2):
+                        case (Code.Conv_Ovf_I2):
+                        case (Code.Conv_Ovf_I2_Un): ConvertToSigned(16); break;
+                        case (Code.Conv_I4):
+                        case (Code.Conv_Ovf_I4):
+                        case (Code.Conv_Ovf_I4_Un): ConvertToSigned(32); break;
+                        case (Code.Conv_I8):
+                        case (Code.Conv_Ovf_I8):
+                        case (Code.Conv_Ovf_I8_Un): ConvertToSigned(64); break;
+                        case (Code.Conv_U):
+                        case (Code.Conv_Ovf_U):
+                        case (Code.Conv_Ovf_U_Un): ConvertToUnsigned(Options.NativeIntWidth); break;
+                        case (Code.Conv_U1):
+                        case (Code.Conv_Ovf_U1):
+                        case (Code.Conv_Ovf_U1_Un): ConvertToUnsigned(8); break;
+                        case (Code.Conv_U2):
+                        case (Code.Conv_Ovf_U2):
+                        case (Code.Conv_Ovf_U2_Un): ConvertToUnsigned(16); break;
+                        case (Code.Conv_U4):
+                        case (Code.Conv_Ovf_U4):
+                        case (Code.Conv_Ovf_U4_Un): ConvertToUnsigned(32); break;
+                        case (Code.Conv_U8):
+                        case (Code.Conv_Ovf_U8):
+                        case (Code.Conv_Ovf_U8_Un): ConvertToUnsigned(64); break;
+                        case (Code.Conv_R_Un): ConvertToFloating(64); break;
+                        case (Code.Conv_R4): ConvertToFloating(32); break;
+                        case (Code.Conv_R8): ConvertToFloating(64); break;
+
+                        case (Code.Add):
+                        case (Code.Add_Ovf):
+                        case (Code.Add_Ovf_Un): Addition(); break;
+                        case (Code.Sub):
+                        case (Code.Sub_Ovf):
+                        case (Code.Sub_Ovf_Un): Subtraction(); break;
+                        case (Code.Mul):
+                        case (Code.Mul_Ovf):
+                        case (Code.Mul_Ovf_Un): Multiplication(); break;
+                        case (Code.Div):
+                        case (Code.Div_Un): Division(); break;
+                        case (Code.Rem):
+                        case (Code.Rem_Un): Remainder(); break;
+                        case (Code.Neg): Negate(); break;
+
+                        case (Code.And): BitwiseAnd(); break;
+                        case (Code.Or): BitwiseOr(); break;
+                        case (Code.Xor): BitwiseXor(); break;
+                        case (Code.Not): BitwiseNot(); break;
+                        case (Code.Shl): ShiftLeftLogical(); break;
+                        case (Code.Shr): ShiftRightArithmetic(); break;
+                        case (Code.Shr_Un): ShiftRightLogical(); break;
+
+                        case (Code.Ceq): PushCompareEqual(); break;
+                        case (Code.Cgt): PushCompareGreater(); break;
+                        case (Code.Cgt_Un): PushCompareGreaterUnordered(); break;
+                        case (Code.Clt): PushCompareLess(); break;
+                        case (Code.Clt_Un): PushCompareLessUnordered(); break;
 
                         case (Code.Leave):
                         case (Code.Leave_S):
                         case (Code.Br):
                         case (Code.Br_S): Branch((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Beq):
+                        case (Code.Beq_S): BranchEqual((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Bne_Un):
+                        case (Code.Bne_Un_S): BranchNotEqual((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Bgt):
+                        case (Code.Bgt_S): BranchGreater((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Bgt_Un):
+                        case (Code.Bgt_Un_S): BranchGreaterUnordered((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Bge):
+                        case (Code.Bge_S): BranchGreaterOrEqual((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Bge_Un):
+                        case (Code.Bge_Un_S): BranchGreaterOrEqualUnordered((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Blt):
+                        case (Code.Blt_S): BranchLess((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Blt_Un):
+                        case (Code.Blt_Un_S): BranchLessUnordered((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Ble):
+                        case (Code.Ble_S): BranchLessOrEqual((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Ble_Un):
+                        case (Code.Ble_Un_S): BranchLessOrEqualUnordered((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Brfalse):
+                        case (Code.Brfalse_S): BranchFalsy((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Brtrue):
+                        case (Code.Brtrue_S): BranchTruthy((ILInstruction)ilInstr.Operand); break;
+
 
                         default: throw new NotSupportedException($"Unsupported opcode {ilInstr.OpCode}");
                     }

@@ -69,6 +69,35 @@ namespace cilspirv.Transpiler
                 });
                 LeaveBlock();
             }
+
+            private void ConditionalBranch(ID conditionID, ILInstruction me)
+            {
+                var trueInstr = (ILInstruction)me.Operand;
+                if (!blocks.TryGetValue(trueInstr.Offset, out var trueBlock))
+                    blocks[trueInstr.Offset] = trueBlock = new BlockInfo(Stack.ToList());
+                if (!blocks.TryGetValue(me.Next.Offset, out var falseBlock))
+                    blocks[me.Next.Offset] = falseBlock = new BlockInfo(Stack.ToList());
+
+                Add(new OpBranchConditional()
+                {
+                    Condition = conditionID,
+                    TrueLabel = context.IDOf(trueBlock.block),
+                    FalseLabel = context.IDOf(falseBlock.block)
+                });
+            }
+
+            private void BranchEqual(ILInstruction me) => ConditionalBranch(CompareEqual(), me);
+            private void BranchNotEqual(ILInstruction me) => ConditionalBranch(CompareNotEqual(), me);
+            private void BranchGreater(ILInstruction me) => ConditionalBranch(CompareGreater(), me);
+            private void BranchGreaterUnordered(ILInstruction me) => ConditionalBranch(CompareGreaterUnordered(), me);
+            private void BranchGreaterOrEqual(ILInstruction me) => ConditionalBranch(CompareGreaterOrEqual(), me);
+            private void BranchGreaterOrEqualUnordered(ILInstruction me) => ConditionalBranch(CompareGreaterOrEqualUnordered(), me);
+            private void BranchLess(ILInstruction me) => ConditionalBranch(CompareLess(), me);
+            private void BranchLessUnordered(ILInstruction me) => ConditionalBranch(CompareLessUnordered(), me);
+            private void BranchLessOrEqual(ILInstruction me) => ConditionalBranch(CompareLessOrEqual(), me);
+            private void BranchLessOrEqualUnordered(ILInstruction me) => ConditionalBranch(CompareLessOrEqualUnordered(), me);
+            private void BranchFalsy(ILInstruction me) => ConditionalBranch(CompareFalsy(), me);
+            private void BranchTruthy(ILInstruction me) => ConditionalBranch(CompareTruthy(), me);
         }
     }
 }

@@ -49,6 +49,10 @@ namespace cilspirv.Transpiler
             private void PushR4(float value) => PushConstant(LiteralNumber.ArrayFor(value), new SpirvFloatingType() { Width = 32 });
             private void PushR8(double value) => PushConstant(LiteralNumber.ArrayFor(value), new SpirvFloatingType() { Width = 64 });
 
+            private ValueStackEntry PopValue() =>
+                Pop() as ValueStackEntry
+                ?? throw new InvalidOperationException("Top of stack is not a value");
+
             private StackEntry Pop()
             {
                 var result = Peek();
@@ -59,6 +63,13 @@ namespace cilspirv.Transpiler
             private StackEntry Peek() => Stack.Any()
                 ? Stack.Last()
                 : throw new InvalidOperationException("Stack is empty, cannot pop");
+
+            private StackEntry Dup()
+            {
+                var result = Peek();
+                Stack.Add(result);
+                return result;
+            }
         }
     }
 }
