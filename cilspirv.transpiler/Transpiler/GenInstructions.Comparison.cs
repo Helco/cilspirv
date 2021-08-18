@@ -32,8 +32,8 @@ namespace cilspirv.Transpiler
 
             private ID CompareEqual()
             {
-                var a = PopNumeric();
                 var b = PopNumeric();
+                var a = PopNumeric();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(type is SpirvIntegerType intType
@@ -56,8 +56,8 @@ namespace cilspirv.Transpiler
 
             private ID CompareNotEqual()
             {
-                var a = PopNumeric();
                 var b = PopNumeric();
+                var a = PopNumeric();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(type is SpirvIntegerType intType
@@ -80,8 +80,8 @@ namespace cilspirv.Transpiler
 
             private ID CompareGreater()
             {
-                var a = PopNumeric();
                 var b = PopNumeric();
+                var a = PopNumeric();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(type is SpirvIntegerType intType
@@ -111,8 +111,8 @@ namespace cilspirv.Transpiler
 
             private ID CompareGreaterUnordered()
             {
-                var a = PopNumeric();
                 var b = PopNumeric();
+                var a = PopNumeric();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(type is SpirvIntegerType intType
@@ -135,8 +135,8 @@ namespace cilspirv.Transpiler
 
             private ID CompareGreaterOrEqual()
             {
-                var a = PopNumeric();
                 var b = PopNumeric();
+                var a = PopNumeric();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(type is SpirvIntegerType intType
@@ -166,8 +166,8 @@ namespace cilspirv.Transpiler
 
             private ID CompareGreaterOrEqualUnordered()
             {
-                var a = PopNumeric();
                 var b = PopNumeric();
+                var a = PopNumeric();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(type is SpirvIntegerType intType
@@ -190,8 +190,8 @@ namespace cilspirv.Transpiler
 
             private ID CompareLess()
             {
-                var a = PopNumeric();
                 var b = PopNumeric();
+                var a = PopNumeric();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(type is SpirvIntegerType intType
@@ -221,8 +221,8 @@ namespace cilspirv.Transpiler
 
             private ID CompareLessUnordered()
             {
-                var a = PopNumeric();
                 var b = PopNumeric();
+                var a = PopNumeric();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(type is SpirvIntegerType intType
@@ -245,8 +245,8 @@ namespace cilspirv.Transpiler
 
             private ID CompareLessOrEqual()
             {
-                var a = PopNumeric();
                 var b = PopNumeric();
+                var a = PopNumeric();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(type is SpirvIntegerType intType
@@ -276,8 +276,8 @@ namespace cilspirv.Transpiler
 
             private ID CompareLessOrEqualUnordered()
             {
-                var a = PopNumeric();
                 var b = PopNumeric();
+                var a = PopNumeric();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(type is SpirvIntegerType intType

@@ -25,8 +25,8 @@ namespace cilspirv.Transpiler
 
             private void BitwiseAnd()
             {
-                var a = PopInteger();
                 var b = PopInteger();
+                var a = PopInteger();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(new OpBitwiseAnd()
@@ -41,8 +41,8 @@ namespace cilspirv.Transpiler
 
             private void BitwiseOr()
             {
-                var a = PopInteger();
                 var b = PopInteger();
+                var a = PopInteger();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(new OpBitwiseOr()
@@ -57,8 +57,8 @@ namespace cilspirv.Transpiler
 
             private void BitwiseXor()
             {
-                var a = PopInteger();
                 var b = PopInteger();
+                var a = PopInteger();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(new OpBitwiseAnd()
@@ -73,8 +73,8 @@ namespace cilspirv.Transpiler
 
             private void ShiftLeftLogical()
             {
-                var a = PopInteger();
                 var b = PopInteger();
+                var a = PopInteger();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(new OpShiftLeftLogical()
@@ -89,8 +89,8 @@ namespace cilspirv.Transpiler
 
             private void ShiftRightLogical()
             {
-                var a = PopInteger();
                 var b = PopInteger();
+                var a = PopInteger();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(new OpShiftLeftLogical()
@@ -105,8 +105,8 @@ namespace cilspirv.Transpiler
 
             private void ShiftRightArithmetic()
             {
-                var a = PopInteger();
                 var b = PopInteger();
+                var a = PopInteger();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(new OpShiftLeftLogical()

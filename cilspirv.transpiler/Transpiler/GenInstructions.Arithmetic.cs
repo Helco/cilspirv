@@ -146,8 +146,8 @@ namespace cilspirv.Transpiler
 
             private void Addition()
             {
-                var a = PopNumeric();
                 var b = PopNumeric();
+                var a = PopNumeric();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(type is SpirvIntegerType
@@ -170,8 +170,8 @@ namespace cilspirv.Transpiler
 
             private void Subtraction()
             {
-                var a = PopNumeric();
                 var b = PopNumeric();
+                var a = PopNumeric();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(type is SpirvIntegerType
@@ -194,8 +194,8 @@ namespace cilspirv.Transpiler
 
             private void Multiplication()
             {
-                var a = PopNumeric();
                 var b = PopNumeric();
+                var a = PopNumeric();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(type is SpirvIntegerType
@@ -218,8 +218,8 @@ namespace cilspirv.Transpiler
 
             private void Division()
             {
-                var a = PopNumeric();
                 var b = PopNumeric();
+                var a = PopNumeric();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(type is SpirvIntegerType intType
@@ -250,8 +250,8 @@ namespace cilspirv.Transpiler
             private void Remainder()
             {
                 // TODO: Test signed and floating behavior
-                var a = PopNumeric();
                 var b = PopNumeric();
+                var a = PopNumeric();
                 var type = GetCoercedNumeric((SpirvNumericType)a.Type, (SpirvNumericType)b.Type);
                 var resultId = context.CreateID();
                 Add(type is SpirvIntegerType intType
