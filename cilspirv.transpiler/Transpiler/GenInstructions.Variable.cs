@@ -16,19 +16,20 @@ namespace cilspirv.Transpiler
     {
         partial class GenInstructions
         {
-            private void PushArgument(int argI)
+            private void LoadArgument(int argI)
             {
-                if (ILBody.Method.HasThis)
+                if (argI < 0)
                 {
-                    if (argI == 0)
-                    {
-                        Stack.Add(new StackEntry(new ThisModule()));
-                        return;
-                    }
-                    argI--;
+                    Stack.Add(new StackEntry(new ThisModule()));
+                    return;
                 }
-                var parameter = Function.Parameters[argI];
-                Stack.Add(new ValueStackEntry(parameter, context.IDOf(parameter), Function.Parameters[argI].Type));
+                Stack.Add(Library.MapParameter(ILBody.Method.Parameters[argI], Function) switch
+                {
+                    TranspilerVarGroup varGroup => new StackEntry(varGroup),
+                    TranspilerVariable variable => GetGlobalVariablePtr(variable),
+                    TranspilerParameter parameter => new ValueStackEntry(parameter, context.IDOf(parameter), parameter.Type),
+                    _ => throw new NotSupportedException("Unsupported parameter type")
+                });
             }
 
             private void LoadLocal(int variableI)

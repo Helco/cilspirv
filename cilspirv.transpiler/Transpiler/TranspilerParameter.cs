@@ -6,13 +6,14 @@ using cilspirv.Spirv.Ops;
 
 namespace cilspirv.Transpiler
 {
-    internal class TranspilerParameter : IDecoratableInstructionGeneratable, IDebugInstructionGeneratable
+    internal class TranspilerParameter : IDecoratableInstructionGeneratable, IDebugInstructionGeneratable, IMappedFromCILParam
     {
+        public int SpirvIndex { get; } // this can be different from the CLI arg index
         public string Name { get; }
         public SpirvType Type { get; }
         public IReadOnlySet<DecorationEntry> Decorations { get; set; } = new HashSet<DecorationEntry>();
 
-        public TranspilerParameter(string name, SpirvType type) => (Name, Type) = (name, type);
+        public TranspilerParameter(int index, string name, SpirvType type) => (SpirvIndex, Name, Type) = (index, name, type);
 
         public IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {

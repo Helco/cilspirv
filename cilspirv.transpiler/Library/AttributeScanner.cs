@@ -19,7 +19,7 @@ namespace cilspirv.Library
         }
 
         public IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider element) => element
-            .GetCustomAttributes<DecorationAttributeBase>(exactType: false)
-            .SelectMany(attr => attr.Instantiate<DecorationAttributeBase>().Decorations);
+            .GetCustomAttributes<DecorationAttribute>(exactType: false)
+            .SelectMany(attr => attr.Instantiate<DecorationAttribute>().Decorations);
     }
 }

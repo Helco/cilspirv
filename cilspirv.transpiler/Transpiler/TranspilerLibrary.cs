@@ -29,6 +29,7 @@ namespace cilspirv.Transpiler
 
     internal interface IMappedFromCILType { }
     internal interface IMappedFromCILField { }
+    internal interface IMappedFromCILParam { }
 
     internal class TranspilerLibrary 
     {
@@ -37,6 +38,7 @@ namespace cilspirv.Transpiler
         private readonly Dictionary<string, GenerateCallDelegate> mappedMethods = new Dictionary<string, GenerateCallDelegate>();
         private readonly Dictionary<string, IMappedFromCILType> mappedTypes = new Dictionary<string, IMappedFromCILType>();
         private readonly Dictionary<string, IMappedFromCILField> mappedFields = new Dictionary<string, IMappedFromCILField>();
+        private readonly Dictionary<string, IMappedFromCILParam> mappedParameters = new Dictionary<string, IMappedFromCILParam>();
         private readonly TranspilerStructMapper structMapper;
 
         public IEnumerable<ITranspilerLibraryMapper> AllMappers => Mappers.Reverse().Append(structMapper);
@@ -120,14 +122,9 @@ namespace cilspirv.Transpiler
 
             TranspilerVariable MapGlobalVariable(SpirvType realType)
             {
-                var storageClass = AllScanners
-                    .Select(scanner => scanner.TryScanStorageClass(fieldRef.Resolve()))
-                    .FirstOrDefault(c => c.HasValue)
+                var storageClass = TryScanStorageClass(fieldRef.Resolve())
                     ?? throw new InvalidOperationException($"Could not scan storage class for field {fieldRef.FullName}");
-                var decorations = AllScanners
-                    .Select(scanner => scanner.TryScanDecorations(fieldRef.Resolve()))
-                    .FirstOrDefault(c => c.Any())
-                    ?? Enumerable.Empty<DecorationEntry>();
+                var decorations = ScanDecorations(fieldRef.Resolve());
 
                 var variable = new TranspilerVariable(fieldRef.FullName, new SpirvPointerType()
                 {
@@ -140,6 +137,64 @@ namespace cilspirv.Transpiler
 
                 module.GlobalVariables.Add(variable);
                 return variable;
+            }
+        }
+
+        private IEnumerable<DecorationEntry> ScanDecorations(ICustomAttributeProvider element) => AllScanners
+            .Select(scanner => scanner.TryScanDecorations(element))
+            .FirstOrDefault(c => c.Any())
+            ?? Enumerable.Empty<DecorationEntry>();
+
+        private StorageClass? TryScanStorageClass(ICustomAttributeProvider element) => AllScanners
+            .Select(scanner => scanner.TryScanStorageClass(element))
+            .FirstOrDefault(c => c.HasValue);
+
+        public IMappedFromCILParam MapParameter(ParameterDefinition paramDef, TranspilerFunction function)
+        {
+            var mappingName = $"{function.Name}#{paramDef.Name}";
+            if (mappedParameters.TryGetValue(mappingName, out var mapped))
+                return mapped;
+
+            if (paramDef.IsOut || paramDef.IsIn)
+                throw new NotSupportedException($"Out or ref parameter are not supported");
+            var paramType = MapType(paramDef.ParameterType);
+            var storageClass = TryScanStorageClass(paramDef);
+            var decorations = ScanDecorations(paramDef).ToHashSet();
+
+            mapped = paramType switch
+            {
+                TranspilerVarGroup varGroup => varGroup,
+                SpirvType realType when storageClass != null => MapGlobalVariable(realType),
+                SpirvType realType => MapSpirvParameter(realType),
+                _ => throw new NotSupportedException("Unsupported parameter type")
+            };
+            mappedParameters[mappingName] = mapped;
+            return mapped;
+
+            IMappedFromCILParam MapGlobalVariable(SpirvType realType)
+            {
+                var variable = new TranspilerVariable(paramDef.Name, new SpirvPointerType()
+                {
+                    Type = realType,
+                    StorageClass = storageClass.Value,
+                })
+                {
+                    Decorations = decorations
+                };
+                module.GlobalVariables.Add(variable);
+                return variable;
+            }
+
+            TranspilerParameter MapSpirvParameter(SpirvType realType)
+            {
+                if (function is TranspilerEntryFunction)
+                    throw new InvalidOperationException("Entry point parameters require a storage class");
+                var parameter = new TranspilerParameter(function.Parameters.Count, paramDef.Name, realType)
+                {
+                    Decorations = decorations
+                };
+                function.Parameters.Add(parameter);
+                return parameter;
             }
         }
     }

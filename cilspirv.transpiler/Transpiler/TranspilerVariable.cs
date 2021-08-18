@@ -6,7 +6,7 @@ using cilspirv.Spirv.Ops;
 
 namespace cilspirv.Transpiler
 {
-    internal class TranspilerVariable : IDecoratableInstructionGeneratable, IMappedFromCILField
+    internal class TranspilerVariable : IDecoratableInstructionGeneratable, IMappedFromCILField, IMappedFromCILParam
     {
         public string Name { get; }
         public SpirvPointerType PointerType { get; }

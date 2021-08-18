@@ -60,13 +60,8 @@ namespace cilspirv.Transpiler
                 : ilMethod.HasBody ? new TranspilerDefinedFunction(ilMethod.Name, (SpirvType)returnType)
                 : new TranspilerFunction(ilMethod.Name, (SpirvType)returnType);
 
-            if (ilMethod.Parameters.Any())
-                throw new InvalidOperationException("Parameters are not supported yet");
             foreach (var parameter in ilMethod.Parameters)
-            {
-                if (parameter.IsOut)
-                    throw new NotSupportedException($"Out or ref parameter are not supported");
-            }
+                Library.MapParameter(parameter, function);
 
             Module.Functions.Add(function);
             if (function is TranspilerDefinedFunction definedFunction)

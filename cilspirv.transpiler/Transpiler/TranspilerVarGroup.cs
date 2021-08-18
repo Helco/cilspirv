@@ -7,7 +7,7 @@ using cilspirv.Spirv;
 
 namespace cilspirv.Transpiler
 {
-    internal class TranspilerVarGroup : IMappedFromCILType, IMappedFromCILField
+    internal class TranspilerVarGroup : IMappedFromCILType, IMappedFromCILField, IMappedFromCILParam
     {
         public TypeDefinition TypeDefinition { get; }
         public string Name { get; }

@@ -87,12 +87,14 @@ namespace cilspirv.Transpiler
                         case (Code.Pop): Pop(); break;
                         case (Code.Ret): Return(); break;
 
-                        case (Code.Ldarg): PushArgument((ushort)ilInstr.Operand); break;
-                        case (Code.Ldarg_S): PushArgument((byte)ilInstr.Operand); break;
-                        case (Code.Ldarg_0): PushArgument(0); break;
-                        case (Code.Ldarg_1): PushArgument(1); break;
-                        case (Code.Ldarg_2): PushArgument(2); break;
-                        case (Code.Ldarg_3): PushArgument(3); break;
+                        case (Code.Ldarga): // yes, currently no difference ldarga and larg
+                        case (Code.Ldarg):
+                        case (Code.Ldarga_S):
+                        case (Code.Ldarg_S): LoadArgument(((ParameterReference)ilInstr.Operand).Index); break;
+                        case (Code.Ldarg_0): LoadArgument(ILBody.Method.HasThis ? -1 : 0); break;
+                        case (Code.Ldarg_1): LoadArgument(ILBody.Method.HasThis ? 0 : 1); break;
+                        case (Code.Ldarg_2): LoadArgument(ILBody.Method.HasThis ? 1 : 2); break;
+                        case (Code.Ldarg_3): LoadArgument(ILBody.Method.HasThis ? 2 : 3); break;
 
                         case (Code.Ldc_I4): PushI4((int)ilInstr.Operand); break;
                         case (Code.Ldc_I4_S): PushI4((sbyte)ilInstr.Operand); break;

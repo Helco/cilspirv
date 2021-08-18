@@ -76,6 +76,13 @@ namespace cilspirv.Transpiler
             foreach (var entryPoint in Functions.OfType<TranspilerEntryFunction>())
                 yield return entryPoint.GenerateEntryPoint(context);
 
+            foreach (var entryPoint in Functions.OfType<TranspilerEntryFunction>().Where(e => e.ExecutionModel == ExecutionModel.Fragment))
+                yield return new OpExecutionMode()
+                {
+                    EntryPoint = context.IDOf(entryPoint),
+                    Mode = ExecutionMode.OriginUpperLeft
+                };
+
             // TODO: Execution modes
 
             // In order for the types to be complete and properly orderable we need to

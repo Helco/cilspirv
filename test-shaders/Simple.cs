@@ -21,24 +21,26 @@ namespace test_shaders
             [Location(0)] public Vector4 pos;
             [Location(1)] public Color color;
         }
-
-        [Output, Location(0)]
-        private Vector4 output;
         
         private VSInput input;
         [Output, BuiltIn(BuiltIn.Position)]
         private Vector4 position;
 
-        [EntryPoint(ExecutionModel.Fragment)]
-        public void Frag()
+        public float DoNothing(float a)
         {
-            output = new Vector4(0.1f, 0.3f, 0.7f, 1f);
+            return a;
+        }
+
+        [EntryPoint(ExecutionModel.Fragment)]
+        public void Frag([Output, Location(0)] Vector4 output)
+        {
+            output = new Vector4(0.1f, 0.3f, 0.7f, DoNothing(1f));
         }
 
         [EntryPoint(ExecutionModel.Vertex)]
         public void Vert()
         {
-            position = input.pos;
+            position = new Vector4(input.color.r, input.color.g, input.color.b, input.color.a);
         }
     }
 }
