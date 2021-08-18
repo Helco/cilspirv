@@ -25,7 +25,7 @@ namespace cilspirv.Library
 
     public class BindingAttribute : DecorationAttribute
     {
-        public BindingAttribute(uint binding, uint set = 0) : base(new[]
+        public BindingAttribute(uint set, uint binding) : base(new[]
         {
             Binding(binding),
             DescriptorSet(set)

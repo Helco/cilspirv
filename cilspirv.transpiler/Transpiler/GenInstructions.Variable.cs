@@ -199,6 +199,23 @@ namespace cilspirv.Transpiler
                 });
             }
 
+            private void LoadObject()
+            {
+                if (Pop() is not ValueStackEntry pointer)
+                    throw new InvalidOperationException("LoadObject source is not a value");
+                if (pointer.Type is not SpirvPointerType pointerType)
+                    throw new InvalidOperationException("LoadObject source is not a pointer value");
+
+                var resultId = context.CreateID();
+                Add(new OpLoad()
+                {
+                    Result = resultId,
+                    ResultType = context.IDOf(pointerType.Type!),
+                    Pointer = pointer.ID
+                });
+                Stack.Add(new ValueStackEntry(resultId, pointerType.Type!));
+            }
+
             private void StoreObject()
             {
                 if (Pop() is not ValueStackEntry value)

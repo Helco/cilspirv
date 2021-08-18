@@ -10,7 +10,6 @@ namespace test_shaders
     [MemoryModel(AddressingModel.Logical, MemoryModel.GLSL450)]
     public class Simple
     {
-        [Uniform, Binding(0, 0)]
         public struct UniformBlock
         {
             public Vector4 color;
@@ -18,7 +17,7 @@ namespace test_shaders
 
         [EntryPoint(ExecutionModel.Fragment)]
         public void Frag(
-            in UniformBlock uniform,
+            [Uniform, Binding(0, 0) ] in UniformBlock uniform,
             [Output, Location(0)] out Vector4 output)
         {
             output = uniform.color;
@@ -29,6 +28,7 @@ namespace test_shaders
             [Input, Location(0)] in Vector3 input,
             [Output, BuiltIn(BuiltIn.Position)] out Vector4 position)
         {
+            position = new Vector4(input, 1f);
             position = new Vector4(input, 1f);
         }
     }
