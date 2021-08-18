@@ -16,4 +16,14 @@ namespace cilspirv.Transpiler
         public TranspilerVarGroup(string name, TypeDefinition typeDef) =>
             (Name, TypeDefinition) = (name, typeDef);
     }
+
+    // a variable group with missing storage class
+    internal sealed record TranspilerVarGroupTemplate : IMappedFromCILType
+    {
+        public TypeDefinition TypeDefinition { get; }
+        public string Name => TypeDefinition.Name;
+
+        public TranspilerVarGroupTemplate(TypeDefinition typeDef) =>
+            (TypeDefinition) = (typeDef);
+    }
 }

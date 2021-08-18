@@ -50,6 +50,22 @@ namespace cilspirv.Transpiler
             return ctorInfo.FullName();
         }
 
+        public enum OperatorKind
+        {
+            UnaryPlus,
+            UnaryNegation,
+            Increment,
+            Decrement,
+            LogicalNot,
+            Addition,
+            Subtraction,
+            Multiply,
+            Division,
+            BitwiseAnd,
+            BitwiseOr,
+            ExclusiveOr
+        }
+
         public static GenerateCallDelegate CallOpCompositeConstruct(SpirvType resultType) => (ITranspilerMethodContext context, IReadOnlyList<(ID id, SpirvType)> parameters, out ID? resultId) => new[]
         {
             new OpCompositeConstruct()

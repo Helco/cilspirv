@@ -118,6 +118,7 @@ namespace cilspirv.Transpiler
             mapped = MapType(fieldRef.FieldType) switch
             {
                 TranspilerVarGroup varGroup => varGroup,
+                TranspilerVarGroupTemplate template => InstantiateTemplateFor(fieldRef.FullName, fieldRef.Resolve(), template),
                 SpirvType realType when (fieldRef.DeclaringType.FullName == ilModuleType.FullName) => MapGlobalVariable(realType),
 
                 SpirvType realType => MapType(fieldRef.DeclaringType) switch
@@ -153,6 +154,15 @@ namespace cilspirv.Transpiler
             }
         }
 
+        private TranspilerVarGroup InstantiateTemplateFor(string elementName, ICustomAttributeProvider element, TranspilerVarGroupTemplate template)
+        {
+            var storageClass = TryScanStorageClass(element);
+            if (storageClass == null)
+                throw new InvalidOperationException("Field has to have a storage class to instantiate a var group template");
+
+            return structMapper.MapVarGroup($"{elementName}#VarGroup", template.TypeDefinition, storageClass);
+        }
+
         private IEnumerable<DecorationEntry> ScanDecorations(ICustomAttributeProvider element) => AllScanners
             .Select(scanner => scanner.TryScanDecorations(element))
             .FirstOrDefault(c => c.Any())
@@ -175,6 +185,7 @@ namespace cilspirv.Transpiler
             mapped = paramType switch
             {
                 TranspilerVarGroup varGroup => varGroup,
+                TranspilerVarGroupTemplate template => InstantiateTemplateFor(mappingName, paramDef, template),
                 SpirvType realType when storageClass != null => MapGlobalVariable(realType),
                 SpirvType realType => MapSpirvParameter(realType),
                 _ => throw new NotSupportedException("Unsupported parameter type")

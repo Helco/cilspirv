@@ -44,6 +44,7 @@ namespace cilspirv.Transpiler
                 return null;
 
             var structStorageClass = ScanStorageClass(ilTypeDef);
+            var structureDecorations = ScanDecorations(ilTypeDef);
             var fieldStorageClasses = ilTypeDef.Fields
                 .Select(field => (field, ScanStorageClass(field)))
                 .ToDictionary(t => t.field, t => t.Item2);
@@ -51,68 +52,19 @@ namespace cilspirv.Transpiler
                 .SelectMany(field => ScanDecorations(field).Select(decoration => (field, decoration)))
                 .ToLookup(t => t.field, t => t.decoration);
 
-            var structureDecorations = ScanDecorations(ilTypeDef);
-            IMappedFromCILType structure = IsVariableGroup()
-                ? MapVarGroup()
+            var fieldsHaveStorageClass = fieldStorageClasses.Values.Any(v => v.HasValue);
+            var fieldsHaveGlobalDecorations = fieldDecorations.Any(g => g.Any(d => GlobalDecorations.Contains(d.Kind)));
+            var fieldsHaveMemberDecorations = fieldDecorations.Any(g => g.Any(d => MemberDecorations.Contains(d.Kind)));
+            if (fieldsHaveMemberDecorations && (fieldsHaveStorageClass || fieldsHaveGlobalDecorations))
+                throw new InvalidOperationException($"Type \"{ilTypeDef.FullName}\" is ambiguous whether it contains global variables or members");
+
+            IMappedFromCILType structure =
+                fieldsHaveStorageClass ? MapVarGroup(ilTypeDef.Name, ilTypeDef, structStorageClass)
+                : fieldsHaveGlobalDecorations ? new TranspilerVarGroupTemplate(ilTypeDef)
                 : MapStructure();
 
             structures.Add(ilTypeDef.FullName, structure);
             return structure;
-
-            bool IsVariableGroup()
-            {
-                var countStorageFields = structStorageClass.HasValue
-                    ? ilTypeDef.Fields.Count
-                    : fieldStorageClasses.Count(kv => kv.Value.HasValue);
-                var countGlobalFields = fieldDecorations.Count(
-                    group => group.Any(e => GlobalDecorations.Contains(e.Kind)));
-                var countMemberFields = fieldDecorations.Count(
-                    group => group.Any(e => MemberDecorations.Contains(e.Kind)));
-
-                var shouldBeGroup = countStorageFields > 0 || countGlobalFields > 0;
-                var shouldBeReal = countMemberFields > 0;
-                if (shouldBeGroup && shouldBeReal)
-                    throw new InvalidOperationException($"Type \"{ilTypeDef.FullName}\" is ambiguous whether it contains global variables or members");
-                return shouldBeGroup; // so no decorations at all is still a real struct
-            }
-
-            TranspilerVarGroup MapVarGroup()
-            {
-                var missingStorageClassFields = fieldStorageClasses.Where(kv => !kv.Value.HasValue);
-                if (structStorageClass == null && missingStorageClassFields.Any())
-                    throw new InvalidOperationException($"Global variable type \"{ilTypeDef.FullName}\" missing storage classes for " +
-                        string.Join(", ", missingStorageClassFields.Select(kv => kv.Key.Name)));
-
-                var varGroup = new TranspilerVarGroup(ilTypeDef.Name, ilTypeDef);
-                foreach (var field in ilTypeDef.Fields)
-                {
-                    var fieldType = library.MapType(field.FieldType);
-                    if (fieldType is TranspilerVarGroup subVarGroup)
-                    {
-                        varGroup.Variables.AddRange(subVarGroup.Variables);
-                        continue;
-                    }
-                    if (fieldType is not SpirvType fieldSpirvType)
-                        throw new InvalidOperationException("Invalid field type in variable group structure");
-
-                    var variable = new TranspilerVariable(field.FullName, new SpirvPointerType()
-                    {
-                        Type = fieldSpirvType,
-                        StorageClass = (fieldStorageClasses[field] ?? structStorageClass)!.Value,
-                    })
-                    {
-                        Decorations = fieldDecorations[field]
-                            .Concat(structureDecorations)
-                            .GroupBy(d => d.Kind)
-                            .Select(g => g.First())
-                            .ToImmutableHashSet()
-                    };
-                    varGroup.Variables.Add(variable);
-                    module.GlobalVariables.Add(variable);
-                }
-
-                return varGroup;
-            }
 
             SpirvStructType MapStructure() => new SpirvStructType()
             {
@@ -127,6 +79,51 @@ namespace cilspirv.Transpiler
                 library.MapType(fieldDef.FieldType) as SpirvType ??
                     throw new InvalidOperationException("A structure can only hold fields to other SPIRV types"),
                 fieldDecorations[fieldDef].ToImmutableHashSet());
+        }
+
+        internal TranspilerVarGroup MapVarGroup(string name, TypeDefinition ilTypeDef, StorageClass? structStorageClass)
+        {
+            var fieldStorageClasses = ilTypeDef.Fields
+                .Select(field => (field, ScanStorageClass(field)))
+                .ToDictionary(t => t.field, t => t.Item2);
+            var fieldDecorations = ilTypeDef.Fields
+                .SelectMany(field => ScanDecorations(field).Select(decoration => (field, decoration)))
+                .ToLookup(t => t.field, t => t.decoration);
+
+            var missingStorageClassFields = fieldStorageClasses.Where(kv => !kv.Value.HasValue);
+            if (structStorageClass == null && missingStorageClassFields.Any())
+                throw new InvalidOperationException($"Global variable type \"{ilTypeDef.FullName}\" missing storage classes for " +
+                    string.Join(", ", missingStorageClassFields.Select(kv => kv.Key.Name)));
+
+            var varGroup = new TranspilerVarGroup(name, ilTypeDef);
+            foreach (var field in ilTypeDef.Fields)
+            {
+                var fieldType = library.MapType(field.FieldType);
+                if (fieldType is TranspilerVarGroup subVarGroup)
+                {
+                    varGroup.Variables.AddRange(subVarGroup.Variables);
+                    continue;
+                }
+                if (fieldType is not SpirvType fieldSpirvType)
+                    throw new InvalidOperationException("Invalid field type in variable group structure");
+
+                var variable = new TranspilerVariable(field.FullName, new SpirvPointerType()
+                {
+                    Type = fieldSpirvType,
+                    StorageClass = (fieldStorageClasses[field] ?? structStorageClass)!.Value,
+                })
+                {
+                    Decorations = fieldDecorations[field]
+                        .Concat(ScanDecorations(ilTypeDef))
+                        .GroupBy(d => d.Kind)
+                        .Select(g => g.First())
+                        .ToImmutableHashSet()
+                };
+                varGroup.Variables.Add(variable);
+                module.GlobalVariables.Add(variable);
+            }
+
+            return varGroup;
         }
 
         private IEnumerable<DecorationEntry> ScanDecorations(ICustomAttributeProvider fieldDef) => library.AllScanners
