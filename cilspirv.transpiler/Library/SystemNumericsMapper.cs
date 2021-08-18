@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Numerics;
+using System.Collections.Generic;
+using System.Linq;
 using cilspirv.Transpiler;
 using cilspirv.Spirv;
+using cilspirv.Spirv.Ops;
 using Mono.Cecil;
 
 using static cilspirv.Transpiler.TranspilerExternalMethodMapper;
@@ -93,6 +96,19 @@ namespace cilspirv.Library
                 FullNameOfCtor<Vector4>(typeof(float), typeof(float), typeof(float), typeof(float)),
                 CallOpCompositeConstruct(SpirvVector4)
             },
+            {
+                FullNameOf<Vector4>(nameof(Vector4.Transform), typeof(Vector4), typeof(Matrix4x4)),
+                (ITranspilerMethodContext context, IReadOnlyList<(ID, SpirvType)> parameters, out ID? resultId) => new[]
+                {
+                    new OpMatrixTimesVector()
+                    {
+                        Result = (resultId = context.CreateID()).Value,
+                        ResultType = context.IDOf(SpirvVector4),
+                        Vector = parameters[0].Item1,
+                        Matrix = parameters[1].Item1
+                    }
+                }
+            }
         };
 
         public IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => typeMapper.TryMapType(ilTypeRef);
