@@ -135,6 +135,8 @@ namespace cilspirv.Transpiler
                         case (Code.Ldflda): LoadFieldAddress((FieldReference)ilInstr.Operand); break;
                         case (Code.Stfld): StoreField((FieldReference)ilInstr.Operand); break;
 
+                        case (Code.Stobj): StoreObject(); break;
+
                         case (Code.Newobj): Call((MethodReference)ilInstr.Operand, isCtor: true); break;
                         case (Code.Call): Call((MethodReference)ilInstr.Operand, isCtor: false); break;
 

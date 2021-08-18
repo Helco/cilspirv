@@ -183,8 +183,7 @@ namespace cilspirv.Transpiler
 
             private void StoreField(FieldReference fieldRef)
             {
-                var valueEntry = Pop();
-                if (valueEntry is not ValueStackEntry value)
+                if (Pop() is not ValueStackEntry value)
                     throw new InvalidOperationException("Top of stack is not a value");
 
                 var fieldEntry = PopAndGetFieldPtr(fieldRef);
@@ -196,6 +195,22 @@ namespace cilspirv.Transpiler
                 Add(new OpStore()
                 {
                     Pointer = field.ID,
+                    Object = value.ID
+                });
+            }
+
+            private void StoreObject()
+            {
+                if (Pop() is not ValueStackEntry value)
+                    throw new InvalidOperationException("StoreObject source is not a value");
+                if (Pop() is not ValueStackEntry dest)
+                    throw new InvalidOperationException("StoreObject destination is not a value");
+                if (dest.Type is not SpirvPointerType)
+                    throw new InvalidOperationException("StoreObject destination is not a pointer value");
+
+                Add(new OpStore()
+                {
+                    Pointer = dest.ID,
                     Object = value.ID
                 });
             }

@@ -45,11 +45,13 @@ namespace cilspirv.Transpiler
         private readonly Dictionary<string, IMappedFromCILField> mappedFields = new Dictionary<string, IMappedFromCILField>();
         private readonly Dictionary<string, IMappedFromCILParam> mappedParameters = new Dictionary<string, IMappedFromCILParam>();
         private readonly TranspilerStructMapper structMapper;
+        private readonly TranspilerReferenceMapper referenceMapper;
         private readonly TranspilerInternalMethodMapper methodMapper;
 
         public IEnumerable<ITranspilerLibraryMapper> AllMappers => Mappers.Reverse()
             .Append(structMapper)
-            .Append(methodMapper);
+            .Append(methodMapper)
+            .Prepend(referenceMapper);
         public IEnumerable<IITranspilerLibraryScanner> AllScanners => Scanners.Reverse();
 
         public IList<ITranspilerLibraryMapper> Mappers { get; } = new List<ITranspilerLibraryMapper>()
@@ -68,6 +70,7 @@ namespace cilspirv.Transpiler
             this.module = module;
             this.queueMethodBody = queueMethodBody;
             structMapper = new TranspilerStructMapper(this, module);
+            referenceMapper = new TranspilerReferenceMapper(this);
             methodMapper = new TranspilerInternalMethodMapper(this);
         }
 
@@ -165,8 +168,6 @@ namespace cilspirv.Transpiler
             if (mappedParameters.TryGetValue(mappingName, out var mapped))
                 return mapped;
 
-            if (paramDef.IsOut || paramDef.IsIn)
-                throw new NotSupportedException($"Out or ref parameter are not supported");
             var paramType = MapType(paramDef.ParameterType);
             var storageClass = TryScanStorageClass(paramDef);
             var decorations = ScanDecorations(paramDef).ToHashSet();

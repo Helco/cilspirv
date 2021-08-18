@@ -10,19 +10,18 @@ namespace test_shaders
     [MemoryModel(AddressingModel.Logical, MemoryModel.GLSL450)]
     public class Simple
     {
-        private struct Color
+        public struct Color
         {
             public float r, g, b, a;
         }
 
         [Input]
-        private struct VSInput
+        public struct VSInput
         {
             [Location(0)] public Vector4 pos;
             [Location(1)] public Color color;
         }
         
-        private VSInput input;
         [Output, BuiltIn(BuiltIn.Position)]
         private Vector4 position;
 
@@ -32,13 +31,13 @@ namespace test_shaders
         }
 
         [EntryPoint(ExecutionModel.Fragment)]
-        public void Frag([Output, Location(0)] Vector4 output)
+        public void Frag([Output, Location(0)] out Vector4 output)
         {
             output = DoNothing();
         }
 
         [EntryPoint(ExecutionModel.Vertex)]
-        public void Vert()
+        public void Vert(in VSInput input)
         {
             position = new Vector4(input.color.r, input.color.g, input.color.b, input.color.a);
         }
