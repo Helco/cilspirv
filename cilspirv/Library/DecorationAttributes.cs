@@ -14,7 +14,6 @@ namespace cilspirv.Library
         protected DecorationAttribute(params DecorationEntry[] decorations) => Decorations = decorations;
     }
 
-    [AttributeUsage(AttributeTargets.ReturnValue | AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = false)]
     public class LocationAttribute : DecorationAttribute
     {
         public LocationAttribute(uint location) : base(new[]
@@ -24,7 +23,6 @@ namespace cilspirv.Library
         { }
     }
 
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = false)]
     public class BindingAttribute : DecorationAttribute
     {
         public BindingAttribute(uint binding, uint set = 0) : base(new[]

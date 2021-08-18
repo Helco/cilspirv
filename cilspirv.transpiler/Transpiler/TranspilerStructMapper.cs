@@ -43,6 +43,7 @@ namespace cilspirv.Transpiler
             if (!ilTypeDef.IsValueType || ilTypeDef.IsPrimitive || ilTypeDef.IsEnum || !ilTypeDef.HasFields)
                 return null;
 
+            var structStorageClass = ScanStorageClass(ilTypeDef);
             var fieldStorageClasses = ilTypeDef.Fields
                 .Select(field => (field, ScanStorageClass(field)))
                 .ToDictionary(t => t.field, t => t.Item2);
@@ -60,7 +61,9 @@ namespace cilspirv.Transpiler
 
             bool IsVariableGroup()
             {
-                var countStorageFields = fieldStorageClasses.Count(kv => kv.Value.HasValue);
+                var countStorageFields = structStorageClass.HasValue
+                    ? ilTypeDef.Fields.Count
+                    : fieldStorageClasses.Count(kv => kv.Value.HasValue);
                 var countGlobalFields = fieldDecorations.Count(
                     group => group.Any(e => GlobalDecorations.Contains(e.Kind)));
                 var countMemberFields = fieldDecorations.Count(
@@ -75,7 +78,6 @@ namespace cilspirv.Transpiler
 
             TranspilerVarGroup MapVarGroup()
             {
-                var structStorageClass = ScanStorageClass(ilTypeDef);
                 var missingStorageClassFields = fieldStorageClasses.Where(kv => !kv.Value.HasValue);
                 if (structStorageClass == null && missingStorageClassFields.Any())
                     throw new InvalidOperationException($"Global variable type \"{ilTypeDef.FullName}\" missing storage classes for " +

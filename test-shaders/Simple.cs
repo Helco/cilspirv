@@ -10,36 +10,26 @@ namespace test_shaders
     [MemoryModel(AddressingModel.Logical, MemoryModel.GLSL450)]
     public class Simple
     {
-        public struct Color
+        [Uniform, Binding(0, 0)]
+        public struct UniformBlock
         {
-            public float r, g, b, a;
-        }
-
-        [Input]
-        public struct VSInput
-        {
-            [Location(0)] public Vector4 pos;
-            [Location(1)] public Color color;
-        }
-        
-        [Output, BuiltIn(BuiltIn.Position)]
-        private Vector4 position;
-
-        public Vector4 DoNothing()
-        {
-            return new Vector4(0.1f, 0.3f, 0.7f, 1f);
+            public Vector4 color;
         }
 
         [EntryPoint(ExecutionModel.Fragment)]
-        public void Frag([Output, Location(0)] out Vector4 output)
+        public void Frag(
+            in UniformBlock uniform,
+            [Output, Location(0)] out Vector4 output)
         {
-            output = DoNothing();
+            output = uniform.color;
         }
 
         [EntryPoint(ExecutionModel.Vertex)]
-        public void Vert(in VSInput input)
+        public void Vert(
+            [Input, Location(0)] in Vector3 input,
+            [Output, BuiltIn(BuiltIn.Position)] out Vector4 position)
         {
-            position = new Vector4(input.color.r, input.color.g, input.color.b, input.color.a);
+            position = new Vector4(input, 1f);
         }
     }
 }
