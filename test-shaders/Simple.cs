@@ -26,15 +26,15 @@ namespace test_shaders
         [Output, BuiltIn(BuiltIn.Position)]
         private Vector4 position;
 
-        public float DoNothing(float a)
+        public Vector4 DoNothing()
         {
-            return a;
+            return new Vector4(0.1f, 0.3f, 0.7f, 1f);
         }
 
         [EntryPoint(ExecutionModel.Fragment)]
         public void Frag([Output, Location(0)] Vector4 output)
         {
-            output = new Vector4(0.1f, 0.3f, 0.7f, DoNothing(1f));
+            output = DoNothing();
         }
 
         [EntryPoint(ExecutionModel.Vertex)]

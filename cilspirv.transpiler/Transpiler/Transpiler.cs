@@ -32,7 +32,7 @@ namespace cilspirv.Transpiler
         public Transpiler(TypeDefinition moduleType)
         {
             ILModuleType = moduleType;
-            Library = new TranspilerLibrary(moduleType, Module);
+            Library = new TranspilerLibrary(moduleType, Module, (function, body) => missingBodies.Enqueue((function, body)) );
         }
 
         public void WriteSpirvModule(System.IO.Stream stream, bool leaveOpen = false) => new SpirvModule()
@@ -43,39 +43,18 @@ namespace cilspirv.Transpiler
         }.Write(stream, leaveOpen, generatorContext.MapFromTemporaryID);
 
         public TranspilerFunction TranspileEntryPoint(MethodDefinition ilMethod) =>
-            TranspileMethod(ilMethod, isEntryPoint: true);
-
-        private TranspilerFunction TranspileMethod(MethodDefinition ilMethod, bool isEntryPoint)
-        {
-            if (!ilMethod.HasBody)
-                throw new InvalidOperationException("An entry point method has to have a body");
-
-            var returnType = Library.MapType(ilMethod.ReturnType);
-            if (isEntryPoint && returnType is not SpirvVoidType && returnType is not TranspilerVarGroup)
-                throw new InvalidOperationException("An entry point can only return void or a variable group");
-            if (!isEntryPoint && returnType is not SpirvType)
-                throw new InvalidOperationException("A function can only return SPIRV types");
-            var function =
-                isEntryPoint ? new TranspilerEntryFunction(ilMethod.Name, ExtractExecutionModel(ilMethod))
-                : ilMethod.HasBody ? new TranspilerDefinedFunction(ilMethod.Name, (SpirvType)returnType)
-                : new TranspilerFunction(ilMethod.Name, (SpirvType)returnType);
-
-            foreach (var parameter in ilMethod.Parameters)
-                Library.MapParameter(parameter, function);
-
-            Module.Functions.Add(function);
-            if (function is TranspilerDefinedFunction definedFunction)
-                missingBodies.Enqueue((definedFunction, ilMethod.Body));
-            return function;
-        }
+            Library.TryMapInternalMethod(ilMethod, isEntryPoint: true) ??
+            throw new ArgumentException("Could not map entry point method");
 
         public void TranspileAllMethodBodies()
         {
             while(missingBodies.Any())
             {
                 var (definedFunction, ilBody) = missingBodies.Dequeue();
-                TranspileVariables(definedFunction, ilBody);
+                if (definedFunction.Blocks.Any())
+                    continue; // seems like we enqueued the function twice
 
+                TranspileVariables(definedFunction, ilBody);
                 var genInstructions = new GenInstructions(this, definedFunction, ilBody);
                 genInstructions.GenerateInstructions();
             }
@@ -95,15 +74,6 @@ namespace cilspirv.Transpiler
                     StorageClass = StorageClass.Function
                 }));
             }
-        }
-
-        private ExecutionModel ExtractExecutionModel(MethodDefinition ilMethod)
-        {
-            var attr = ilMethod.GetCustomAttributes<EntryPointAttribute>().SingleOrDefault();
-            if (attr == null)
-                throw new InvalidOperationException($"Entry point method {ilMethod.FullName} does not have an EntryPointAttribute");
-
-            return (ExecutionModel)attr.ConstructorArguments.Single().Value;
         }
 
         public void ExtractModuleAttributes()

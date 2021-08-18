@@ -31,12 +31,6 @@ namespace cilspirv.Transpiler
                     .Select(e => (e.ID, e.Type))
                     .ToArray();
                 Block.Instructions.AddRange(callMethod(this, parameters, out var resultId));
-                if (!isCtor) // TODO: Check if there are some sort of read-only pointers
-                    Add(new OpStore()
-                    {
-                        Pointer = thiz?.ID ?? throw new InvalidOperationException("this-parameter is not a value entry"),
-                        Object = resultId ?? throw new NullReferenceException("Unexpected null return value")
-                    });
 
                 Stack.RemoveRange(Stack.Count - stackCount, stackCount);
                 if (resultId != null)

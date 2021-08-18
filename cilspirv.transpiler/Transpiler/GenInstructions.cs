@@ -96,6 +96,9 @@ namespace cilspirv.Transpiler
                         case (Code.Ldarg_2): LoadArgument(ILBody.Method.HasThis ? 1 : 2); break;
                         case (Code.Ldarg_3): LoadArgument(ILBody.Method.HasThis ? 2 : 3); break;
 
+                        case (Code.Starg):
+                        case (Code.Starg_S): StoreArgument(((ParameterReference)ilInstr.Operand).Index); break;
+
                         case (Code.Ldc_I4): PushI4((int)ilInstr.Operand); break;
                         case (Code.Ldc_I4_S): PushI4((sbyte)ilInstr.Operand); break;
                         case (Code.Ldc_I4_0): PushI4(0); break;

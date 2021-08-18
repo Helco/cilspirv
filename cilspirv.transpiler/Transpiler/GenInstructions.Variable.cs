@@ -32,6 +32,22 @@ namespace cilspirv.Transpiler
                 });
             }
 
+            private void StoreArgument(int argI)
+            {
+                if (Pop() is not ValueStackEntry value)
+                    throw new InvalidOperationException("Top of stack is not a value");
+
+                var parameter = Library.MapParameter(ILBody.Method.Parameters[argI], Function);
+                if (parameter is not TranspilerVariable variable)
+                    throw new NotSupportedException("Real parameters cannot be written into");
+                MarkVariableUsage(variable);
+                Add(new OpStore()
+                {
+                    Pointer = context.IDOf(variable),
+                    Object = value.ID
+                });
+            }
+
             private void LoadLocal(int variableI)
             {
                 var id = context.CreateID();
@@ -90,10 +106,15 @@ namespace cilspirv.Transpiler
 
             private StackEntry GetGlobalVariablePtr(TranspilerVariable variable)
             {
+                MarkVariableUsage(variable);
+                return new ValueStackEntry(variable, context.IDOf(variable), variable.PointerType);
+            }
+
+            private void MarkVariableUsage(TranspilerVariable variable)
+            {
                 if (Function is TranspilerEntryFunction entryFunction &&
                     (variable.StorageClass == StorageClass.Input || variable.StorageClass == StorageClass.Output))
                     entryFunction.Interface.Add(variable);
-                return new ValueStackEntry(variable, context.IDOf(variable), variable.PointerType);
             }
 
             private StackEntry GetFieldPtrFromStruct(ValueStackEntry structValue, FieldReference fieldRef)

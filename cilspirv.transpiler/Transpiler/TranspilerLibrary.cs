@@ -2,8 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using cilspirv.Library;
 using cilspirv.Spirv;
+
+using ILInstruction = Mono.Cecil.Cil.Instruction;
+using SpirvInstruction = cilspirv.Spirv.Instruction;
 
 namespace cilspirv.Transpiler
 {
@@ -25,7 +29,7 @@ namespace cilspirv.Transpiler
         IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider fieldDef);
     }
 
-    internal delegate IEnumerable<Instruction> GenerateCallDelegate(ITranspilerMethodContext context, IReadOnlyList<(ID id, SpirvType type)> parameters, out ID? resultId);
+    internal delegate IEnumerable<SpirvInstruction> GenerateCallDelegate(ITranspilerMethodContext context, IReadOnlyList<(ID id, SpirvType type)> parameters, out ID? resultId);
 
     internal interface IMappedFromCILType { }
     internal interface IMappedFromCILField { }
@@ -35,13 +39,17 @@ namespace cilspirv.Transpiler
     {
         private readonly TypeDefinition ilModuleType;
         private readonly TranspilerModule module;
+        private readonly Action<TranspilerDefinedFunction, MethodBody> queueMethodBody;
         private readonly Dictionary<string, GenerateCallDelegate> mappedMethods = new Dictionary<string, GenerateCallDelegate>();
         private readonly Dictionary<string, IMappedFromCILType> mappedTypes = new Dictionary<string, IMappedFromCILType>();
         private readonly Dictionary<string, IMappedFromCILField> mappedFields = new Dictionary<string, IMappedFromCILField>();
         private readonly Dictionary<string, IMappedFromCILParam> mappedParameters = new Dictionary<string, IMappedFromCILParam>();
         private readonly TranspilerStructMapper structMapper;
+        private readonly TranspilerInternalMethodMapper methodMapper;
 
-        public IEnumerable<ITranspilerLibraryMapper> AllMappers => Mappers.Reverse().Append(structMapper);
+        public IEnumerable<ITranspilerLibraryMapper> AllMappers => Mappers.Reverse()
+            .Append(structMapper)
+            .Append(methodMapper);
         public IEnumerable<IITranspilerLibraryScanner> AllScanners => Scanners.Reverse();
 
         public IList<ITranspilerLibraryMapper> Mappers { get; } = new List<ITranspilerLibraryMapper>()
@@ -54,11 +62,13 @@ namespace cilspirv.Transpiler
             new AttributeScanner()
         };
 
-        public TranspilerLibrary(TypeDefinition ilModuleType, TranspilerModule module)
+        public TranspilerLibrary(TypeDefinition ilModuleType, TranspilerModule module, Action<TranspilerDefinedFunction, MethodBody> queueMethodBody)
         {
             this.ilModuleType = ilModuleType;
             this.module = module;
+            this.queueMethodBody = queueMethodBody;
             structMapper = new TranspilerStructMapper(this, module);
+            methodMapper = new TranspilerInternalMethodMapper(this);
         }
 
         public IMappedFromCILType? TryMapType(TypeReference ilTypeRef)
@@ -196,6 +206,48 @@ namespace cilspirv.Transpiler
                 function.Parameters.Add(parameter);
                 return parameter;
             }
+        }
+
+        public TranspilerFunction? TryMapInternalMethod(MethodDefinition ilMethod, bool isEntryPoint)
+        {
+            var returnType = MapType(ilMethod.ReturnType);
+            if (isEntryPoint)
+            {
+                if (!ilMethod.HasBody)
+                    throw new InvalidOperationException("An entry point method has to have a body");
+                if (returnType is not SpirvVoidType && returnType is not TranspilerVarGroup)
+                    throw new InvalidOperationException("An entry point can only return void or a variable group");
+            }
+            else
+            {
+                if (returnType is not SpirvType)
+                    throw new InvalidOperationException("A function can only return SPIRV types");
+            }
+
+            var function =
+                isEntryPoint ? new TranspilerEntryFunction(ilMethod.Name, ExtractExecutionModel(ilMethod))
+                : ilMethod.HasBody ? new TranspilerDefinedFunction(ilMethod.Name, (SpirvType)returnType)
+                : new TranspilerFunction(ilMethod.Name, (SpirvType)returnType);
+
+            if (ilMethod.HasThis && ilMethod.DeclaringType.FullName != ilModuleType.FullName)
+                throw new NotSupportedException("Real instance methods are not supported yet");
+
+            foreach (var parameter in ilMethod.Parameters)
+                MapParameter(parameter, function);
+
+            module.Functions.Add(function);
+            if (function is TranspilerDefinedFunction definedFunction)
+                queueMethodBody(definedFunction, ilMethod.Body);
+            return function;
+        }
+
+        private ExecutionModel ExtractExecutionModel(MethodDefinition ilMethod)
+        {
+            var attr = ilMethod.GetCustomAttributes<EntryPointAttribute>().SingleOrDefault();
+            if (attr == null)
+                throw new InvalidOperationException($"Entry point method {ilMethod.FullName} does not have an EntryPointAttribute");
+
+            return (ExecutionModel)attr.ConstructorArguments.Single().Value;
         }
     }
 }
