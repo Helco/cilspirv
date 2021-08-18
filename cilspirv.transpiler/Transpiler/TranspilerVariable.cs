@@ -6,7 +6,11 @@ using cilspirv.Spirv.Ops;
 
 namespace cilspirv.Transpiler
 {
-    internal class TranspilerVariable : IDecoratableInstructionGeneratable, IMappedFromCILField, IMappedFromCILParam
+    internal class TranspilerVariable :
+        IDecoratableInstructionGeneratable,
+        IDebugInstructionGeneratable,
+        IMappedFromCILField,
+        IMappedFromCILParam
     {
         public string Name { get; }
         public SpirvPointerType PointerType { get; }
@@ -25,6 +29,16 @@ namespace cilspirv.Transpiler
                 ResultType = context.IDOf(PointerType),
                 StorageClass = StorageClass
             };
+        }
+
+        public IEnumerator<Instruction> GenerateDebugInfo(IInstructionGeneratorContext context)
+        {
+            if (!string.IsNullOrEmpty(Name))
+                yield return new OpName()
+                {
+                    Target = context.IDOf(this),
+                    Name = Name
+                };
         }
     }
 }
