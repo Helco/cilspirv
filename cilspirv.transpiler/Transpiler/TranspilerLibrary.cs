@@ -11,19 +11,41 @@ using SpirvInstruction = cilspirv.Spirv.Instruction;
 
 namespace cilspirv.Transpiler
 {
-    internal interface ITranspilerMethodContext : IInstructionGeneratorContext
+    internal interface ITranspilerContext : IInstructionGeneratorContext
     {
         TranspilerLibrary Library { get; }
         TranspilerModule Module { get; }
+        TranspilerFunction Function { get; }
+    }
+
+    internal interface ITranspilerMethodContext : ITranspilerContext
+    {
         (ID id, SpirvType type)? This { get; }
         IReadOnlyList<(ID id, SpirvType type)> Parameters { get; }
-        ID ResultID { get; }
+        ID ResultID { get; set; }
+    }
+
+    internal interface ITranspilerFieldContext : ITranspilerContext
+    {
+        StackEntry Parent { get; }
+        StackEntry Result { set; }
+    }
+
+    internal interface ITranspilerFieldBehavior : IMappedFromCILField
+    {
+        // if LoadAddress is defined (returns not null) Load/Store will use standard OpLoad/OpStore 
+        // if LoadAddress is not defined, ldflda is not supported
+
+        IEnumerable<SpirvInstruction>? LoadAddress(ITranspilerFieldContext context) { return null; }
+        IEnumerable<SpirvInstruction>? Load(ITranspilerFieldContext context) { return null; }
+        IEnumerable<SpirvInstruction>? Store(ITranspilerFieldContext context, ValueStackEntry value) { return null; }
     }
 
     internal interface ITranspilerLibraryMapper
     {
-        GenerateCallDelegate? TryMapMethod(MethodReference methodRef);
-        IMappedFromCILType? TryMapType(TypeReference ilTypeRef);
+        GenerateCallDelegate? TryMapMethod(MethodReference methodRef) { return null; }
+        IMappedFromCILType? TryMapType(TypeReference ilTypeRef) { return null; }
+        ITranspilerFieldBehavior? TryMapFieldBehavior(FieldReference fieldRef) { return null; }
     }
 
     internal interface IITranspilerLibraryScanner
@@ -33,6 +55,8 @@ namespace cilspirv.Transpiler
     }
 
     internal delegate IEnumerable<SpirvInstruction> GenerateCallDelegate(ITranspilerMethodContext context);
+    internal delegate IEnumerable<SpirvInstruction> GenerateFieldDelegate(ITranspilerFieldContext context);
+    internal delegate IEnumerable<SpirvInstruction> GenerateFieldStoreDelegate(ITranspilerFieldContext context, ValueStackEntry value);
 
     internal interface IMappedFromCILType { }
     internal interface IMappedFromCILField { }
@@ -128,6 +152,7 @@ namespace cilspirv.Transpiler
                 {
                     SpirvStructType declaringStructType => declaringStructType.Members.First(m => m.Name == fieldRef.Name),
                     TranspilerVarGroup varGroup => varGroup.Variables.First(v => v.Name == fieldRef.FullName),
+                    _ when TryMapFieldBehavior(fieldRef) is ITranspilerFieldBehavior fieldBehavior => fieldBehavior,
 
                     _ => throw new NotSupportedException("Unsupported field container type")
                 },
@@ -165,6 +190,10 @@ namespace cilspirv.Transpiler
 
             return structMapper.MapVarGroup($"{elementName}#VarGroup", template.TypeDefinition, storageClass);
         }
+
+        private ITranspilerFieldBehavior? TryMapFieldBehavior(FieldReference fieldRef) => AllMappers
+            .Select(mapper => mapper.TryMapFieldBehavior(fieldRef))
+            .FirstOrDefault();
 
         private IEnumerable<DecorationEntry> ScanDecorations(ICustomAttributeProvider element) => AllScanners
             .Select(scanner => scanner.TryScanDecorations(element))

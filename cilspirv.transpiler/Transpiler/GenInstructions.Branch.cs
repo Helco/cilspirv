@@ -22,6 +22,7 @@ namespace cilspirv.Transpiler
 
                 public TranspilerLibrary Library => gen.Library;
                 public TranspilerModule Module => gen.Module;
+                public TranspilerFunction Function => gen.Function;
                 public TranspilerOptions Options => gen.Options;
                 public ID CreateID() => gen.context.CreateID();
                 public ID CreateIDFor(IInstructionGeneratable generatable) => gen.context.CreateIDFor(generatable);
@@ -32,7 +33,16 @@ namespace cilspirv.Transpiler
                 public IReadOnlyList<(ID, SpirvType)> Parameters { get; init; } = Array.Empty<(ID, SpirvType)>();
 
                 public ID? ResultID => resultID;
-                ID ITranspilerMethodContext.ResultID => resultID ?? (resultID = CreateID()).Value;
+                ID ITranspilerMethodContext.ResultID
+                {
+                    get => resultID ?? (resultID = CreateID()).Value;
+                    set
+                    {
+                        if (resultID != null)
+                            throw new InvalidOperationException("Result ID was already generated or set");
+                        resultID = value;
+                    }
+                }
 
                 public MethodCallContext(GenInstructions gen) => this.gen = gen;
             }

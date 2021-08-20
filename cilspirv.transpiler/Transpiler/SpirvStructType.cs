@@ -59,7 +59,10 @@ namespace cilspirv.Transpiler
         }
     }
 
-    public record SpirvMember : IDecoratable, IMappedFromCILField
+    public record SpirvMember :
+        IDecoratable,
+        IMappedFromCILField,
+        ITranspilerFieldBehavior
     {
         public int Index { get; }
         public string Name { get; }
@@ -115,6 +118,31 @@ namespace cilspirv.Transpiler
                     };
                 }
             }
+        }
+
+        IEnumerable<Instruction> ITranspilerFieldBehavior.LoadAddress(ITranspilerFieldContext context)
+        {
+            if (context.Parent is not ValueStackEntry parentValue)
+                throw new InvalidOperationException("Struct member parent is not a value");
+            if (parentValue.Type is not SpirvPointerType parentPointerType)
+                throw new InvalidOperationException("Struct member parent is not a pointer");
+
+            var resultType = new SpirvPointerType()
+            {
+                Type = Type,
+                StorageClass = parentPointerType.StorageClass
+            };
+            var result = new ValueStackEntry(this, context.CreateID(), resultType);
+            context.Result = result;
+            yield return new OpAccessChain()
+            {
+                Result = result.ID,
+                ResultType = context.IDOf(resultType),
+                Base = parentValue.ID,
+                Indexes = ImmutableArray.Create(
+                    context.IDOf(
+                        new TranspilerNumericConstant(Index)))
+            };
         }
     }
 }

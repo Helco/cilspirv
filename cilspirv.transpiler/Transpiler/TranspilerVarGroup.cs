@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
 using cilspirv.Spirv;
 
 namespace cilspirv.Transpiler
 {
-    internal class TranspilerVarGroup : IMappedFromCILType, IMappedFromCILField, IMappedFromCILParam
+    internal class TranspilerVarGroup :
+        IMappedFromCILType,
+        IMappedFromCILField,
+        IMappedFromCILParam,
+        ITranspilerFieldBehavior
     {
         public TypeDefinition TypeDefinition { get; }
         public string Name { get; }
@@ -15,6 +18,18 @@ namespace cilspirv.Transpiler
 
         public TranspilerVarGroup(string name, TypeDefinition typeDef) =>
             (Name, TypeDefinition) = (name, typeDef);
+
+        IEnumerable<Instruction> ITranspilerFieldBehavior.LoadAddress(ITranspilerFieldContext context)
+        {
+            context.Result = new StackEntry(this);
+            return Enumerable.Empty<Instruction>();
+        }
+
+        IEnumerable<Instruction> ITranspilerFieldBehavior.Load(ITranspilerFieldContext context) =>
+            throw new InvalidOperationException("Cannot load a variable group");
+
+        IEnumerable<Instruction> ITranspilerFieldBehavior.Store(ITranspilerFieldContext context, ValueStackEntry value) =>
+            throw new InvalidOperationException("Cannot load a variable group");
     }
 
     // a variable group with missing storage class

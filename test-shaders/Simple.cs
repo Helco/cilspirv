@@ -5,7 +5,6 @@ using cilspirv.Spirv;
 
 namespace test_shaders
 {
-#pragma warning disable CS0649
     [Capability(Capability.Shader)]
     [MemoryModel(AddressingModel.Logical, MemoryModel.GLSL450)]
     public class Simple
@@ -46,6 +45,7 @@ namespace test_shaders
                 * WeighColor(input.color, uniforms.vectorColorFactor)
                 * WeighColor(uniforms.tint, uniforms.tintFactor);
             //if (output.W < uniforms.alphaReference)
+            //    output.W = 0f;
             //    discard;
         }
 

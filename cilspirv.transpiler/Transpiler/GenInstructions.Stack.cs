@@ -12,31 +12,31 @@ using SpirvInstruction = cilspirv.Spirv.Instruction;
 
 namespace cilspirv.Transpiler
 {
+    internal record StackEntry
+    {
+        public StackEntry(object tag) => this.Tag = tag;
+        protected StackEntry() => Tag = null;
+
+        public object? Tag { get; }
+    }
+
+    internal sealed record ValueStackEntry : StackEntry
+    {
+        public ID ID { get; }
+        public SpirvType Type { get; }
+        public StorageClass? StorageClass => (Type as SpirvPointerType)?.StorageClass;
+
+        public ValueStackEntry(ID id, SpirvType type) : base() =>
+            (ID, Type) = (id, type);
+
+        public ValueStackEntry(object tag, ID id, SpirvType type) : base(tag) =>
+            (ID, Type) = (id, type);
+    }
+
+    internal sealed record ThisModuleTag { }
+
     partial class Transpiler
     {
-        private record StackEntry
-        {
-            public StackEntry(object tag) => this.Tag = tag;
-            protected StackEntry() => Tag = null;
-
-            public object? Tag { get; }
-        }
-
-        private sealed record ValueStackEntry : StackEntry
-        {
-            public ID ID { get; }
-            public SpirvType Type { get; }
-            public StorageClass? StorageClass => (Type as SpirvPointerType)?.StorageClass;
-
-            public ValueStackEntry(ID id, SpirvType type) : base() =>
-                (ID, Type) = (id, type);
-
-            public ValueStackEntry(object tag, ID id, SpirvType type) : base(tag) =>
-                (ID, Type) = (id, type);
-        }
-
-        private sealed record ThisModule { }
-
         partial class GenInstructions
         {
             private void PushConstant(ImmutableArray<LiteralNumber> literal, SpirvNumericType spirvType)
