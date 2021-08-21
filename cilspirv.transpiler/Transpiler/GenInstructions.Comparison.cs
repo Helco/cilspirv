@@ -300,8 +300,23 @@ namespace cilspirv.Transpiler
 
             private ID CompareFalsy()
             {
-                var a = PopNumeric();
-                var resultId = context.CreateID();
+                ID resultId;
+                var a = PopValue();
+                if (a.Type is SpirvBooleanType)
+                {
+                    resultId = context.CreateID();
+                    Add(new OpLogicalNot()
+                    {
+                        Result = resultId,
+                        ResultType = context.IDOf(a.Type),
+                        Operand = a.ID
+                    });
+                    return resultId;
+                }
+
+                if (a.Type is not SpirvNumericType)
+                    throw new InvalidOperationException("Invalid type to compare falsy");
+                resultId = context.CreateID();
                 Add(new OpIEqual()
                 {
                     Result = resultId,
@@ -316,7 +331,11 @@ namespace cilspirv.Transpiler
 
             private ID CompareTruthy()
             {
-                var a = PopNumeric();
+                var a = PopValue();
+                if (a.Type is SpirvBooleanType)
+                    return a.ID;
+                if (a.Type is not SpirvNumericType)
+                    throw new InvalidOperationException("Invalid type to compare falsy");
                 var resultId = context.CreateID();
                 Add(new OpINotEqual()
                 {

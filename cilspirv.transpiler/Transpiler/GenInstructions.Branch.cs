@@ -120,8 +120,10 @@ namespace cilspirv.Transpiler
                 {
                     Condition = conditionID,
                     TrueLabel = context.IDOf(trueBlock.block),
-                    FalseLabel = context.IDOf(falseBlock.block)
+                    FalseLabel = context.IDOf(falseBlock.block),
+                    Branchweights = ImmutableArray<LiteralNumber>.Empty
                 });
+                LeaveBlock();
             }
 
             private void BranchEqual(ILInstruction me) => ConditionalBranch(CompareEqual(), me);
