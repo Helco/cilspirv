@@ -13,19 +13,20 @@ namespace cilspirv.Library
 {
     internal class SystemNumericsMapper : ITranspilerLibraryMapper
     {
+        private static readonly SpirvFloatingType SpirvFloat32 = new SpirvFloatingType() { Width = 32 };
         private static readonly SpirvVectorType SpirvVector2 = new SpirvVectorType()
         {
-            ComponentType = new SpirvFloatingType() { Width = 32 },
+            ComponentType = SpirvFloat32,
             ComponentCount = 2
         };
         private static readonly SpirvVectorType SpirvVector3 = new SpirvVectorType()
         {
-            ComponentType = new SpirvFloatingType() { Width = 32 },
+            ComponentType = SpirvFloat32,
             ComponentCount = 3
         };
         private static readonly SpirvVectorType SpirvVector4 = new SpirvVectorType()
         {
-            ComponentType = new SpirvFloatingType() { Width = 32 },
+            ComponentType = SpirvFloat32,
             ComponentCount = 4
         };
         private static readonly SpirvVectorType SpirvQuaternion = SpirvVector4;
@@ -33,7 +34,7 @@ namespace cilspirv.Library
         {
             ColumnType = new SpirvVectorType()
             {
-                ComponentType = new SpirvFloatingType() { Width = 32 },
+                ComponentType = SpirvFloat32,
                 ComponentCount = 3
             },
             ColumnCount = 2
@@ -42,13 +43,13 @@ namespace cilspirv.Library
         {
             ColumnType = new SpirvVectorType()
             {
-                ComponentType = new SpirvFloatingType() { Width = 32 },
+                ComponentType = SpirvFloat32,
                 ComponentCount = 4
             },
             ColumnCount = 4
         };
 
-        private readonly ITranspilerLibraryMapper typeMapper = new ExternalTypeMapper()
+        private readonly ExternalTypeMapper typeMapper = new ExternalTypeMapper()
         {
             { typeof(Vector2), SpirvVector2 },
             { typeof(Vector3), SpirvVector3 },
@@ -116,9 +117,26 @@ namespace cilspirv.Library
             methodMapper.AddAllOperators<Vector2>(SpirvVector2);
             methodMapper.AddAllOperators<Vector3>(SpirvVector3);
             methodMapper.AddAllOperators<Vector4>(SpirvVector4);
+            AddFieldsFor<Vector2>();
+            AddFieldsFor<Vector3>();
+            AddFieldsFor<Vector4>();
+            AddFieldsFor<Quaternion>();
         }
 
         public IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => typeMapper.TryMapType(ilTypeRef);
         public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => methodMapper.TryMapMethod(methodRef);
+        public ITranspilerFieldBehavior? TryMapFieldBehavior(FieldReference fieldRef) => typeMapper.TryMapFieldBehavior(fieldRef);
+
+        private void AddFieldsFor<T>()
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                var fieldName = new string((char)('X' + i), 1);
+                if (typeof(T).GetField(fieldName) != null)
+                    typeMapper.Add<T, float>(fieldName, new StandardFieldBehavior(SpirvFloat32, i));
+            }
+            if (typeof(T).GetField("W") != null)
+                typeMapper.Add<T, float>("W", new StandardFieldBehavior(SpirvFloat32, 3));
+        }
     }
 }

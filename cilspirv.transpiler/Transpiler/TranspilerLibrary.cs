@@ -193,7 +193,7 @@ namespace cilspirv.Transpiler
 
         private ITranspilerFieldBehavior? TryMapFieldBehavior(FieldReference fieldRef) => AllMappers
             .Select(mapper => mapper.TryMapFieldBehavior(fieldRef))
-            .FirstOrDefault();
+            .FirstOrDefault(b => b != null);
 
         private IEnumerable<DecorationEntry> ScanDecorations(ICustomAttributeProvider element) => AllScanners
             .Select(scanner => scanner.TryScanDecorations(element))
