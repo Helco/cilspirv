@@ -74,6 +74,15 @@ namespace cilspirv.Transpiler
                 {
                     currentInstruction = ilInstr;
 
+                    if (blocks.TryGetValue(ilInstr.Offset, out var fallthroughBlock) && fallthroughBlock != CurrentBlockInfo)
+                    {
+                        Add(new OpBranch()
+                        {
+                            TargetLabel = context.IDOf(fallthroughBlock.block)
+                        });
+                        LeaveBlock();
+                    }
+
                     if (ilInstr.OpCode.OpCodeType == OpCodeType.Prefix)
                     {
                         currentPrefix = ilInstr;
@@ -207,31 +216,31 @@ namespace cilspirv.Transpiler
                         case (Code.Leave):
                         case (Code.Leave_S):
                         case (Code.Br):
-                        case (Code.Br_S): Branch((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Br_S): Branch(ilInstr); break;
                         case (Code.Beq):
-                        case (Code.Beq_S): BranchEqual((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Beq_S): BranchEqual(ilInstr); break;
                         case (Code.Bne_Un):
-                        case (Code.Bne_Un_S): BranchNotEqual((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Bne_Un_S): BranchNotEqual(ilInstr); break;
                         case (Code.Bgt):
-                        case (Code.Bgt_S): BranchGreater((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Bgt_S): BranchGreater(ilInstr); break;
                         case (Code.Bgt_Un):
-                        case (Code.Bgt_Un_S): BranchGreaterUnordered((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Bgt_Un_S): BranchGreaterUnordered(ilInstr); break;
                         case (Code.Bge):
-                        case (Code.Bge_S): BranchGreaterOrEqual((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Bge_S): BranchGreaterOrEqual(ilInstr); break;
                         case (Code.Bge_Un):
-                        case (Code.Bge_Un_S): BranchGreaterOrEqualUnordered((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Bge_Un_S): BranchGreaterOrEqualUnordered(ilInstr); break;
                         case (Code.Blt):
-                        case (Code.Blt_S): BranchLess((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Blt_S): BranchLess(ilInstr); break;
                         case (Code.Blt_Un):
-                        case (Code.Blt_Un_S): BranchLessUnordered((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Blt_Un_S): BranchLessUnordered(ilInstr); break;
                         case (Code.Ble):
-                        case (Code.Ble_S): BranchLessOrEqual((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Ble_S): BranchLessOrEqual(ilInstr); break;
                         case (Code.Ble_Un):
-                        case (Code.Ble_Un_S): BranchLessOrEqualUnordered((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Ble_Un_S): BranchLessOrEqualUnordered(ilInstr); break;
                         case (Code.Brfalse):
-                        case (Code.Brfalse_S): BranchFalsy((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Brfalse_S): BranchFalsy(ilInstr); break;
                         case (Code.Brtrue):
-                        case (Code.Brtrue_S): BranchTruthy((ILInstruction)ilInstr.Operand); break;
+                        case (Code.Brtrue_S): BranchTruthy(ilInstr); break;
 
 
                         default: throw new NotSupportedException($"Unsupported opcode {ilInstr.OpCode}");
