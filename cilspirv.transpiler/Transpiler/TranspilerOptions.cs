@@ -1,4 +1,5 @@
 ﻿using System;
+using cilspirv.Spirv;
 
 namespace cilspirv.Transpiler
 {
@@ -8,5 +9,6 @@ namespace cilspirv.Transpiler
         public bool DefaultTypeUserNames { get; init; } = false;
         public bool SkipUnusedFunctions { get; init; } = true;
         public int NativeIntWidth { get; init; } = 32;
+        public SelectionControl DefaultSelectionControl { get; init; } = SelectionControl.Flatten;
     }
 }

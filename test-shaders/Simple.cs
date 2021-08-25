@@ -44,8 +44,8 @@ namespace test_shaders
             output = input.color
                 * WeighColor(input.color, uniforms.vectorColorFactor)
                 * WeighColor(uniforms.tint, uniforms.tintFactor);
-            //if (output.W < uniforms.alphaReference)
-            //    output.W = 0f;
+            if (output.W < uniforms.alphaReference)
+                output.W = 0f;
             //    discard;
         }
 

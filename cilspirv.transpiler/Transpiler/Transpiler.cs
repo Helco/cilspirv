@@ -55,6 +55,8 @@ namespace cilspirv.Transpiler
                     continue; // seems like we enqueued the function twice
 
                 TranspileVariables(definedFunction, ilBody);
+                var controlFlowAnalysis = new ControlFlowAnalysis(ilBody);
+                controlFlowAnalysis.Analyse();
                 var genInstructions = new GenInstructions(this, definedFunction, ilBody);
                 genInstructions.GenerateInstructions();
             }
