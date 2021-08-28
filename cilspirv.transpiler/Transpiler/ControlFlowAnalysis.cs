@@ -6,7 +6,7 @@ using Mono.Cecil.Cil;
 
 namespace cilspirv.Transpiler
 {
-    internal enum ControlFlowKind
+    internal enum HeaderBlockKind
     {
         None = 0,
         Selection,
@@ -15,20 +15,15 @@ namespace cilspirv.Transpiler
 
     internal interface IControlFlowBlock
     {
-        ControlFlowKind ControlFlowKind { get; }
+        HeaderBlockKind HeaderBlockKind { get; }
+        IControlFlowBlock? MergeBlock { get; }
+        IControlFlowBlock? ContinueBlock { get; }
         IEnumerable<Instruction> Instructions { get; }
         int InboundStackSize { get; }
     }
 
     internal class ControlFlowAnalysis
     {
-        internal enum BlockKind
-        {
-            Normal,
-            HeaderBlock,
-            MergeBlock
-        }
-
         internal enum ExitKind
         {
             None,
@@ -39,8 +34,9 @@ namespace cilspirv.Transpiler
 
         internal class Block : IControlFlowBlock
         {
-            public BlockKind BlockKind { get; set; }
-            public ControlFlowKind ControlFlowKind { get; set; }
+            public HeaderBlockKind HeaderBlockKind { get; set; }
+            public Block? MergeBlock { get; set; }
+            public Block? ContinueBlock { get; set; }
             public ExitKind ExitKind { get; set; }
             public Block? ParentHeaderBlock { get; set; }
             public List<Block> OutboundEdges { get; } = new List<Block>();
@@ -59,6 +55,9 @@ namespace cilspirv.Transpiler
                     curB = curB.ImmediateDominator;
                 return curB == this;
             }
+
+            IControlFlowBlock? IControlFlowBlock.MergeBlock => MergeBlock;
+            IControlFlowBlock? IControlFlowBlock.ContinueBlock => ContinueBlock;
         }
 
         private readonly MethodBody ilMethodBody;
@@ -76,9 +75,9 @@ namespace cilspirv.Transpiler
         {
             CreateInitialBlocks();
             SetOutboundEdges();
-            SetInboundEdges();
-            SetPostOrderNumbers();
+            SetPostOrderNumberAndInboundEdges();
             DetermineDominators();
+            ConstructLoops();
         }
 
         /// <summary>Generates instruction blocks without any graph or flow info</summary>
@@ -118,14 +117,17 @@ namespace cilspirv.Transpiler
             }
         }
 
+        /// <remarks>Also splits blocks where branches jump into</remarks>
         private void SetOutboundEdges()
         {
             var edges = new List<(Block, Instruction)>(allBlocks.Count);
             foreach (var block in allBlocks)
             {
                 var lastInstr = block.Instructions.Last();
-                if (lastInstr.Operand is Instruction branchInstr)
-                    edges.Add((block, branchInstr));
+                if (lastInstr.Operand is Instruction targetInstr)
+                    edges.Add((block, targetInstr));
+                if (lastInstr.Operand is IEnumerable<Instruction> targetInstrs)
+                    edges.AddRange(targetInstrs.Select(t => (block, t)));
                 if (lastInstr.OpCode.Code != Code.Ret &&
                     lastInstr.OpCode.Code != Code.Throw &&
                     lastInstr.OpCode.Code != Code.Rethrow)
@@ -161,29 +163,8 @@ namespace cilspirv.Transpiler
             }
         }
 
-        private void SetInboundEdges()
-        {
-            var blockIndices = allBlocks
-                .Select((block, i) => (block, i))
-                .ToDictionary(t => t.block, t => t.i);
-            for (int fromI = 0; fromI < allBlocks.Count; fromI++)
-            {
-                var from = allBlocks[fromI];
-                foreach (var to in from.OutboundEdges)
-                {
-                    // easy backedge detection thanks to CIL restrictions
-                    //
-
-                    int toI = blockIndices[to];
-                    (fromI < toI
-                        ? to.InboundForwardEdges
-                        : to.InboundBackwardEdges)
-                        .Add(from);
-                }
-            }
-        }
-    
-        private void SetPostOrderNumbers()
+        /// <remarks>Using Depth-First Search</remarks>
+        private void SetPostOrderNumberAndInboundEdges()
         {
             var stack = new Stack<(Block, int)>();
             stack.Push((allBlocks[0], 0));
@@ -197,15 +178,19 @@ namespace cilspirv.Transpiler
                     stack.Push((parent, ++edgeI));
                     if (child.PostOrderI < 0)
                         stack.Push((child, 0));
+
+                    (child.PostOrderI < 0
+                        ? child.InboundForwardEdges
+                        : child.InboundBackwardEdges).Add(parent);
                 }
                 else
                     parent.PostOrderI = next++;
             }
         }
 
+        /// <remarks>Cooper, Harvey, Kennedy - "A Simple, Fast Dominance Algorithm"</remarks>
         private void DetermineDominators()
         {
-            // Cooper, Harvey, Kennedy - "A Simple, Fast Dominance Algorithm"
             var revPostOrderBlocks = allBlocks
                 .OrderByDescending(b => b.PostOrderI)
                 .Skip(1) // the first is the root which has no predecessors
@@ -244,6 +229,23 @@ namespace cilspirv.Transpiler
                 }
                 return b1;
             }
+        }
+    
+        private void ConstructLoops()
+        {
+            var continueBlocks = allBlocks.Where(b => b.InboundBackwardEdges.Any());
+            foreach (var continueBlock in continueBlocks)
+            {
+                var backEdgeBlock = continueBlock.InboundBackwardEdges.Count > 1
+                    ? ConstructBackEdgeBlock(continueBlock.InboundBackwardEdges)
+                    : continueBlock.InboundBackwardEdges.Single();
+
+            }
+        }
+
+        private IControlFlowBlock ConstructBackEdgeBlock(IReadOnlyList<IControlFlowBlock> sourceBlocks)
+        {
+            throw new NotSupportedException("Unsupported loop construct with multiple back edges");
         }
     }
 }
