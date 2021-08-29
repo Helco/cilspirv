@@ -1,19 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using NUnit.Framework;
 
-namespace cilspirv.transpiler.test.ControlFlowAnalysis
+namespace cilspirv.transpiler.test
 {
     public static class Assembler
     {
         private static readonly RegexOptions Options = RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.Compiled;
-        private static readonly Regex TypePragmaRegex = new Regex(@"^\s*\.(param|return|local)\s+([\w\.]+)(\[\])?(&)?\s*$", Options);
-        private static readonly Regex InstrPragmaRegex = new Regex(@"^\s*(\w+:)?\s*(\w+(?:\.[s0-9])?)(\s+.+)?\s*$", Options);
-        private static readonly Regex TokenRegex = new Regex(@"^([\w\.]+)((?:::|\/)\w+)?$", Options);
+        private static readonly Regex TypePragmaRegex = new Regex(@"^\s*\.(param|return|local)\s+([\w\.\+]+)(\[\])?(&)?\s*$", Options);
+        private static readonly Regex InstrPragmaRegex = new Regex(@"^\s*(\w+:)?\s*(\w[\w\.]+)(\s+.+)?\s*$", Options);
+        private static readonly Regex TokenRegex = new Regex(@"^([\w\.\+]+)(::\w+)?$", Options);
 
         private static readonly object myAssemblyLock = new object();
         private static AssemblyDefinition? myAssembly;
@@ -78,7 +79,7 @@ namespace cilspirv.transpiler.test.ControlFlowAnalysis
                 .ToArray();
             var instrByLabel = instrTuples
                 .Where(i => i.label != null)
-                .ToDictionary(t => t.label!, t => t.instr);
+                .ToDictionary(t => t.label![0..^1], t => t.instr);
             var offset = 0;
             for (int i = 0; i < instrs.Length; i++)
             {
@@ -89,6 +90,12 @@ namespace cilspirv.transpiler.test.ControlFlowAnalysis
                 methodDef.Body.Instructions.Add(instrs[i]);
             }
 
+            var invalidLine = lines
+                .Where(l => !TypePragmaRegex.IsMatch(l) && !InstrPragmaRegex.IsMatch(l))
+                .FirstOrDefault();
+            if (invalidLine != null)
+                throw new InvalidOperationException("Invalid line: " + invalidLine);
+
             return methodDef;
 
             object ParseOperand(Instruction instr, string operand) => instr.OpCode.OperandType switch
@@ -96,8 +103,8 @@ namespace cilspirv.transpiler.test.ControlFlowAnalysis
                 OperandType.ShortInlineI => sbyte.Parse(operand),
                 OperandType.InlineI => int.Parse(operand),
                 OperandType.InlineI8 => long.Parse(operand),
-                OperandType.ShortInlineR => float.Parse(operand),
-                OperandType.InlineR => double.Parse(operand),
+                OperandType.ShortInlineR => float.Parse(operand, CultureInfo.InvariantCulture),
+                OperandType.InlineR => double.Parse(operand, CultureInfo.InvariantCulture),
                 OperandType.InlineArg => methodDef.Parameters[short.Parse(operand)],
                 OperandType.ShortInlineArg => methodDef.Parameters[byte.Parse(operand)],
                 OperandType.InlineVar => methodDef.Body.Variables[short.Parse(operand)],
@@ -169,15 +176,11 @@ namespace cilspirv.transpiler.test.ControlFlowAnalysis
             if (!match.Groups[2].Success)
                 return typeRef;
 
-            var member = match.Groups[2].Value;
-            if (member.StartsWith("::"))
-                return typeRef.Resolve().Methods.FirstOrDefault(m => m.Name == member.Substring(2))
-                    ?? throw new InvalidOperationException("Invalid method name: " + member.Substring(2));
-            if (member.StartsWith("/"))
-                return typeRef.Resolve().Fields.FirstOrDefault(f => f.Name == member.Substring(1))
-                    ?? throw new InvalidOperationException("Invalid field name: " + member.Substring(1));
-
-            throw new NotSupportedException("Unsupported member prefix: " + member);
+            var member = match.Groups[2].Value.Substring(2); // skip the ::
+            return
+                typeRef.Resolve().Methods.FirstOrDefault(m => m.Name == member) as IMetadataTokenProvider ??
+                typeRef.Resolve().Fields.FirstOrDefault(f => f.Name == member) ??
+                throw new InvalidOperationException("Invalid member name: " + member);
         }
     }
 }
