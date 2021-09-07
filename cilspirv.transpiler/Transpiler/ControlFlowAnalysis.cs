@@ -22,44 +22,8 @@ namespace cilspirv.Transpiler
         int InboundStackSize { get; }
     }
 
-    internal class ControlFlowAnalysis
+    internal partial class ControlFlowAnalysis
     {
-        internal enum ExitKind
-        {
-            None,
-            Branch,
-            CondBranch,
-            Exit // any kind, e.g. return, kill, unreachable
-        }
-
-        internal class Block : IControlFlowBlock
-        {
-            public HeaderBlockKind HeaderBlockKind { get; set; }
-            public Block? MergeBlock { get; set; }
-            public Block? ContinueBlock { get; set; }
-            public ExitKind ExitKind { get; set; }
-            public Block? ParentHeaderBlock { get; set; }
-            public List<Block> OutboundEdges { get; } = new List<Block>();
-            public List<Block> InboundForwardEdges { get; } = new List<Block>();
-            public List<Block> InboundBackwardEdges { get; } = new List<Block>();
-            public int OutboundStackSize { get; set; }
-            public int InboundStackSize { get; set; }
-            public IEnumerable<Instruction> Instructions { get; set; } = Enumerable.Empty<Instruction>();
-
-            public int PostOrderI { get; set; } = -1;
-            public Block? ImmediateDominator { get; set; }
-            public bool Dominates(Block b)
-            {
-                var curB = b;
-                while (curB != null && curB != this && curB != curB.ImmediateDominator)
-                    curB = curB.ImmediateDominator;
-                return curB == this;
-            }
-
-            IControlFlowBlock? IControlFlowBlock.MergeBlock => MergeBlock;
-            IControlFlowBlock? IControlFlowBlock.ContinueBlock => ContinueBlock;
-        }
-
         private readonly MethodBody ilMethodBody;
         private readonly List<Block> allBlocks = new List<Block>();
         private readonly Dictionary<int, Block> blocksByOffset = new Dictionary<int, Block>();
@@ -71,13 +35,21 @@ namespace cilspirv.Transpiler
             this.ilMethodBody = ilMethodBody;
         }
 
-        public void Analyse()
+        internal void PreAnalyse()
         {
             CreateInitialBlocks();
             SetOutboundEdges();
-            SetPostOrderNumberAndInboundEdges();
-            DetermineDominators();
+            SetPreOrderNumberAndInboundEdges();
+            SetPostOrderNumber();
+            DeterminePreDominators();
+            DeterminePostDominators();
+        }
+
+        public void Analyse()
+        {
+            PreAnalyse();
             ConstructLoops();
+            ConstructSelections();
         }
 
         /// <summary>Generates instruction blocks without any graph or flow info</summary>
@@ -130,7 +102,9 @@ namespace cilspirv.Transpiler
                     edges.AddRange(targetInstrs.Select(t => (block, t)));
                 if (lastInstr.OpCode.Code != Code.Ret &&
                     lastInstr.OpCode.Code != Code.Throw &&
-                    lastInstr.OpCode.Code != Code.Rethrow)
+                    lastInstr.OpCode.Code != Code.Rethrow &&
+                    lastInstr.OpCode.Code != Code.Br &&
+                    lastInstr.OpCode.Code != Code.Br_S)
                     edges.Add((block, lastInstr.Next));
             }
 
@@ -164,7 +138,7 @@ namespace cilspirv.Transpiler
         }
 
         /// <remarks>Using Depth-First Search</remarks>
-        private void SetPostOrderNumberAndInboundEdges()
+        private void SetPostOrderNumber()
         {
             var stack = new Stack<(Block, int)>();
             stack.Push((allBlocks[0], 0));
@@ -178,62 +152,43 @@ namespace cilspirv.Transpiler
                     stack.Push((parent, ++edgeI));
                     if (child.PostOrderI < 0)
                         stack.Push((child, 0));
-
-                    (child.PostOrderI < 0
-                        ? child.InboundForwardEdges
-                        : child.InboundBackwardEdges).Add(parent);
                 }
                 else
                     parent.PostOrderI = next++;
             }
         }
 
-        /// <remarks>Cooper, Harvey, Kennedy - "A Simple, Fast Dominance Algorithm"</remarks>
-        private void DetermineDominators()
+        /// <remarks>Again using Depth-First Search, but pre-order this time</remarks>
+        private void SetPreOrderNumberAndInboundEdges()
         {
-            var revPostOrderBlocks = allBlocks
-                .OrderByDescending(b => b.PostOrderI)
-                .Skip(1) // the first is the root which has no predecessors
-                .ToArray();
-            allBlocks[0].ImmediateDominator = allBlocks[0];
-
-            bool changed;
-            do
+            var visited = new HashSet<Block>(allBlocks.Count);
+            var stack = new Stack<(Block, int)>();
+            stack.Push((allBlocks[0], 0));
+            int next = 0;
+            while (stack.Any())
             {
-                changed = false;
-                foreach (var block in revPostOrderBlocks)
-                {
-                    var inboundEdges = block.InboundForwardEdges
-                        .Cast<Block?>()
-                        .Concat(block.InboundBackwardEdges)
-                        .Where(b => b?.ImmediateDominator != null);
-                    if (!inboundEdges.Any())
-                        continue;
-                    var newIDom = inboundEdges.Aggregate(Intersect);
-                    if (newIDom != block.ImmediateDominator)
-                    {
-                        block.ImmediateDominator = newIDom;
-                        changed = true;
-                    }
-                }
-            } while (changed);
+                var (parent, edgeI) = stack.Pop();
+                visited.Add(parent);
+                parent.PreOrderI = next++;
+                if (edgeI >= parent.OutboundEdges.Count)
+                    continue;
 
-            static Block? Intersect(Block? b1, Block? b2)
-            {
-                while (b1 != b2)
+                var child = parent.OutboundEdges[edgeI];
+                if (visited.Contains(child))
+                    child.InboundBackwardEdges.Add(parent);
+                else
                 {
-                    while (b1?.PostOrderI < b2?.PostOrderI)
-                        b1 = b1?.ImmediateDominator;
-                    while (b2?.PostOrderI < b1?.PostOrderI)
-                        b2 = b2?.ImmediateDominator;
+                    child.InboundForwardEdges.Add(parent);
+                    stack.Push((child, 0));
                 }
-                return b1;
             }
         }
-    
+
         private void ConstructLoops()
         {
             var continueBlocks = allBlocks.Where(b => b.InboundBackwardEdges.Any());
+            if (continueBlocks.Any())
+                throw new NotSupportedException("Loops are currently not supported");
             foreach (var continueBlock in continueBlocks)
             {
                 var backEdgeBlock = continueBlock.InboundBackwardEdges.Count > 1
@@ -246,6 +201,24 @@ namespace cilspirv.Transpiler
         private IControlFlowBlock ConstructBackEdgeBlock(IReadOnlyList<IControlFlowBlock> sourceBlocks)
         {
             throw new NotSupportedException("Unsupported loop construct with multiple back edges");
+        }
+
+        /// <summary>After constructing loops we should have a DAG and all branches are selections</summary>
+        private void ConstructSelections()
+        {
+            var headers = allBlocks.Where(b => b.OutboundEdges.Count > 1);
+            foreach (var header in headers)
+            {
+                var mergeBlock = header.OutboundEdges
+                    .Select(s => s.PostDominators)
+                    .Aggregate((a, b) => a.Intersect(b).ToArray())
+                    .FirstOrDefault();
+                if (mergeBlock == null) // TODO: maybe just add an unreachable merge block?
+                    throw new NotSupportedException("Unsupported undivergent selection control flow");
+
+                header.BlockKinds |= BlockKinds.SelectionHeader;
+                header.MergeBlock = mergeBlock;
+            }
         }
     }
 }

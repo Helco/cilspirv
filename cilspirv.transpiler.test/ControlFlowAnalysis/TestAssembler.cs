@@ -7,7 +7,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using NUnit.Framework;
 
-namespace cilspirv.transpiler.test
+namespace cilspirv.Transpiler.test
 {
     public class TestAssembler
     {
@@ -46,35 +46,35 @@ L0: ret
         [Test]
         public void TypeReference()
         {
-            var method = Assembler.Parse(@"stobj cilspirv.transpiler.test.TestAssembler+Struct");
+            var method = Assembler.Parse(@"stobj cilspirv.Transpiler.test.TestAssembler+Struct");
 
             var instr = method.Body.Instructions.Single();
             Assert.AreEqual(OpCodes.Stobj, instr.OpCode);
             Assert.IsInstanceOf<TypeReference>(instr.Operand);
-            Assert.AreEqual("cilspirv.transpiler.test.TestAssembler/Struct", ((TypeReference)instr.Operand).FullName);
+            Assert.AreEqual("cilspirv.Transpiler.test.TestAssembler/Struct", ((TypeReference)instr.Operand).FullName);
             // Mono uses / as separator between parent and child type, CLR uses +
         }
 
         [Test]
         public void MethodReference()
         {
-            var method = Assembler.Parse(@"call cilspirv.transpiler.test.TestAssembler::Method");
+            var method = Assembler.Parse(@"call cilspirv.Transpiler.test.TestAssembler::Method");
 
             var instr = method.Body.Instructions.Single();
             Assert.AreEqual(OpCodes.Call, instr.OpCode);
             Assert.IsInstanceOf<MethodReference>(instr.Operand);
-            Assert.AreEqual("System.Void cilspirv.transpiler.test.TestAssembler::Method()", ((MethodReference)instr.Operand).FullName);
+            Assert.AreEqual("System.Void cilspirv.Transpiler.test.TestAssembler::Method()", ((MethodReference)instr.Operand).FullName);
         }
 
         [Test]
         public void FieldReference()
         {
-            var method = Assembler.Parse(@"ldfld cilspirv.transpiler.test.TestAssembler::Field");
+            var method = Assembler.Parse(@"ldfld cilspirv.Transpiler.test.TestAssembler::Field");
 
             var instr = method.Body.Instructions.Single();
             Assert.AreEqual(OpCodes.Ldfld, instr.OpCode);
             Assert.IsInstanceOf<FieldReference>(instr.Operand);
-            Assert.AreEqual("System.Int32 cilspirv.transpiler.test.TestAssembler::Field", ((FieldReference)instr.Operand).FullName);
+            Assert.AreEqual("System.Int32 cilspirv.Transpiler.test.TestAssembler::Field", ((FieldReference)instr.Operand).FullName);
         }
 
         [Test]

@@ -7,7 +7,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using NUnit.Framework;
 
-namespace cilspirv.transpiler.test
+namespace cilspirv.Transpiler.test
 {
     public static class Assembler
     {

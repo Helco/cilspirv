@@ -1,0 +1,18 @@
+﻿[0] None
+    IL_0000: br IL_0005
+
+[1] None
+    IL_0005: br IL_000a
+
+[2] None
+    IL_000a: br IL_0010
+
+[3] None
+    IL_000f: nop
+    IL_0000: br IL_0010
+
+[4] None
+    IL_0010: br IL_0015
+
+[5] None
+    IL_0015: ret

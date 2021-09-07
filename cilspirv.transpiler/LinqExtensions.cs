@@ -26,5 +26,32 @@ namespace cilspirv
             while (enumerator.MoveNext())
                 yield return enumerator.Current;
         }
+
+        public static int IndexOf<T>(this IEnumerable<T> set, T search, IEqualityComparer<T>? comparer = null)
+        {
+            comparer ??= EqualityComparer<T>.Default;
+            int searchHash = search == null ? 0 : comparer.GetHashCode(search);
+            int i = 0;
+            foreach (var elem in set)
+            {
+                int elemHash = elem == null ? 0 : comparer.GetHashCode(elem);
+                if (elemHash == searchHash && comparer.Equals(search, elem))
+                    return i;
+                i++;
+            }
+            return -1;
+        }
+
+        public static int IndexOf<T>(this IEnumerable<T> set, Predicate<T> predicate)
+        {
+            int i = 0;
+            foreach (var elem in set)
+            {
+                if (predicate(elem))
+                    return i;
+                i++;
+            }
+            return -1;
+        }
     }
 }

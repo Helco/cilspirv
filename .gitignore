@@ -1,6 +1,7 @@
 *.db
 **/bin/
 **/obj/
+**/*.received.txt
 .vscode
 .vs
 UpgradeLog.htm
