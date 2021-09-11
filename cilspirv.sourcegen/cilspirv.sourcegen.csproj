@@ -6,6 +6,7 @@
     <LangVersion>preview</LangVersion>
     <Nullable>annotations</Nullable>
     <RootNamespace>cilspirv.SourceGen</RootNamespace>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
   <ItemGroup>
