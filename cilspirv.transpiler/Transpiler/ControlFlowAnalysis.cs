@@ -35,19 +35,15 @@ namespace cilspirv.Transpiler
             this.ilMethodBody = ilMethodBody;
         }
 
-        internal void PreAnalyse()
+        public void Analyse()
         {
             CreateInitialBlocks();
             SetOutboundEdges();
-            SetPreOrderNumberAndInboundEdges();
+            SetInboundEdges();
             SetPostOrderNumber();
+            SetPostOrderRevNumber();
             DeterminePreDominators();
             DeterminePostDominators();
-        }
-
-        public void Analyse()
-        {
-            PreAnalyse();
             ConstructLoops();
             ConstructSelections();
         }
@@ -92,7 +88,7 @@ namespace cilspirv.Transpiler
         /// <remarks>Also splits blocks where branches jump into</remarks>
         private void SetOutboundEdges()
         {
-            var edges = new List<(Block, Instruction)>(allBlocks.Count);
+            var edges = new List<(Block source, Instruction target)>(allBlocks.Count);
             foreach (var block in allBlocks)
             {
                 var lastInstr = block.Instructions.Last();
@@ -108,14 +104,9 @@ namespace cilspirv.Transpiler
                     edges.Add((block, lastInstr.Next));
             }
 
-            foreach (var (from, toInstr) in edges)
+            var splittingEdges = edges.Where(t => !blocksByOffset.ContainsKey(t.target.Offset)).ToArray();
+            foreach (var (_, toInstr) in splittingEdges)
             {
-                if (blocksByOffset.TryGetValue(toInstr.Offset, out var to))
-                {
-                    from.OutboundEdges.Add(to);
-                    continue;
-                }
-
                 var containingBlockI = allBlocks.FindIndex(b => b.Instructions.Contains(toInstr));
                 if (containingBlockI < 0)
                     throw new InvalidOperationException("No block contains target instruction");
@@ -132,34 +123,19 @@ namespace cilspirv.Transpiler
                 blocksByOffset[prefixBlock.Instructions.First().Offset] = prefixBlock;
                 blocksByOffset[toInstr.Offset] = containingBlock;
 
-                from.OutboundEdges.Add(containingBlock);
                 prefixBlock.OutboundEdges.Add(containingBlock);
+            }
+
+            foreach (var (from, toInstr) in edges)
+            {
+                if (!blocksByOffset.TryGetValue(toInstr.Offset, out var to))
+                    throw new InvalidOperationException("Blocks were not split correctly");
+                from.OutboundEdges.Add(to);
             }
         }
 
         /// <remarks>Using Depth-First Search</remarks>
         private void SetPostOrderNumber()
-        {
-            var stack = new Stack<(Block, int)>();
-            stack.Push((allBlocks[0], 0));
-            int next = 0;
-            while (stack.Any())
-            {
-                var (parent, edgeI) = stack.Pop();
-                if (edgeI < parent.OutboundEdges.Count)
-                {
-                    var child = parent.OutboundEdges[edgeI];
-                    stack.Push((parent, ++edgeI));
-                    if (child.PostOrderI < 0)
-                        stack.Push((child, 0));
-                }
-                else
-                    parent.PostOrderI = next++;
-            }
-        }
-
-        /// <remarks>Again using Depth-First Search, but pre-order this time</remarks>
-        private void SetPreOrderNumberAndInboundEdges()
         {
             var visited = new HashSet<Block>(allBlocks.Count);
             var stack = new Stack<(Block, int)>();
@@ -169,18 +145,65 @@ namespace cilspirv.Transpiler
             {
                 var (parent, edgeI) = stack.Pop();
                 visited.Add(parent);
-                parent.PreOrderI = next++;
+                if (edgeI < parent.OutboundEdges.Count)
+                {
+                    var child = parent.OutboundEdges[edgeI];
+                    stack.Push((parent, ++edgeI));
+                    if (!visited.Contains(child))
+                        stack.Push((child, 0));
+                }
+                else
+                    parent.PostOrderI = next++;
+            }
+        }
+
+        /// <remarks>The postorder of the reversed graph</remarks>
+        private void SetPostOrderRevNumber()
+        {
+            var visited = new HashSet<Block>(allBlocks.Count);
+            var stack = new Stack<(Block, int)>();
+            foreach (var startBlock in allBlocks.Where(b => b.OutboundEdges.Count == 0))
+                stack.Push((startBlock, 0));
+            int next = 0;
+            while (stack.Any())
+            {
+                var (parent, edgeI) = stack.Pop();
+                visited.Add(parent);
+                if (edgeI < parent.InboundForwardEdges.Count + parent.InboundBackwardEdges.Count)
+                {
+                    var child = edgeI < parent.InboundForwardEdges.Count
+                        ? parent.InboundForwardEdges[edgeI]
+                        : parent.InboundBackwardEdges[edgeI - parent.InboundForwardEdges.Count];
+                    stack.Push((parent, ++edgeI));
+                    if (!visited.Contains(child))
+                        stack.Push((child, 0));
+                }
+                else
+                    parent.PostOrderRevI = next++;
+            }
+        }
+
+        /// <remarks>Again using Depth-First Search, but pre-order this time</remarks>
+        private void SetInboundEdges()
+        {
+            var visited = new HashSet<Block>(allBlocks.Count);
+            var stack = new Stack<(Block, int)>();
+            stack.Push((allBlocks[0], 0));
+            while (stack.Any())
+            {
+                var (parent, edgeI) = stack.Pop();
+                visited.Add(parent);
                 if (edgeI >= parent.OutboundEdges.Count)
                     continue;
-
                 var child = parent.OutboundEdges[edgeI];
-                if (visited.Contains(child))
-                    child.InboundBackwardEdges.Add(parent);
-                else
-                {
-                    child.InboundForwardEdges.Add(parent);
+
+                (stack.Any(t => t.Item1 == child)
+                    ? child.InboundBackwardEdges
+                    : child.InboundForwardEdges).Add(parent);
+
+                stack.Push((parent, edgeI + 1));
+                if (!visited.Contains(child))
                     stack.Push((child, 0));
-                }
             }
         }
 

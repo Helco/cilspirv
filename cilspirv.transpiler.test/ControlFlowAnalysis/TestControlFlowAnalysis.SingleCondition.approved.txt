@@ -1,14 +1,22 @@
-﻿[0] Selection Merge:3
+﻿[0] SelectionHeader Merge:3
+  Edges: Out-2-1  In  Back
+  Dominators: Pre-0  Post-3
     IL_0000: ldarg.0
     IL_0001: brfalse IL_000c
 
-[1] None
+[1] 0
+  Edges: Out-3  In-0  Back
+  Dominators: Pre-0  Post-3
     IL_0006: ldarg.1
     IL_0007: br IL_000d
 
-[2] None
+[2] 0
+  Edges: Out-3  In-0  Back
+  Dominators: Pre-0  Post-3
     IL_000c: ldarg.2
     IL_0000: br IL_000d
 
-[3] None
+[3] 0
+  Edges: Out  In-2-1  Back
+  Dominators: Pre-0  Post-3
     IL_000d: ret

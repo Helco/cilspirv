@@ -1,18 +1,24 @@
-﻿[0] None
+﻿[0] 0
+  Edges: Out-1  In  Back
+  Dominators: Pre-0  Post-1
     IL_0000: br IL_0005
 
-[1] None
+[1] 0
+  Edges: Out-2  In-0  Back
+  Dominators: Pre-0  Post-2
     IL_0005: br IL_000a
 
-[2] None
-    IL_000a: br IL_0010
+[2] 0
+  Edges: Out-3  In-1  Back
+  Dominators: Pre-1  Post-3
+    IL_000a: br IL_000f
 
-[3] None
-    IL_000f: nop
-    IL_0000: br IL_0010
+[3] 0
+  Edges: Out-4  In-2  Back
+  Dominators: Pre-2  Post-4
+    IL_000f: br IL_0014
 
-[4] None
-    IL_0010: br IL_0015
-
-[5] None
-    IL_0015: ret
+[4] 0
+  Edges: Out  In-3  Back
+  Dominators: Pre-3  Post-4
+    IL_0014: ret

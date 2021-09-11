@@ -48,7 +48,8 @@ namespace cilspirv.Transpiler
             public Block? ImmediateDominator { get; set; }
             public IEnumerable<Block> Dominators => Chain(this, b => b.ImmediateDominator);
 
-            public int PreOrderI { get; set; } = -1;
+            /// <remarks>the post order of the reversed graph, not the reverse postorder of the original graph!</remarks>
+            public int PostOrderRevI { get; set; } = -1;
             public Block? ImmediatePostDominator { get; set; }
             public IEnumerable<Block> PostDominators => Chain(this, b => b.ImmediatePostDominator);
 
@@ -85,6 +86,8 @@ namespace cilspirv.Transpiler
 
             IControlFlowBlock? IControlFlowBlock.MergeBlock => MergeBlock;
             IControlFlowBlock? IControlFlowBlock.ContinueBlock => ContinueBlock;
+
+            public override string ToString() => $"Block {Instructions.First().Offset:X4}->{Instructions.Last().Offset:X4}";
         }
     }
 }

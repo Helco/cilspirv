@@ -13,6 +13,7 @@ namespace cilspirv.Transpiler
             int OrderI { get; }
             IDominatorAccess? ImmediateDominator { get; set; }
             IEnumerable<IDominatorAccess> InboundEdges { get; }
+            bool IsStart { get; }
         }
 
         private readonly struct ForwardDominatorAccess : IDominatorAccess
@@ -34,6 +35,8 @@ namespace cilspirv.Transpiler
             public IEnumerable<IDominatorAccess> InboundEdges => block.InboundBackwardEdges
                 .Concat(block.InboundForwardEdges)
                 .Select(b => new ForwardDominatorAccess(b) as IDominatorAccess);
+
+            public bool IsStart => block.InboundForwardEdges.Count == 0;
         }
 
         private readonly struct BackwardDominatorAccess : IDominatorAccess
@@ -42,7 +45,7 @@ namespace cilspirv.Transpiler
 
             public BackwardDominatorAccess(Block block) => this.block = block;
 
-            public int OrderI => block.PreOrderI;
+            public int OrderI => block.PostOrderRevI;
 
             public IDominatorAccess? ImmediateDominator
             {
@@ -54,6 +57,8 @@ namespace cilspirv.Transpiler
 
             public IEnumerable<IDominatorAccess> InboundEdges => block.OutboundEdges
                 .Select(b => new BackwardDominatorAccess(b) as IDominatorAccess);
+
+            public bool IsStart => block.OutboundEdges.Count == 0;
         }
 
         private void DeterminePreDominators() => DetermineDominators(allBlocks.Select(b => new ForwardDominatorAccess(b) as IDominatorAccess));
@@ -63,10 +68,10 @@ namespace cilspirv.Transpiler
         private static void DetermineDominators(IEnumerable<IDominatorAccess> allBlocks)
         {
             var revOrderBlocks = allBlocks
-                .Where(b => !b.InboundEdges.Any())
+                .Where(b => !b.IsStart)
                 .OrderByDescending(b => b.OrderI)
                 .ToArray();
-            foreach (var startBlock in allBlocks.Where(b => b.InboundEdges.Any()))
+            foreach (var startBlock in allBlocks.Where(b => b.IsStart))
                 startBlock.ImmediateDominator = startBlock;
 
             bool changed;
@@ -81,7 +86,7 @@ namespace cilspirv.Transpiler
                     if (!inboundEdges.Any())
                         continue;
                     var newIDom = inboundEdges.Aggregate(Intersect);
-                    if (newIDom != block.ImmediateDominator)
+                    if (newIDom?.OrderI != block.ImmediateDominator?.OrderI)
                     {
                         block.ImmediateDominator = newIDom;
                         changed = true;
@@ -91,7 +96,7 @@ namespace cilspirv.Transpiler
 
             static IDominatorAccess? Intersect(IDominatorAccess? b1, IDominatorAccess? b2)
             {
-                while (b1 != b2)
+                while (b1?.OrderI != b2?.OrderI)
                 {
                     while (b1?.OrderI < b2?.OrderI)
                         b1 = b1?.ImmediateDominator;

@@ -1,0 +1,19 @@
+﻿[0] 0
+  Edges: Out-2-1  In  Back-1
+  Dominators: Pre-0  Post-2
+    IL_0000: ldarg.0
+    IL_0001: brfalse IL_0012
+
+[1] 0
+  Edges: Out-0  In-0  Back
+  Dominators: Pre-0  Post-0
+    IL_0006: ldarg.0
+    IL_0007: ldc.i4.1
+    IL_0008: sub
+    IL_0009: starg 
+    IL_000d: br IL_0000
+
+[2] 0
+  Edges: Out  In-0  Back
+  Dominators: Pre-0  Post-2
+    IL_0012: ret
