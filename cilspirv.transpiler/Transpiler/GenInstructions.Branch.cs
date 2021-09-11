@@ -94,27 +94,49 @@ namespace cilspirv.Transpiler
                         Value = returnValue.ID
                     });
                 }
-                LeaveBlock();
             }
 
-            private void Branch(ILInstruction target)
+            private void Branch(ILInstruction me)
             {
-                if (!blocks.TryGetValue(target.Offset, out var targetBlock))
-                    blocks[target.Offset] = targetBlock = new BlockInfo(Stack.ToList());
+                var targetBlock = blocks[((ILInstruction)me.Operand).Offset];
+                targetBlock.Stack = Stack;
                 Add(new OpBranch()
                 {
                     TargetLabel = context.IDOf(targetBlock.block)
                 });
-                LeaveBlock();
             }
 
             private void ConditionalBranch(ID conditionID, ILInstruction me)
             {
                 var trueInstr = (ILInstruction)me.Operand;
-                if (!blocks.TryGetValue(trueInstr.Offset, out var trueBlock))
-                    blocks[trueInstr.Offset] = trueBlock = new BlockInfo(Stack.ToList());
-                if (!blocks.TryGetValue(me.Next.Offset, out var falseBlock))
-                    blocks[me.Next.Offset] = falseBlock = new BlockInfo(Stack.ToList());
+                var trueBlock = blocks[trueInstr.Offset];
+                var falseBlock = blocks[me.Next.Offset];
+                trueBlock.Stack = Stack;
+                falseBlock.Stack = Stack;
+
+                switch (CFABlock.HeaderBlockKind)
+                {
+                    case HeaderBlockKind.Selection:
+                        if (CFABlock.MergeBlock == null)
+                            throw new InvalidOperationException("Analysed selection flow without merge block");
+                        Add(new OpSelectionMerge()
+                        {
+                            MergeBlock = context.IDOf(blocksByCfa[CFABlock.MergeBlock].block)
+                        });
+                        break;
+                    case HeaderBlockKind.Loop:
+                        if (CFABlock.MergeBlock == null || CFABlock.ContinueBlock == null)
+                            throw new InvalidOperationException("Analysed loop flow without merge or continue block");
+                        Add(new OpLoopMerge()
+                        {
+                            MergeBlock = context.IDOf(blocksByCfa[CFABlock.MergeBlock].block),
+                            ContinueTarget = context.IDOf(blocksByCfa[CFABlock.ContinueBlock].block)
+                        });
+                        break;
+                    case HeaderBlockKind.None: throw new InvalidOperationException("Conditional branch without analysed control flow detected");
+                    default: throw new NotSupportedException($"Unsupported header block kind: {CFABlock.HeaderBlockKind}");
+                }
+
 
                 Add(new OpBranchConditional()
                 {
@@ -123,7 +145,6 @@ namespace cilspirv.Transpiler
                     FalseLabel = context.IDOf(falseBlock.block),
                     Branchweights = ImmutableArray<LiteralNumber>.Empty
                 });
-                LeaveBlock();
             }
 
             private void BranchEqual(ILInstruction me) => ConditionalBranch(CompareEqual(), me);

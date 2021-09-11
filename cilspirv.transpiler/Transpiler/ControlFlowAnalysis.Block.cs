@@ -77,11 +77,13 @@ namespace cilspirv.Transpiler
             private static IEnumerable<Block> Chain(Block start, Func<Block, Block?> getNext)
             {
                 Block? cur = start, next = getNext(start);
-                while (next != null && next != cur)
+                if (next == null)
+                    yield break;
+                do
                 {
                     yield return next;
                     next = getNext(cur = next);
-                }
+                } while (next != null && next != cur);
             }
 
             IControlFlowBlock? IControlFlowBlock.MergeBlock => MergeBlock;

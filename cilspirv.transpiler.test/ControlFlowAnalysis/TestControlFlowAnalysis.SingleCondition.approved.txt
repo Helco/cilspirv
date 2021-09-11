@@ -14,7 +14,7 @@
   Edges: Out-3  In-0  Back
   Dominators: Pre-0  Post-3
     IL_000c: ldarg.2
-    IL_0000: br IL_000d
+    IL_f00d: br IL_000d
 
 [3] 0
   Edges: Out  In-2-1  Back

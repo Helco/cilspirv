@@ -111,11 +111,14 @@ namespace cilspirv.Transpiler
                 if (containingBlockI < 0)
                     throw new InvalidOperationException("No block contains target instruction");
 
+                var branchInstr = Instruction.Create(OpCodes.Br, toInstr); 
+                branchInstr.Next = toInstr;
+                branchInstr.Offset = toInstr.Offset | 0xf000;
+
                 var containingBlock = allBlocks[containingBlockI];
                 var prefixBlock = new Block()
                 {
-                    Instructions = containingBlock.Instructions.TakeWhile(i => i != toInstr)
-                        .Append(Instruction.Create(OpCodes.Br, toInstr)),
+                    Instructions = containingBlock.Instructions.TakeWhile(i => i != toInstr).Append(branchInstr),
                     ExitKind = ExitKind.Branch
                 };
                 containingBlock.Instructions = containingBlock.Instructions.SkipWhile(i => i != toInstr);

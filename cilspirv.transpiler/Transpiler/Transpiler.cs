@@ -57,7 +57,7 @@ namespace cilspirv.Transpiler
                 TranspileVariables(definedFunction, ilBody);
                 var controlFlowAnalysis = new ControlFlowAnalysis(ilBody);
                 controlFlowAnalysis.Analyse();
-                var genInstructions = new GenInstructions(this, definedFunction, ilBody);
+                var genInstructions = new GenInstructions(this, definedFunction, ilBody.Method, controlFlowAnalysis.Blocks);
                 genInstructions.GenerateInstructions();
             }
         }

@@ -15,73 +15,72 @@ namespace cilspirv.Transpiler
     {
         private class BlockInfo
         {
+            public readonly IControlFlowBlock cfa;
             public readonly TranspilerBlock block = new TranspilerBlock();
-            public readonly List<StackEntry> stack;
+            private List<StackEntry>? stack;
 
-            public BlockInfo(List<StackEntry>? initialStack = null) =>
-                stack = initialStack ?? new List<StackEntry>();
+            public BlockInfo(IControlFlowBlock cfa) => this.cfa = cfa;
+
+            public List<StackEntry> Stack
+            {
+                get => stack ??= new List<StackEntry>();
+                set
+                {
+                    if (stack != null && stack.Count != 0)
+                        throw new InvalidOperationException("Unsupported control flow with dependent stacks, I should add OpPhi instructions here at some point");
+                    stack = value;
+                }
+            }
         }
 
         private partial class GenInstructions
         {
             private readonly IInstructionGeneratorContext context;
             private readonly ID thisID;
-            private readonly Dictionary<int, BlockInfo> blocks = new Dictionary<int, BlockInfo>();
+            private readonly Dictionary<int, BlockInfo> blocks;
+            private readonly Dictionary<IControlFlowBlock, BlockInfo> blocksByCfa;
 
             public TranspilerLibrary Library { get; }
             public TranspilerModule Module { get; }
             public TranspilerOptions Options { get; }
             public TranspilerDefinedFunction Function { get; }
-            public MethodBody ILBody { get; }
+            public MethodDefinition ILMethod { get; }
 
             private ILInstruction? currentPrefix;
             private ILInstruction currentInstruction;
+            private BlockInfo currentBlockInfo;
+            private IControlFlowBlock CFABlock => currentBlockInfo.cfa;
+            private TranspilerBlock Block => currentBlockInfo.block;
+            private List<StackEntry> Stack => currentBlockInfo.Stack;
 
-            private BlockInfo? _currentBlockInfo;
-            private BlockInfo CurrentBlockInfo
-            {
-                get
-                {
-                    if (_currentBlockInfo != null)
-                        return _currentBlockInfo;
-                    if (blocks.TryGetValue(currentInstruction.Offset, out var blockInfo))
-                        return _currentBlockInfo = blockInfo;
-
-                    _currentBlockInfo = new BlockInfo();
-                    blocks.Add(currentInstruction.Offset, _currentBlockInfo);
-                    return _currentBlockInfo;
-                }
-            }
-            private TranspilerBlock Block => CurrentBlockInfo.block;
-            private List<StackEntry> Stack => CurrentBlockInfo.stack;
-
-            public GenInstructions(Transpiler transpiler, TranspilerDefinedFunction function, MethodBody ilBody)
+            public GenInstructions(Transpiler transpiler, TranspilerDefinedFunction function, MethodDefinition ilMethod, IReadOnlyList<IControlFlowBlock> cfaBlocks)
             {
                 context = transpiler.generatorContext;
                 Library = transpiler.Library;
                 Module = transpiler.Module;
                 Options = transpiler.Options;
                 Function = function;
-                ILBody = ilBody;
-                thisID = context.IDOf(function);
+                ILMethod = ilMethod;
 
-                currentInstruction = ilBody.Instructions.First();
+                thisID = context.IDOf(function);
+                blocksByCfa = cfaBlocks.ToDictionary(cfa => cfa, cfa => new BlockInfo(cfa));
+                blocks = blocksByCfa.Values.ToDictionary(b => b.cfa.Instructions.First().Offset, b => b);
+                currentInstruction = cfaBlocks.First().Instructions.First();
+                currentBlockInfo = new BlockInfo(cfaBlocks.First());
             }
 
             public void GenerateInstructions()
             {
-                foreach (var ilInstr in ILBody.Instructions)
+                foreach (var block in blocks.Values)
+                    GenerateInstructionsFor(block);
+            }
+
+            private void GenerateInstructionsFor(BlockInfo block)
+            {
+                currentBlockInfo = block;
+                foreach (var ilInstr in block.cfa.Instructions)
                 {
                     currentInstruction = ilInstr;
-
-                    if (blocks.TryGetValue(ilInstr.Offset, out var fallthroughBlock) && fallthroughBlock != CurrentBlockInfo)
-                    {
-                        Add(new OpBranch()
-                        {
-                            TargetLabel = context.IDOf(fallthroughBlock.block)
-                        });
-                        LeaveBlock();
-                    }
 
                     if (ilInstr.OpCode.OpCodeType == OpCodeType.Prefix)
                     {
@@ -103,10 +102,10 @@ namespace cilspirv.Transpiler
                         case (Code.Ldarg):
                         case (Code.Ldarga_S):
                         case (Code.Ldarg_S): LoadArgument(((ParameterReference)ilInstr.Operand).Index); break;
-                        case (Code.Ldarg_0): LoadArgument(ILBody.Method.HasThis ? -1 : 0); break;
-                        case (Code.Ldarg_1): LoadArgument(ILBody.Method.HasThis ? 0 : 1); break;
-                        case (Code.Ldarg_2): LoadArgument(ILBody.Method.HasThis ? 1 : 2); break;
-                        case (Code.Ldarg_3): LoadArgument(ILBody.Method.HasThis ? 2 : 3); break;
+                        case (Code.Ldarg_0): LoadArgument(ILMethod.HasThis ? -1 : 0); break;
+                        case (Code.Ldarg_1): LoadArgument(ILMethod.HasThis ? 0 : 1); break;
+                        case (Code.Ldarg_2): LoadArgument(ILMethod.HasThis ? 1 : 2); break;
+                        case (Code.Ldarg_3): LoadArgument(ILMethod.HasThis ? 2 : 3); break;
 
                         case (Code.Starg):
                         case (Code.Starg_S): StoreArgument(((ParameterReference)ilInstr.Operand).Index); break;
@@ -251,8 +250,6 @@ namespace cilspirv.Transpiler
                 foreach (var kv in blocks.OrderBy(kv => kv.Key))
                     Function.Blocks.Add(kv.Value.block);
             }
-
-            private void LeaveBlock() => _currentBlockInfo = null;
 
             private void Add(SpirvInstruction instr) => Block.Instructions.Add(instr);
         }

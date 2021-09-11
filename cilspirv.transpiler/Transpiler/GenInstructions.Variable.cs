@@ -58,7 +58,7 @@ namespace cilspirv.Transpiler
                     Stack.Add(new StackEntry(new ThisModuleTag()));
                     return;
                 }
-                Stack.Add(Library.MapParameter(ILBody.Method.Parameters[argI], Function) switch
+                Stack.Add(Library.MapParameter(ILMethod.Parameters[argI], Function) switch
                 {
                     TranspilerVarGroup varGroup => new StackEntry(varGroup),
                     TranspilerVariable variable => GetGlobalVariable(variable),
@@ -78,7 +78,7 @@ namespace cilspirv.Transpiler
                 if (Pop() is not ValueStackEntry value)
                     throw new InvalidOperationException("Top of stack is not a value");
 
-                var parameter = Library.MapParameter(ILBody.Method.Parameters[argI], Function);
+                var parameter = Library.MapParameter(ILMethod.Parameters[argI], Function);
                 if (parameter is not TranspilerVariable variable)
                     throw new NotSupportedException("Real parameters cannot be written into");
                 variable.MarkUsageIn(Function);
