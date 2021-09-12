@@ -98,7 +98,7 @@ namespace cilspirv.Transpiler
 
             private void Branch(ILInstruction me)
             {
-                var targetBlock = blocks[((ILInstruction)me.Operand).Offset];
+                var targetBlock = blocksByOffset[((ILInstruction)me.Operand).Offset];
                 targetBlock.Stack = Stack;
                 Add(new OpBranch()
                 {
@@ -109,8 +109,8 @@ namespace cilspirv.Transpiler
             private void ConditionalBranch(ID conditionID, ILInstruction me)
             {
                 var trueInstr = (ILInstruction)me.Operand;
-                var trueBlock = blocks[trueInstr.Offset];
-                var falseBlock = blocks[me.Next.Offset];
+                var trueBlock = blocksByOffset[trueInstr.Offset];
+                var falseBlock = blocksByOffset[me.Next.Offset];
                 trueBlock.Stack = Stack;
                 falseBlock.Stack = Stack;
 

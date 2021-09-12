@@ -22,7 +22,7 @@ namespace cilspirv.Transpiler
             LoopHeader = (1 << 1),
             ContinueBlock = (1 << 2),
             MergeBlock = (1 << 3),
-            SelectionSwitch = (1 << 4)
+            Unreachable = (1 << 4)
         }
 
         internal class Block : IControlFlowBlock
@@ -30,6 +30,7 @@ namespace cilspirv.Transpiler
             public HeaderBlockKind HeaderBlockKind =>
                 BlockKinds.HasFlag(BlockKinds.SelectionHeader) ? HeaderBlockKind.Selection
                 : BlockKinds.HasFlag(BlockKinds.LoopHeader) ? HeaderBlockKind.Loop
+                : BlockKinds.HasFlag(BlockKinds.Unreachable) ? HeaderBlockKind.Unreachable
                 : HeaderBlockKind.None;
 
             public BlockKinds BlockKinds { get; set; }

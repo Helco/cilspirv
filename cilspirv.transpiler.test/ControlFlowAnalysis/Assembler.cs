@@ -14,7 +14,7 @@ namespace cilspirv.Transpiler.test
         private static readonly RegexOptions Options = RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.Compiled;
         private static readonly Regex TypePragmaRegex = new Regex(@"^\s*\.(param|return|local)\s+([\w\.\+]+)(\[\])?(&)?\s*$", Options);
         private static readonly Regex InstrPragmaRegex = new Regex(@"^\s*(\w+:)?\s*(\w[\w\.]+)(\s+.+)?\s*$", Options);
-        private static readonly Regex TokenRegex = new Regex(@"^([\w\.\+]+)(::\w+)?$", Options);
+        private static readonly Regex TokenRegex = new Regex(@"^([\w\.\+]+)(::[\w\.]+)?$", Options);
 
         private static readonly object myAssemblyLock = new object();
         private static AssemblyDefinition? myAssembly;

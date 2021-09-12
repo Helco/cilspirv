@@ -37,7 +37,7 @@ namespace cilspirv.Transpiler
         {
             private readonly IInstructionGeneratorContext context;
             private readonly ID thisID;
-            private readonly Dictionary<int, BlockInfo> blocks;
+            private readonly Dictionary<int, BlockInfo> blocksByOffset;
             private readonly Dictionary<IControlFlowBlock, BlockInfo> blocksByCfa;
 
             public TranspilerLibrary Library { get; }
@@ -64,15 +64,28 @@ namespace cilspirv.Transpiler
 
                 thisID = context.IDOf(function);
                 blocksByCfa = cfaBlocks.ToDictionary(cfa => cfa, cfa => new BlockInfo(cfa));
-                blocks = blocksByCfa.Values.ToDictionary(b => b.cfa.Instructions.First().Offset, b => b);
+                blocksByOffset = blocksByCfa.Values
+                    .Where(b => b.cfa.Instructions.Any())
+                    .ToDictionary(b => b.cfa.Instructions.First().Offset, b => b);
                 currentInstruction = cfaBlocks.First().Instructions.First();
                 currentBlockInfo = new BlockInfo(cfaBlocks.First());
             }
 
             public void GenerateInstructions()
             {
-                foreach (var block in blocks.Values)
-                    GenerateInstructionsFor(block);
+                foreach (var block in blocksByOffset.Values)
+                {
+                    if (block.cfa.HeaderBlockKind == HeaderBlockKind.Unreachable)
+                        GenerateUnreachableBlockFor(block);
+                    else
+                        GenerateInstructionsFor(block);
+                }
+            }
+
+            private void GenerateUnreachableBlockFor(BlockInfo block)
+            {
+                currentBlockInfo = block;
+                Add(new OpUnreachable());
             }
 
             private void GenerateInstructionsFor(BlockInfo block)
@@ -247,7 +260,7 @@ namespace cilspirv.Transpiler
                 }
 
                 Function.Blocks.Clear();
-                foreach (var kv in blocks.OrderBy(kv => kv.Key))
+                foreach (var kv in blocksByOffset.OrderBy(kv => kv.Key))
                     Function.Blocks.Add(kv.Value.block);
             }
 

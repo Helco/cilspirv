@@ -45,8 +45,7 @@ namespace test_shaders
                 * WeighColor(input.color, uniforms.vectorColorFactor)
                 * WeighColor(uniforms.tint, uniforms.tintFactor);
             if (output.W < uniforms.alphaReference)
-                output.W = 0f;
-            //    discard;
+                throw new DiscardException();
         }
 
         [EntryPoint(ExecutionModel.Vertex)]

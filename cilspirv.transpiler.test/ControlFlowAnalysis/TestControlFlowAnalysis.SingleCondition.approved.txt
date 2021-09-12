@@ -16,7 +16,7 @@
     IL_000c: ldarg.2
     IL_f00d: br IL_000d
 
-[3] 0
+[3] MergeBlock
   Edges: Out  In-2-1  Back
   Dominators: Pre-0  Post-3
     IL_000d: ret

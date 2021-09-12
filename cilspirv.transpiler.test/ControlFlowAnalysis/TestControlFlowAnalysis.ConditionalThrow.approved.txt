@@ -1,0 +1,20 @@
+﻿[0] SelectionHeader Merge:3
+  Edges: Out-2-1  In  Back
+  Dominators: Pre-0  Post-0
+    IL_0000: ldarg.0
+    IL_0001: brfalse IL_000c
+
+[1] 0
+  Edges: Out  In-0  Back
+  Dominators: Pre-0  Post-1
+    IL_0006: newobj System.Void System.Exception::.ctor()
+    IL_000b: throw
+
+[2] 0
+  Edges: Out  In-0  Back
+  Dominators: Pre-0  Post-2
+    IL_000c: ret
+
+[3] MergeBlock, Unreachable
+  Edges: Out  In  Back
+  Dominators: Pre-<none>  Post-<none>

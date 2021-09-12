@@ -120,6 +120,15 @@ L0: ldarg.2
 L1: ret");
 
         [Test]
+        public void ConditionalThrow() => ApproveCFABlocks(@"
+.param System.Boolean
+    ldarg.0
+    brfalse L0
+    newobj System.Exception::.ctor
+    throw
+L0: ret");
+
+        [Test]
         public void SimpleLoop() => ApproveCFABlocks(@"
 .param System.Int32
 L0: ldarg.0

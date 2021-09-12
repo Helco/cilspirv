@@ -10,7 +10,8 @@ namespace cilspirv.Transpiler
     {
         None = 0,
         Selection,
-        Loop
+        Loop,
+        Unreachable
     }
 
     internal interface IControlFlowBlock
@@ -232,17 +233,27 @@ namespace cilspirv.Transpiler
         /// <summary>After constructing loops we should have a DAG and all branches are selections</summary>
         private void ConstructSelections()
         {
-            var headers = allBlocks.Where(b => b.OutboundEdges.Count > 1);
+            var headers = allBlocks
+                .Where(b => b.OutboundEdges.Count > 1)
+                .ToArray(); // we might want to add blocks
             foreach (var header in headers)
             {
                 var mergeBlock = header.OutboundEdges
                     .Select(s => s.PostDominators)
                     .Aggregate((a, b) => a.Intersect(b).ToArray())
                     .FirstOrDefault();
-                if (mergeBlock == null) // TODO: maybe just add an unreachable merge block?
-                    throw new NotSupportedException("Unsupported undivergent selection control flow");
+                if (mergeBlock == null)
+                {
+                    var unreachableBlock = new Block()
+                    {
+                        BlockKinds = BlockKinds.Unreachable,
+                    };
+                    allBlocks.Add(unreachableBlock);
+                    mergeBlock = unreachableBlock;
+                }
 
                 header.BlockKinds |= BlockKinds.SelectionHeader;
+                mergeBlock.BlockKinds |= BlockKinds.MergeBlock;
                 header.MergeBlock = mergeBlock;
             }
         }

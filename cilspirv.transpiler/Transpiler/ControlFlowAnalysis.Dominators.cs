@@ -81,12 +81,11 @@ namespace cilspirv.Transpiler
                 foreach (var block in revOrderBlocks)
                 {
                     var inboundEdges = block.InboundEdges
-                        .Cast<IDominatorAccess?>()
-                        .Where(b => b?.ImmediateDominator != null);
+                        .Where(b => b.ImmediateDominator != null);
                     if (!inboundEdges.Any())
                         continue;
-                    var newIDom = inboundEdges.Aggregate(Intersect);
-                    if (newIDom?.OrderI != block.ImmediateDominator?.OrderI)
+                    var newIDom = inboundEdges.Aggregate(Intersect!) ?? block;
+                    if (newIDom.OrderI != block.ImmediateDominator?.OrderI)
                     {
                         block.ImmediateDominator = newIDom;
                         changed = true;
@@ -94,14 +93,24 @@ namespace cilspirv.Transpiler
                 }
             } while (changed);
 
-            static IDominatorAccess? Intersect(IDominatorAccess? b1, IDominatorAccess? b2)
+            static IDominatorAccess? Intersect(IDominatorAccess b1, IDominatorAccess b2)
             {
-                while (b1?.OrderI != b2?.OrderI)
+                if (b1 == null)
+                    return null;
+                while (b1.OrderI != b2.OrderI)
                 {
-                    while (b1?.OrderI < b2?.OrderI)
-                        b1 = b1?.ImmediateDominator;
-                    while (b2?.OrderI < b1?.OrderI)
-                        b2 = b2?.ImmediateDominator;
+                    while (b1.OrderI < b2.OrderI)
+                    {
+                        if (b1.OrderI == b1.ImmediateDominator!.OrderI)
+                            return null;
+                        b1 = b1.ImmediateDominator!;
+                    }
+                    while (b2.OrderI < b1.OrderI)
+                    {
+                        if (b2.OrderI == b2.ImmediateDominator!.OrderI)
+                            return null;
+                        b2 = b2.ImmediateDominator!;
+                    }
                 }
                 return b1;
             }
