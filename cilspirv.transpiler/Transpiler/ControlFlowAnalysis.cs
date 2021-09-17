@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -67,6 +68,9 @@ namespace cilspirv.Transpiler
                     FlowControl.Throw => ExitKind.Exit,
                     _ => ExitKind.None
                 };
+                if (exitKind == ExitKind.None && ilInstr.OpCode == OpCodes.Call &&
+                    IsKillMethod((MethodReference)ilInstr.Operand))
+                    exitKind = ExitKind.Exit;
                 if (exitKind != ExitKind.None)
                     FinishBlock(i, exitKind);
             }
@@ -86,6 +90,14 @@ namespace cilspirv.Transpiler
             }
         }
 
+        internal static bool IsKillMethod(MethodReference methodRef) => methodRef
+            .Resolve()
+            .CustomAttributes
+            .Select(attr => attr.AttributeType)
+            .Any(typeRef =>
+                typeRef.Name == nameof(DoesNotReturnAttribute) || // only local name 
+                typeRef.FullName == typeof(Library.KillAttribute).FullName);
+
         /// <remarks>Also splits blocks where branches jump into</remarks>
         private void SetOutboundEdges()
         {
@@ -97,11 +109,8 @@ namespace cilspirv.Transpiler
                     edges.Add((block, targetInstr));
                 if (lastInstr.Operand is IEnumerable<Instruction> targetInstrs)
                     edges.AddRange(targetInstrs.Select(t => (block, t)));
-                if (lastInstr.OpCode.Code != Code.Ret &&
-                    lastInstr.OpCode.Code != Code.Throw &&
-                    lastInstr.OpCode.Code != Code.Rethrow &&
-                    lastInstr.OpCode.Code != Code.Br &&
-                    lastInstr.OpCode.Code != Code.Br_S)
+                if (block.ExitKind == ExitKind.CondBranch ||
+                    block.ExitKind == ExitKind.None)
                     edges.Add((block, lastInstr.Next));
             }
 
