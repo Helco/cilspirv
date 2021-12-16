@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using ApprovalTests;
 using ApprovalTests.Reporters;
@@ -12,6 +12,9 @@ namespace cilspirv.Transpiler.test
     [UseReporter(typeof(DiffReporter))]
     public class TestControlFlowAnalysis
     {
+        [DoesNotReturn]
+        internal static void Unreachable() => throw new InvalidOperationException();
+
         internal void ApproveCFABlocks(ControlFlowAnalysis cfa)
         {
             var writer = new StringWriter();
@@ -153,6 +156,42 @@ LC: ldarg.0
     brtrue L0
     ret",
             ignoreLoopExceptions: true);
+
+        [Test]
+        public void UnreachableInTheMiddle() => ApproveCFABlocks(@"
+    nop
+    nop
+    call cilspirv.Transpiler.test.TestControlFlowAnalysis::Unreachable
+    nop
+    ret",
+            ignoreLoopExceptions: false);
+
+        [Test]
+        public void UnreachableAtTheEnd() => ApproveCFABlocks(@"
+    call cilspirv.Transpiler.test.TestControlFlowAnalysis::Unreachable",
+            ignoreLoopExceptions: false);
+
+        [Test]
+        public void UnreachableInConditionalAtEnd() => ApproveCFABlocks(@"
+.param System.Int32
+    ldarg.0
+    brtrue LE
+    call cilspirv.Transpiler.test.TestControlFlowAnalysis::Unreachable
+LE: ret",
+            ignoreLoopExceptions: false);
+
+        [Test]
+        public void UnreachableInConditionalInMiddle() => ApproveCFABlocks(@"
+.param System.Int32
+    ldarg.0
+    brtrue LE
+    call cilspirv.Transpiler.test.TestControlFlowAnalysis::Unreachable
+    ldarg.0
+    ldarg.0
+    sub
+    pop
+LE: ret",
+            ignoreLoopExceptions: false);
 
     }
 }

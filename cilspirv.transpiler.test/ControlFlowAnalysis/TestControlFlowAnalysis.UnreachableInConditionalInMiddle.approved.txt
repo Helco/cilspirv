@@ -1,0 +1,28 @@
+﻿[0] SelectionHeader Merge:4
+  Edges: Out-3-1  In  Back
+  Dominators: Pre-0  Post-0
+    IL_0000: ldarg.0
+    IL_0001: brtrue IL_000f
+
+[1] 0
+  Edges: Out  In-0  Back
+  Dominators: Pre-0  Post-1
+    IL_0006: call System.Void cilspirv.Transpiler.test.TestControlFlowAnalysis::Unreachable()
+
+[2] 0
+  Edges: Out-3  In  Back
+  Dominators: Pre-2  Post-3
+    IL_000b: ldarg.0
+    IL_000c: ldarg.0
+    IL_000d: sub
+    IL_000e: pop
+    IL_f00f: br IL_000f
+
+[3] 0
+  Edges: Out  In-0  Back
+  Dominators: Pre-0  Post-3
+    IL_000f: ret
+
+[4] MergeBlock, Unreachable Merge:<none>
+  Edges: Out  In  Back
+  Dominators: Pre-<none>  Post-<none>
