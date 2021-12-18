@@ -17,17 +17,21 @@ namespace cilspirv.Transpiler
         {
             public readonly IControlFlowBlock cfa;
             public readonly TranspilerBlock block = new TranspilerBlock();
+            private readonly List<BlockInfo> previousBlocks = new List<BlockInfo>(); // to set up the stack
             private List<StackEntry>? stack;
 
             public BlockInfo(IControlFlowBlock cfa) => this.cfa = cfa;
 
+            public IReadOnlyList<BlockInfo> PreviousBlocks => previousBlocks;
+            public void AddPreviousBlock(BlockInfo previous) => previousBlocks.Add(previous);
+
             public List<StackEntry> Stack
             {
-                get => stack ??= new List<StackEntry>();
+                get => stack ?? throw new InvalidOperationException("Stack was not setup yet");
                 set
                 {
-                    if (stack != null && stack.Count != 0)
-                        throw new InvalidOperationException("Unsupported control flow with dependent stacks, I should add OpPhi instructions here at some point");
+                    if (stack != null)
+                        throw new InvalidOperationException("Stack was already setup, cannot be setup twice");
                     stack = value;
                 }
             }
@@ -73,13 +77,19 @@ namespace cilspirv.Transpiler
 
             public void GenerateInstructions()
             {
-                foreach (var block in blocksByOffset.Values)
+                foreach (var block in blocksByCfa.Values)
                 {
                     if (block.cfa.HeaderBlockKind == HeaderBlockKind.Unreachable)
                         GenerateUnreachableBlockFor(block);
                     else
                         GenerateInstructionsFor(block);
                 }
+
+                Function.Blocks.Clear();
+                foreach (var kv in blocksByOffset.OrderBy(kv => kv.Key))
+                    Function.Blocks.Add(kv.Value.block);
+                foreach (var kv in blocksByCfa.Values.Except(blocksByOffset.Values))
+                    Function.Blocks.Add(kv.block);
             }
 
             private void GenerateUnreachableBlockFor(BlockInfo block)
@@ -91,6 +101,7 @@ namespace cilspirv.Transpiler
             private void GenerateInstructionsFor(BlockInfo block)
             {
                 currentBlockInfo = block;
+                SetupCurrentStack();
                 foreach (var ilInstr in block.cfa.Instructions)
                 {
                     currentInstruction = ilInstr;
@@ -258,10 +269,6 @@ namespace cilspirv.Transpiler
                         default: throw new NotSupportedException($"Unsupported opcode {ilInstr.OpCode}");
                     }
                 }
-
-                Function.Blocks.Clear();
-                foreach (var kv in blocksByOffset.OrderBy(kv => kv.Key))
-                    Function.Blocks.Add(kv.Value.block);
             }
 
             private void Add(SpirvInstruction instr) => Block.Instructions.Add(instr);

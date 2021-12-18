@@ -39,6 +39,34 @@ namespace cilspirv.Transpiler
     {
         partial class GenInstructions
         {
+            private void SetupCurrentStack()
+            {
+                var previousBlocks = currentBlockInfo.PreviousBlocks;
+                var length = previousBlocks.FirstOrDefault()?.Stack?.Count ?? 0;
+                if (previousBlocks.Any(b => b.Stack.Count != length))
+                    throw new InvalidOperationException("Some previous block brings a stack of another size");
+
+                var stack = new List<StackEntry>(length);
+                for (int i = 0; i < length; i++)
+                {
+                    var template = previousBlocks.First().Stack[i];
+                    if (template is not ValueStackEntry templateValue)
+                        throw new InvalidOperationException("Previous blocks can only bring values through the stack");
+
+                    var newEntry = new ValueStackEntry(context.CreateID(), templateValue.Type);
+                    Add(new OpPhi()
+                    {
+                        Result = newEntry.ID,
+                        ResultType = context.IDOf(newEntry.Type),
+                        Operands = previousBlocks
+                            .Select(b => (((ValueStackEntry)b.Stack[i]).ID, context.IDOf(b.block)))
+                            .ToImmutableArray()
+                    });
+                    stack.Add(newEntry);
+                }
+                currentBlockInfo.Stack = stack;
+            }
+
             private void PushConstant(ImmutableArray<LiteralNumber> literal, SpirvNumericType spirvType)
             {
                 var constant = new TranspilerNumericConstant(literal, spirvType);

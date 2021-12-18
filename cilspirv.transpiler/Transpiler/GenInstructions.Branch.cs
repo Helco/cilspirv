@@ -99,7 +99,7 @@ namespace cilspirv.Transpiler
             private void Branch(ILInstruction me)
             {
                 var targetBlock = blocksByOffset[((ILInstruction)me.Operand).Offset];
-                targetBlock.Stack = Stack;
+                targetBlock.AddPreviousBlock(currentBlockInfo);
                 Add(new OpBranch()
                 {
                     TargetLabel = context.IDOf(targetBlock.block)
@@ -111,8 +111,8 @@ namespace cilspirv.Transpiler
                 var trueInstr = (ILInstruction)me.Operand;
                 var trueBlock = blocksByOffset[trueInstr.Offset];
                 var falseBlock = blocksByOffset[me.Next.Offset];
-                trueBlock.Stack = Stack;
-                falseBlock.Stack = Stack;
+                trueBlock.AddPreviousBlock(currentBlockInfo);
+                falseBlock.AddPreviousBlock(currentBlockInfo);
 
                 switch (CFABlock.HeaderBlockKind)
                 {
