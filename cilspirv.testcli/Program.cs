@@ -18,26 +18,30 @@ namespace cilspirv.testcli
                 ReadSymbols = true
             });
 
-            var moduleTypeDef = assemblyDef.MainModule.Types.FirstOrDefault(
+            var moduleTypeDefs = assemblyDef.MainModule.Types.Where(
                 t => t.GetCustomAttributes<ModuleAttributeBase>(exactType: false).Any());
-            if (moduleTypeDef == null)
+            if (!moduleTypeDefs.Any())
                 throw new InvalidDataException("Could not find a module class");
 
-            var entryPoints = moduleTypeDef.Methods.Where(
-                method => method.GetCustomAttributes<EntryPointAttribute>().Any())
-                .ToArray();
-            if (!entryPoints.Any())
-                throw new InvalidDataException($"Module class {moduleTypeDef.FullName} has no entry point");
-
-            var unit = new Transpiler.Transpiler(moduleTypeDef);
-            unit.Library.Mappers.Add(new SystemNumericsMapper());
-            unit.ExtractModuleAttributes();
-            foreach (var entryPoint in entryPoints)
+            foreach (var moduleTypeDef in moduleTypeDefs)
             {
-                unit.TranspileEntryPoint(entryPoint);
+                Console.WriteLine($"Transpiling {moduleTypeDef.Name}");
+                var entryPoints = moduleTypeDef.Methods.Where(
+                    method => method.GetCustomAttributes<EntryPointAttribute>().Any())
+                    .ToArray();
+                if (!entryPoints.Any())
+                    throw new InvalidDataException($"Module class {moduleTypeDef.FullName} has no entry point");
+
+                var unit = new Transpiler.Transpiler(moduleTypeDef);
+                unit.Library.Mappers.Add(new SystemNumericsMapper());
+                unit.ExtractModuleAttributes();
+                foreach (var entryPoint in entryPoints)
+                {
+                    unit.TranspileEntryPoint(entryPoint);
+                }
+                unit.TranspileAllMethodBodies();
+                unit.WriteSpirvModule(new FileStream($"{moduleTypeDef.Name}.spv", FileMode.Create));
             }
-            unit.TranspileAllMethodBodies();
-            unit.WriteSpirvModule(new FileStream($"{moduleTypeDef.Name}.spv", FileMode.Create));
         }
     }
 }
