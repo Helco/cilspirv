@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -67,6 +68,9 @@ namespace cilspirv.Transpiler
                     FlowControl.Throw => ExitKind.Exit,
                     _ => ExitKind.None
                 };
+                if (exitKind == ExitKind.None && ilInstr.OpCode == OpCodes.Call &&
+                    IsKillMethod((MethodReference)ilInstr.Operand))
+                    exitKind = ExitKind.Exit;
                 if (exitKind != ExitKind.None)
                     FinishBlock(i, exitKind);
             }
@@ -86,26 +90,42 @@ namespace cilspirv.Transpiler
             }
         }
 
+        internal static bool IsKillMethod(MethodReference methodRef) => methodRef
+            .Resolve()
+            .CustomAttributes
+            .Select(attr => attr.AttributeType)
+            .Any(typeRef =>
+                typeRef.Name == nameof(DoesNotReturnAttribute) || // only local name 
+                typeRef.FullName == typeof(Library.KillAttribute).FullName);
+
         /// <remarks>Also splits blocks where branches jump into</remarks>
         private void SetOutboundEdges()
         {
             var edges = new List<(Block source, Instruction target)>(allBlocks.Count);
+            var deadEnds = new List<(Block source, Instruction target)>();
             foreach (var block in allBlocks)
             {
+                var killInstructions = block.Instructions
+                    .Where(i => i.OpCode == OpCodes.Call || i.OpCode == OpCodes.Callvirt)
+                    .Where(i => IsKillMethod((MethodReference)i.Operand));
+                deadEnds.AddRange(killInstructions.Select(i => (block, i.Next)));
+                if (killInstructions.LastOrDefault() == block.Instructions.Last())
+                    continue;
+
                 var lastInstr = block.Instructions.Last();
                 if (lastInstr.Operand is Instruction targetInstr)
                     edges.Add((block, targetInstr));
                 if (lastInstr.Operand is IEnumerable<Instruction> targetInstrs)
                     edges.AddRange(targetInstrs.Select(t => (block, t)));
-                if (lastInstr.OpCode.Code != Code.Ret &&
-                    lastInstr.OpCode.Code != Code.Throw &&
-                    lastInstr.OpCode.Code != Code.Rethrow &&
-                    lastInstr.OpCode.Code != Code.Br &&
-                    lastInstr.OpCode.Code != Code.Br_S)
+                if (block.ExitKind == ExitKind.CondBranch ||
+                    block.ExitKind == ExitKind.None)
                     edges.Add((block, lastInstr.Next));
             }
 
-            var splittingEdges = edges.Where(t => !blocksByOffset.ContainsKey(t.target.Offset)).ToArray();
+            var splittingEdges = edges
+                .Concat(deadEnds)
+                .Where(t => t.target != null && !blocksByOffset.ContainsKey(t.target.Offset))
+                .ToArray();
             foreach (var (_, toInstr) in splittingEdges)
             {
                 var containingBlockI = allBlocks.FindIndex(b => b.Instructions.Contains(toInstr));
@@ -114,7 +134,7 @@ namespace cilspirv.Transpiler
 
                 var branchInstr = Instruction.Create(OpCodes.Br, toInstr); 
                 branchInstr.Next = toInstr;
-                branchInstr.Offset = toInstr.Offset | 0xf000;
+                branchInstr.Offset = toInstr.Offset | 0xf000; // mark for easier debugging
 
                 var containingBlock = allBlocks[containingBlockI];
                 var prefixBlock = new Block()

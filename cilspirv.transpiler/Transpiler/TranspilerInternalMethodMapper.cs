@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
@@ -23,7 +24,11 @@ namespace cilspirv.Transpiler
             if (methods.TryGetValue(methodRef.FullName, out var mapped))
                 return mapped;
 
-            var function = library.TryMapInternalMethod(methodRef.Resolve(), isEntryPoint: false);
+            var methodDef = methodRef.Resolve();
+            if (IsKillMethod(methodDef))
+                return GenerateKill;
+
+            var function = library.TryMapInternalMethod(methodDef, isEntryPoint: false);
             if (function == null)
                 return null;
 
@@ -41,6 +46,18 @@ namespace cilspirv.Transpiler
                 Function = context.IDOf(function),
                 Arguments = context.Parameters.Select(p => p.id).ToImmutableArray()
             }
+        };
+
+        private bool IsKillMethod(MethodDefinition methodDef) => methodDef
+            .CustomAttributes
+            .Select(attr => attr.AttributeType)
+            .Any(typeRef =>
+                typeRef.Name == nameof(DoesNotReturnAttribute) || // only local name 
+                typeRef.FullName == typeof(Library.KillAttribute).FullName);
+
+        private IEnumerable<Instruction> GenerateKill(ITranspilerContext context) => new[]
+        {
+            new OpKill()
         };
     }
 }

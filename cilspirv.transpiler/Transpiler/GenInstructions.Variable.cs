@@ -170,7 +170,7 @@ namespace cilspirv.Transpiler
                 var parent = Pop();
                 var fieldBehavior = GetFieldBehavior(parent, fieldRef);
                 var context = new FieldContext(this, parent);
-                var instructions = fieldBehavior.LoadAddress(new FieldContext(this, parent))?.ToArray()
+                var instructions = fieldBehavior.LoadAddress(context)?.ToArray()
                     ?? throw new InvalidOperationException($"LoadAddress is not supported for field {fieldRef.FullName}");
 
                 Block.Instructions.AddRange(instructions);

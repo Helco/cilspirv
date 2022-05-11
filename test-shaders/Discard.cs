@@ -7,7 +7,7 @@ namespace test_shaders
 {
     [Capability(Capability.Shader)]
     [MemoryModel(AddressingModel.Logical, MemoryModel.GLSL450)]
-    public class Simple
+    public class Discard
     {
         public struct VSInput
         {
@@ -22,31 +22,15 @@ namespace test_shaders
             [Location(1)] public Vector4 color;
         }
 
-        public struct Uniforms
-        {
-            public const int Size = (4 + 1 + 1 + 1) * sizeof(float);
-
-            public Vector4 tint;
-            public float vectorColorFactor;
-            public float tintFactor;
-            public float alphaReference;
-        }
-
-        private Vector4 WeighColor(Vector4 color, float factor) =>
-            color * factor + new Vector4(1 - factor);
-
         [EntryPoint(ExecutionModel.Fragment)]
         public void Frag(
             [Input] in FSInput input,
-            
-            [Uniform, Binding(0, 5)] in Uniforms uniforms,
 
             [Output, Location(0)] out Vector4 output)
         {
-            output = input.color
-                * WeighColor(input.color, uniforms.vectorColorFactor)
-                * WeighColor(uniforms.tint, uniforms.tintFactor);
-            if (output.W < uniforms.alphaReference)
+            output = input.color;
+            int checker = (int)(input.uv.X * 8f) + (int)(input.uv.Y * 8);
+            if ((checker % 2) == 0)
                 Environment.Exit(0);
         }
 
@@ -54,17 +38,10 @@ namespace test_shaders
         public void Vert(
             [Input] in VSInput input,
 
-            [Uniform, Binding(0, 2)] in Matrix4x4 projection,
-            [Uniform, Binding(0, 3)] in Matrix4x4 view,
-            [Uniform, Binding(0, 4)] in Matrix4x4 world,
-
             [Output, BuiltIn(BuiltIn.Position)] out Vector4 position,
             [Output] out FSInput output)
         {
             position = new Vector4(input.pos, 1f);
-            position = Vector4.Transform(position, world);
-            position = Vector4.Transform(position, view);
-            position = Vector4.Transform(position, projection);
             output.uv = input.uv;
             output.color = input.color;
         }
