@@ -118,6 +118,17 @@ namespace cilspirv.Transpiler
                 });
             }
 
+            private void LoadArgumentAddress(int argI)
+            {
+                if (argI < 0)
+                {
+                    throw new NotSupportedException("Do we need address of this?");
+                }
+
+                var behaviour = Library.MapParameter(ILMethod.Parameters[argI], Function);
+                LoadValueAddress(parent: null, behaviour);
+            }
+
             private void LoadArgument(int argI)
             {
                 if (argI < 0)
@@ -126,23 +137,15 @@ namespace cilspirv.Transpiler
                     return;
                 }
 
-                switch(Library.MapParameter(ILMethod.Parameters[argI], Function))
-                {
-                    case TranspilerVarGroup varGroup: Stack.Add(new StackEntry(varGroup)); break;
-                    case ITranspilerValueBehaviour value: LoadValue(parent: null, value); break;
-                    default: throw new NotSupportedException("Unsupported parameter type");
-                }
+                var behaviour = Library.MapParameter(ILMethod.Parameters[argI], Function);
+                LoadValue(parent: null, behaviour);
             }
 
             private void StoreArgument(int argI)
             {
                 var value = Pop() as ValueStackEntry ?? throw new InvalidOperationException("Top of stack is not a value");
-                switch (Library.MapParameter(ILMethod.Parameters[argI], Function))
-                {
-                    case TranspilerVarGroup: throw new InvalidOperationException("Variable groups cannot be written to");
-                    case ITranspilerValueBehaviour valueBehaviour: StoreValue(parent: null, value, valueBehaviour); break;
-                    default: throw new NotSupportedException("Unsupported parameter type");
-                }
+                var behaviour = Library.MapParameter(ILMethod.Parameters[argI], Function);
+                StoreValue(parent: null, value, behaviour);
             }
 
             private void LoadLocal(int variableI) =>
@@ -161,22 +164,17 @@ namespace cilspirv.Transpiler
                 StoreValue(parent: null, value, variable);
             }
 
-            private ITranspilerValueBehaviour GetFieldBehavior(StackEntry parent, FieldReference fieldRef) =>
-                parent.Tag is TranspilerVarGroup varGroup ? varGroup.Variables.First(v => v.Name == fieldRef.FullName)
-                : Library.MapField(fieldRef) is ITranspilerValueBehaviour fieldBehavior ? fieldBehavior
-                : throw new NotSupportedException("Unsupported field parent or field type");
-
             private void LoadField(FieldReference fieldRef)
             {
                 var parent = Pop();
-                var fieldBehaviour = GetFieldBehavior(parent, fieldRef);
+                var fieldBehaviour = Library.MapField(fieldRef);
                 LoadValue(parent, fieldBehaviour);
             }
 
             private void LoadFieldAddress(FieldReference fieldRef)
             {
                 var parent = Pop();
-                var fieldBehavior = GetFieldBehavior(parent, fieldRef);
+                var fieldBehavior = Library.MapField(fieldRef);
                 LoadValueAddress(parent, fieldBehavior);
             }
 
@@ -184,7 +182,7 @@ namespace cilspirv.Transpiler
             {
                 var value = Pop() as ValueStackEntry ?? throw new InvalidOperationException("Top of stack is not a value");
                 var parent = Pop();
-                var fieldBehavior = GetFieldBehavior(parent, fieldRef);
+                var fieldBehavior = Library.MapField(fieldRef);
                 StoreValue(parent, value, fieldBehavior);
             }
 

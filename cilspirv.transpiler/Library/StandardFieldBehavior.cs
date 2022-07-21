@@ -8,7 +8,7 @@ using cilspirv.Transpiler;
 
 namespace cilspirv.Library
 {
-    public sealed record StandardFieldBehavior : ITranspilerFieldBehaviour
+    public sealed record StandardFieldBehavior : ITranspilerValueBehaviour
     {
         private readonly SpirvType type;
         private readonly int memberIndex;
