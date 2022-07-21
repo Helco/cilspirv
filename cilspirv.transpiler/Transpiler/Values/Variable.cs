@@ -4,9 +4,23 @@ using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
 
-namespace cilspirv.Transpiler
+namespace cilspirv.Transpiler.Values
 {
-    internal class TranspilerVariable :
+    internal class LocalVariable : Variable
+    {
+        public LocalVariable(string name, SpirvPointerType pointerType) : base(name, pointerType)
+        {
+        }
+    }
+
+    internal class GlobalVariable : Variable
+    {
+        public GlobalVariable(string name, SpirvPointerType pointerType) : base(name, pointerType)
+        {
+        }
+    }
+
+    internal abstract class Variable :
         IDecoratableInstructionGeneratable,
         IDebugInstructionGeneratable,
         ITranspilerValueBehaviour
@@ -17,10 +31,10 @@ namespace cilspirv.Transpiler
         public StorageClass StorageClass => PointerType.StorageClass;
         public IReadOnlySet<DecorationEntry> Decorations { get; set; } = new HashSet<DecorationEntry>();
 
-        public TranspilerVariable(string name, SpirvPointerType pointerType) =>
+        public Variable(string name, SpirvPointerType pointerType) =>
             (Name, PointerType) = (name, pointerType);
 
-        public virtual IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        public virtual IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpVariable()
             {
@@ -30,7 +44,7 @@ namespace cilspirv.Transpiler
             };
         }
 
-        public virtual IEnumerator<Instruction> GenerateDebugInfo(IInstructionGeneratorContext context)
+        public virtual IEnumerator<Instruction> GenerateDebugInfo(IIDMapper context)
         {
             if (!string.IsNullOrEmpty(Name))
                 yield return new OpName()

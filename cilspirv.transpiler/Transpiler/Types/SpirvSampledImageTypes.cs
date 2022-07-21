@@ -40,7 +40,7 @@ namespace cilspirv.Transpiler
 
         public override IEnumerable<SpirvType> Dependencies => new[] { SampledType! };
 
-        internal override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        internal override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpTypeImage()
             {
@@ -70,7 +70,7 @@ namespace cilspirv.Transpiler
     public record SpirvSamplerType : SpirvOpaqueType
     {
         public override string ToString() => "Sampler";
-        internal override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        internal override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpTypeSampler()
             {
@@ -84,7 +84,7 @@ namespace cilspirv.Transpiler
         public SpirvImageType? ImageType { get; init; }
         public override string ToString() => "Sampled" + ImageType?.ToString();
         public override IEnumerable<SpirvType> Dependencies => new[] { ImageType! }.Concat(ImageType!.Dependencies);
-        internal override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        internal override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpTypeSampledImage()
             {

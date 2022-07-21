@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 
-namespace cilspirv.Transpiler
+namespace cilspirv.Transpiler.BuiltInLibrary
 {
-    internal class TranspilerReferenceMapper : ITranspilerLibraryMapper
+    internal class ReferenceMapper : ITranspilerLibraryMapper
     {
         private readonly TranspilerLibrary library;
 
-        public TranspilerReferenceMapper(TranspilerLibrary library) => this.library = library;
+        public ReferenceMapper(TranspilerLibrary library) => this.library = library;
 
         public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => null;
 
@@ -20,11 +20,14 @@ namespace cilspirv.Transpiler
             var elementType = library.TryMapType(byRefType.ElementType);
             if (elementType == null)
                 return null;
-            return new MappedByReferenceType(elementType);
+            return new MappedFromRefCILType(elementType);
         }
     }
+}
 
-    internal record MappedByReferenceType(IMappedFromCILType ElementType) : IMappedFromCILType
+namespace cilspirv.Transpiler
+{
+    internal record MappedFromRefCILType(IMappedFromCILType ElementType) : IMappedFromCILType
     {
     }
 }

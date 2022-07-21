@@ -4,15 +4,15 @@ using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
 
-namespace cilspirv.Transpiler
+namespace cilspirv.Transpiler.Values
 {
-    internal class TranspilerImplicitBlockVariable : TranspilerVariable, ITranspilerValueBehaviour
+    internal class ImplicitBlockVariable : Variable, ITranspilerValueBehaviour
     {
         public string BlockName { get; }
         public SpirvType BlockType { get; }
         public SpirvPointerType BlockPointerType { get; }
 
-        public TranspilerImplicitBlockVariable(string actualName, SpirvType blockType, SpirvType actualType, IEnumerable<DecorationEntry> decorations, bool byRef)
+        public ImplicitBlockVariable(string actualName, SpirvType blockType, SpirvType actualType, IEnumerable<DecorationEntry> decorations, bool byRef)
             : base(actualName, byRef ? MakePointerType(MakePointerType(actualType)) : MakePointerType(actualType))
         {
             BlockName = $"{actualName}#Block";
@@ -27,7 +27,7 @@ namespace cilspirv.Transpiler
             Decorations = decorations?.ToHashSet() ?? new HashSet<DecorationEntry>()
         };
 
-        public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        public override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpVariable()
             {
@@ -37,7 +37,7 @@ namespace cilspirv.Transpiler
             };
         }
 
-        public override IEnumerator<Instruction> GenerateDebugInfo(IInstructionGeneratorContext context)
+        public override IEnumerator<Instruction> GenerateDebugInfo(IIDMapper context)
         {
             if (!string.IsNullOrEmpty(BlockName))
                 yield return new OpName()

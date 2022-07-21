@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
+using cilspirv.Transpiler.Values;
 
 namespace cilspirv.Transpiler
 {
@@ -11,7 +12,7 @@ namespace cilspirv.Transpiler
     {
         public string Name { get; }
         public SpirvType ReturnType { get; set; }
-        public IList<TranspilerParameter> Parameters { get; } = new List<TranspilerParameter>();
+        public IList<Parameter> Parameters { get; } = new List<Parameter>();
         public IReadOnlySet<DecorationEntry> Decorations { get; set; } = new HashSet<DecorationEntry>();
         public FunctionControl FunctionControl { get; set; }
 
@@ -24,7 +25,7 @@ namespace cilspirv.Transpiler
         public TranspilerFunction(string name, SpirvType returnType) =>
             (Name, ReturnType) = (name, returnType);
 
-        public IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context) =>
+        public IEnumerator<Instruction> GenerateInstructions(IIDMapper context) =>
             Parameters.SelectMany(p => p.GenerateInstructions(context))
             .Prepend(new OpFunction()
             {
@@ -36,9 +37,9 @@ namespace cilspirv.Transpiler
             .Append(new OpFunctionEnd())
             .GetEnumerator();           
 
-        protected virtual IEnumerable<Instruction> GenerateBody(IInstructionGeneratorContext context) => Enumerable.Empty<Instruction>();
+        protected virtual IEnumerable<Instruction> GenerateBody(IIDMapper context) => Enumerable.Empty<Instruction>();
 
-        public IEnumerator<Instruction> GenerateDebugInfo(IInstructionGeneratorContext context)
+        public IEnumerator<Instruction> GenerateDebugInfo(IIDMapper context)
         {
             yield return new OpName()
             {
@@ -51,11 +52,11 @@ namespace cilspirv.Transpiler
     internal class TranspilerDefinedFunction : TranspilerFunction
     {
         public IList<TranspilerBlock> Blocks { get; } = new List<TranspilerBlock>();
-        public IList<TranspilerVariable> Variables { get; } = new List<TranspilerVariable>();
+        public IList<Variable> Variables { get; } = new List<Variable>();
 
         public TranspilerDefinedFunction(string name, SpirvType returnType) : base(name, returnType) { }
 
-        protected override IEnumerable<Instruction> GenerateBody(IInstructionGeneratorContext context)
+        protected override IEnumerable<Instruction> GenerateBody(IIDMapper context)
         {
             var instructions = Blocks.SelectMany(b => b.GenerateInstructions(context));
             if (Variables.Any())
@@ -76,12 +77,12 @@ namespace cilspirv.Transpiler
     internal class TranspilerEntryFunction : TranspilerDefinedFunction
     {
         public ExecutionModel ExecutionModel { get; }
-        public ISet<TranspilerVariable> Interface { get; } = new HashSet<TranspilerVariable>();
+        public ISet<Variable> Interface { get; } = new HashSet<Variable>();
 
         public TranspilerEntryFunction(string name, ExecutionModel model) : base(name, new SpirvVoidType())
             => ExecutionModel = model;
 
-        public Instruction GenerateEntryPoint(IInstructionGeneratorContext context) => new OpEntryPoint()
+        public Instruction GenerateEntryPoint(IIDMapper context) => new OpEntryPoint()
         {
             ExecutionModel = ExecutionModel,
             EntryPoint = context.IDOf(this),

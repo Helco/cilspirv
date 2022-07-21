@@ -4,9 +4,9 @@ using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
 
-namespace cilspirv.Transpiler
+namespace cilspirv.Transpiler.Values
 {
-    internal class TranspilerParameter :
+    internal class Parameter :
         IDecoratableInstructionGeneratable,
         IDebugInstructionGeneratable,
         ITranspilerValueBehaviour
@@ -16,9 +16,9 @@ namespace cilspirv.Transpiler
         public SpirvType Type { get; }
         public IReadOnlySet<DecorationEntry> Decorations { get; set; } = new HashSet<DecorationEntry>();
 
-        public TranspilerParameter(int index, string name, SpirvType type) => (SpirvIndex, Name, Type) = (index, name, type);
+        public Parameter(int index, string name, SpirvType type) => (SpirvIndex, Name, Type) = (index, name, type);
 
-        public IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        public IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpFunctionParameter()
             {
@@ -27,7 +27,7 @@ namespace cilspirv.Transpiler
             };
         }
 
-        public IEnumerator<Instruction> GenerateDebugInfo(IInstructionGeneratorContext context)
+        public IEnumerator<Instruction> GenerateDebugInfo(IIDMapper context)
         {
             yield return new OpName()
             {

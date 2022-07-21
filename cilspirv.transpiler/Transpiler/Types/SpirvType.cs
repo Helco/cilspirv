@@ -32,11 +32,11 @@ namespace cilspirv.Transpiler
                 EqualityContract),
             HashCode.Combine);
 
-        IEnumerator<Instruction> IInstructionGeneratable.GenerateInstructions(IInstructionGeneratorContext context) => GenerateInstructions(context);
-        internal abstract IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context);
+        IEnumerator<Instruction> IInstructionGeneratable.GenerateInstructions(IIDMapper context) => GenerateInstructions(context);
+        internal abstract IEnumerator<Instruction> GenerateInstructions(IIDMapper context);
 
-        IEnumerator<Instruction> IDebugInstructionGeneratable.GenerateDebugInfo(IInstructionGeneratorContext context) => GenerateDebugInfo(context);
-        internal virtual IEnumerator<Instruction> GenerateDebugInfo(IInstructionGeneratorContext context)
+        IEnumerator<Instruction> IDebugInstructionGeneratable.GenerateDebugInfo(IIDMapper context) => GenerateDebugInfo(context);
+        internal virtual IEnumerator<Instruction> GenerateDebugInfo(IIDMapper context)
         {
             var relevantName = context.Options.DefaultTypeUserNames ? Name : UserName;
             if (relevantName != null)
@@ -57,7 +57,7 @@ namespace cilspirv.Transpiler
     public sealed record SpirvVoidType : SpirvType
     {
         public override string ToString() => "Void";
-        internal override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        internal override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpTypeVoid() { Result = context.CreateIDFor(this) };
         }
@@ -69,7 +69,7 @@ namespace cilspirv.Transpiler
         public StorageClass StorageClass { get; init; }
         public override string ToString() => $"Ptr<{Type}>({StorageClass})";
         public override IEnumerable<SpirvType> Dependencies => new[] { Type! }.Concat(Type!.Dependencies);
-        internal override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        internal override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpTypePointer()
             {
@@ -101,7 +101,7 @@ namespace cilspirv.Transpiler
             base.GetHashCode(), ReturnType,
             ParameterTypes.IsDefaultOrEmpty ? 0 : ParameterTypes.Aggregate(0, HashCode.Combine));
 
-        internal override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        internal override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpTypeFunction()
             {

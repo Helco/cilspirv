@@ -4,11 +4,12 @@ using System.Collections.Immutable;
 using System.Linq;
 using Mono.Cecil;
 using cilspirv.Spirv;
+using cilspirv.Transpiler.Values;
+using cilspirv;
 
-
-namespace cilspirv.Transpiler
+namespace cilspirv.Transpiler.BuiltInLibrary
 {
-    internal class TranspilerStructMapper : ITranspilerLibraryMapper
+    internal class StructMapper : ITranspilerLibraryMapper
     {
         private static readonly ISet<Decoration> GlobalDecorations = new HashSet<Decoration>()
         {
@@ -27,7 +28,7 @@ namespace cilspirv.Transpiler
         private readonly TranspilerLibrary library;
         private readonly TranspilerModule module;
 
-        public TranspilerStructMapper(TranspilerLibrary library, TranspilerModule module)
+        public StructMapper(TranspilerLibrary library, TranspilerModule module)
         {
             this.library = library;
             this.module = module;
@@ -81,7 +82,7 @@ namespace cilspirv.Transpiler
                 fieldDecorations[fieldDef].ToImmutableHashSet());
         }
 
-        internal TranspilerVarGroup MapVarGroup(string name, TypeDefinition ilTypeDef, StorageClass? structStorageClass)
+        internal VarGroup MapVarGroup(string name, TypeDefinition ilTypeDef, StorageClass? structStorageClass)
         {
             var fieldStorageClasses = ilTypeDef.Fields
                 .Select(field => (field, ScanStorageClass(field)))
@@ -95,11 +96,11 @@ namespace cilspirv.Transpiler
                 throw new InvalidOperationException($"Global variable type \"{ilTypeDef.FullName}\" missing storage classes for " +
                     string.Join(", ", missingStorageClassFields.Select(kv => kv.Key.Name)));
 
-            var varGroup = new TranspilerVarGroup(name, ilTypeDef);
+            var varGroup = new VarGroup(name, ilTypeDef);
             foreach (var field in ilTypeDef.Fields)
             {
                 var fieldType = library.MapType(field.FieldType);
-                if (fieldType is TranspilerVarGroup subVarGroup)
+                if (fieldType is VarGroup subVarGroup)
                 {
                     varGroup.Variables.AddRange(subVarGroup.Variables);
                     continue;
@@ -107,7 +108,7 @@ namespace cilspirv.Transpiler
                 if (fieldType is not SpirvType fieldSpirvType)
                     throw new InvalidOperationException("Invalid field type in variable group structure");
 
-                var variable = new TranspilerVariable(field.FullName, new SpirvPointerType()
+                var variable = new Variable(field.FullName, new SpirvPointerType()
                 {
                     Type = fieldSpirvType,
                     StorageClass = (fieldStorageClasses[field] ?? structStorageClass)!.Value,

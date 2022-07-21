@@ -4,17 +4,17 @@ using System.Linq;
 using Mono.Cecil;
 using cilspirv.Spirv;
 
-namespace cilspirv.Transpiler
+namespace cilspirv.Transpiler.Values
 {
-    internal class TranspilerVarGroup :
+    internal class VarGroup :
         IMappedFromCILType,
         ITranspilerValueBehaviour
     {
         public TypeDefinition TypeDefinition { get; }
         public string Name { get; }
-        public List<TranspilerVariable> Variables { get; } = new List<TranspilerVariable>();
+        public List<Variable> Variables { get; } = new List<Variable>();
 
-        public TranspilerVarGroup(string name, TypeDefinition typeDef) =>
+        public VarGroup(string name, TypeDefinition typeDef) =>
             (Name, TypeDefinition) = (name, typeDef);
 
         IEnumerable<Instruction> ITranspilerValueBehaviour.LoadAddress(ITranspilerValueContext context)
@@ -29,7 +29,10 @@ namespace cilspirv.Transpiler
         IEnumerable<Instruction> ITranspilerValueBehaviour.Store(ITranspilerValueContext context, ValueStackEntry value) =>
             throw new InvalidOperationException("Cannot store a variable group");
     }
+}
 
+namespace cilspirv.Transpiler
+{
     // a variable group with missing storage class
     internal sealed record TranspilerVarGroupTemplate : IMappedFromCILType
     {
@@ -37,6 +40,6 @@ namespace cilspirv.Transpiler
         public string Name => TypeDefinition.Name;
 
         public TranspilerVarGroupTemplate(TypeDefinition typeDef) =>
-            (TypeDefinition) = (typeDef);
+            TypeDefinition = typeDef;
     }
 }

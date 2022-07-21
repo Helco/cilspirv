@@ -12,7 +12,7 @@ namespace cilspirv.Transpiler
 
         public TranspilerExtInstructionSet(string name) => Name = name;
 
-        public IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        public IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpExtInstImport()
             {
