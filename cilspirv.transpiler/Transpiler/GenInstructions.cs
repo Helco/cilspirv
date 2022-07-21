@@ -122,9 +122,9 @@ namespace cilspirv.Transpiler
                         case (Code.Newobj): Call((MethodReference)ilInstr.Operand, isCtor: true); break;
                         case (Code.Call): Call((MethodReference)ilInstr.Operand, isCtor: false); break;
 
-                        case (Code.Ldarga): // yes, currently no difference ldarga and larg
+                        case (Code.Ldarga):
+                        case (Code.Ldarga_S): LoadArgumentAddress(((ParameterReference)ilInstr.Operand).Index); break;
                         case (Code.Ldarg):
-                        case (Code.Ldarga_S):
                         case (Code.Ldarg_S): LoadArgument(((ParameterReference)ilInstr.Operand).Index); break;
                         case (Code.Ldarg_0): LoadArgument(ILMethod.HasThis ? -1 : 0); break;
                         case (Code.Ldarg_1): LoadArgument(ILMethod.HasThis ? 0 : 1); break;

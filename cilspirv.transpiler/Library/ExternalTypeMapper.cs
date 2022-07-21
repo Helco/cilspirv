@@ -12,7 +12,7 @@ namespace cilspirv.Library
     {
         private readonly Dictionary<Type, SpirvType> mappedTypes = new Dictionary<Type, SpirvType>();
         private readonly Dictionary<string, SpirvType> typeByName = new Dictionary<string, SpirvType>();
-        private readonly Dictionary<string, ITranspilerFieldBehaviour> fields = new Dictionary<string, ITranspilerFieldBehaviour>();
+        private readonly Dictionary<string, ITranspilerValueBehaviour> fields = new Dictionary<string, ITranspilerValueBehaviour>();
 
         public void Add(Type ilType, SpirvType spirvType)
         {
@@ -34,13 +34,13 @@ namespace cilspirv.Library
 
         public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => null;
 
-        public ITranspilerFieldBehaviour? TryMapFieldBehavior(FieldReference fieldRef) =>
+        public ITranspilerValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) =>
             fields.TryGetValue(fieldRef.FullName, out var fieldBehaviour)
             ? fieldBehaviour
             : null;
 
-        public void Add<TParent, TField>(string fieldName, ITranspilerFieldBehaviour behavior) => Add(typeof(TParent), typeof(TField), fieldName, behavior);
-        public void Add(Type ilParentType, Type ilFieldType, string fieldName, ITranspilerFieldBehaviour behavior)
+        public void Add<TParent, TField>(string fieldName, ITranspilerValueBehaviour behavior) => Add(typeof(TParent), typeof(TField), fieldName, behavior);
+        public void Add(Type ilParentType, Type ilFieldType, string fieldName, ITranspilerValueBehaviour behavior)
         {
             var mappingName = $"{ilFieldType.FullName} {ilParentType.FullName}::{fieldName}";
             fields.Add(mappingName, behavior);

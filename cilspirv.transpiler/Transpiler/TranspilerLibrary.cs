@@ -43,13 +43,11 @@ namespace cilspirv.Transpiler
         IEnumerable<SpirvInstruction>? Store(ITranspilerValueContext context, ValueStackEntry value) { return null; }
     }
 
-    internal interface ITranspilerFieldBehaviour : ITranspilerValueBehaviour, IMappedFromCILField { }
-
     internal interface ITranspilerLibraryMapper
     {
         GenerateCallDelegate? TryMapMethod(MethodReference methodRef) { return null; }
         IMappedFromCILType? TryMapType(TypeReference ilTypeRef) { return null; }
-        ITranspilerFieldBehaviour? TryMapFieldBehavior(FieldReference fieldRef) { return null; }
+        ITranspilerValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) { return null; }
     }
 
     internal interface IITranspilerLibraryScanner
@@ -61,8 +59,6 @@ namespace cilspirv.Transpiler
     internal delegate IEnumerable<SpirvInstruction> GenerateCallDelegate(ITranspilerMethodContext context);
 
     internal interface IMappedFromCILType { }
-    internal interface IMappedFromCILField { }
-    internal interface IMappedFromCILParam { }
 
     internal class TranspilerLibrary 
     {
@@ -71,8 +67,8 @@ namespace cilspirv.Transpiler
         private readonly Action<TranspilerDefinedFunction, MethodBody> queueMethodBody;
         private readonly Dictionary<string, GenerateCallDelegate> mappedMethods = new Dictionary<string, GenerateCallDelegate>();
         private readonly Dictionary<string, IMappedFromCILType> mappedTypes = new Dictionary<string, IMappedFromCILType>();
-        private readonly Dictionary<string, IMappedFromCILField> mappedFields = new Dictionary<string, IMappedFromCILField>();
-        private readonly Dictionary<string, IMappedFromCILParam> mappedParameters = new Dictionary<string, IMappedFromCILParam>();
+        private readonly Dictionary<string, ITranspilerValueBehaviour> mappedFields = new Dictionary<string, ITranspilerValueBehaviour>();
+        private readonly Dictionary<string, ITranspilerValueBehaviour> mappedParameters = new Dictionary<string, ITranspilerValueBehaviour>();
         private readonly TranspilerStructMapper structMapper;
         private readonly TranspilerReferenceMapper referenceMapper;
         private readonly TranspilerInternalMethodMapper methodMapper;
@@ -141,7 +137,7 @@ namespace cilspirv.Transpiler
         public IMappedFromCILType MapType(TypeReference ilTypeRef) => TryMapType(ilTypeRef)
             ?? throw new ArgumentException($"Cannot map type {ilTypeRef.FullName}");
 
-        public IMappedFromCILField MapField(FieldReference fieldRef)
+        public ITranspilerValueBehaviour MapField(FieldReference fieldRef)
         {
             if (mappedFields.TryGetValue(fieldRef.FullName, out var mapped))
                 return mapped;
@@ -156,9 +152,8 @@ namespace cilspirv.Transpiler
                 {
                     SpirvStructType declaringStructType => declaringStructType.Members.First(m => m.Name == fieldRef.Name),
                     TranspilerVarGroup varGroup => varGroup.Variables.First(v => v.Name == fieldRef.FullName),
-                    _ when TryMapFieldBehavior(fieldRef) is ITranspilerFieldBehaviour fieldBehavior => fieldBehavior,
 
-                    _ => throw new NotSupportedException("Unsupported field container type")
+                    _ => TryMapFieldBehavior(fieldRef) ?? throw new NotSupportedException("Unsupported field container type")
                 },
 
                 _ => throw new NotSupportedException("Unsupported field type")
@@ -184,7 +179,7 @@ namespace cilspirv.Transpiler
             return structMapper.MapVarGroup($"{elementName}#VarGroup", template.TypeDefinition, storageClass);
         }
 
-        private ITranspilerFieldBehaviour? TryMapFieldBehavior(FieldReference fieldRef) => AllMappers
+        private ITranspilerValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) => AllMappers
              .Select(mapper => mapper.TryMapFieldBehavior(fieldRef))
              .FirstOrDefault(b => b != null);
 
@@ -197,7 +192,7 @@ namespace cilspirv.Transpiler
             .Select(scanner => scanner.TryScanStorageClass(element))
             .FirstOrDefault(c => c.HasValue);
 
-        public IMappedFromCILParam MapParameter(ParameterDefinition paramDef, TranspilerFunction function)
+        public ITranspilerValueBehaviour MapParameter(ParameterDefinition paramDef, TranspilerFunction function)
         {
             var mappingName = $"{function.Name}#{paramDef.Name}";
             if (mappedParameters.TryGetValue(mappingName, out var mapped))

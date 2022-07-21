@@ -61,7 +61,7 @@ namespace cilspirv.Transpiler
 
     public record SpirvMember :
         IDecoratable,
-        ITranspilerFieldBehaviour
+        ITranspilerValueBehaviour
     {
         public int Index { get; }
         public string Name { get; }

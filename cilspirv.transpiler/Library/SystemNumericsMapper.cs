@@ -125,7 +125,7 @@ namespace cilspirv.Library
 
         public IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => typeMapper.TryMapType(ilTypeRef);
         public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => methodMapper.TryMapMethod(methodRef);
-        public ITranspilerFieldBehaviour? TryMapFieldBehavior(FieldReference fieldRef) => typeMapper.TryMapFieldBehavior(fieldRef);
+        public ITranspilerValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) => typeMapper.TryMapFieldBehavior(fieldRef);
 
         private void AddFieldsFor<T>()
         {

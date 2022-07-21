@@ -8,8 +8,6 @@ namespace cilspirv.Transpiler
 {
     internal class TranspilerVarGroup :
         IMappedFromCILType,
-        IMappedFromCILField,
-        IMappedFromCILParam,
         ITranspilerValueBehaviour
     {
         public TypeDefinition TypeDefinition { get; }

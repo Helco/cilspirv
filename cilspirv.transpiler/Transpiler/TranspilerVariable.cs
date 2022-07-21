@@ -9,8 +9,6 @@ namespace cilspirv.Transpiler
     internal class TranspilerVariable :
         IDecoratableInstructionGeneratable,
         IDebugInstructionGeneratable,
-        IMappedFromCILField,
-        IMappedFromCILParam,
         ITranspilerValueBehaviour
     {
         public string Name { get; }

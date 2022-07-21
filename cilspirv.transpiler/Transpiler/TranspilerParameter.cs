@@ -9,7 +9,6 @@ namespace cilspirv.Transpiler
     internal class TranspilerParameter :
         IDecoratableInstructionGeneratable,
         IDebugInstructionGeneratable,
-        IMappedFromCILParam,
         ITranspilerValueBehaviour
     {
         public int SpirvIndex { get; } // this can be different from the CLI arg index
