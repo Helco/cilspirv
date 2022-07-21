@@ -8,7 +8,7 @@ using cilspirv.Transpiler;
 
 namespace cilspirv.Library
 {
-    public sealed record StandardFieldBehavior : ITranspilerFieldBehavior
+    public sealed record StandardFieldBehavior : ITranspilerFieldBehaviour
     {
         private readonly SpirvType type;
         private readonly int memberIndex;
@@ -16,7 +16,7 @@ namespace cilspirv.Library
         public StandardFieldBehavior(SpirvType type, int memberIndex) =>
             (this.type, this.memberIndex) = (type, memberIndex);
 
-        IEnumerable<Instruction> ITranspilerFieldBehavior.LoadAddress(ITranspilerFieldContext context)
+        IEnumerable<Instruction> ITranspilerValueBehaviour.LoadAddress(ITranspilerValueContext context)
         {
             if (context.Parent is not ValueStackEntry parentValue)
                 throw new InvalidOperationException("Struct member parent is not a value");

@@ -6,7 +6,11 @@ using cilspirv.Spirv.Ops;
 
 namespace cilspirv.Transpiler
 {
-    internal class TranspilerParameter : IDecoratableInstructionGeneratable, IDebugInstructionGeneratable, IMappedFromCILParam
+    internal class TranspilerParameter :
+        IDecoratableInstructionGeneratable,
+        IDebugInstructionGeneratable,
+        IMappedFromCILParam,
+        ITranspilerValueBehaviour
     {
         public int SpirvIndex { get; } // this can be different from the CLI arg index
         public string Name { get; }
@@ -32,5 +36,14 @@ namespace cilspirv.Transpiler
                 Name = Name
             };
         }
+
+        IEnumerable<Instruction>? ITranspilerValueBehaviour.Load(ITranspilerValueContext context)
+        {
+            context.Result = new ValueStackEntry(this, context.IDOf(this), Type);
+            return Enumerable.Empty<Instruction>();
+        }
+
+        IEnumerable<Instruction>? ITranspilerValueBehaviour.Store(ITranspilerValueContext context, ValueStackEntry value) =>
+            throw new InvalidOperationException($"Cannot store values into parameters");
     }
 }
