@@ -11,7 +11,7 @@ namespace cilspirv.Transpiler
         IDebugInstructionGeneratable,
         IMappedFromCILField,
         IMappedFromCILParam,
-        ITranspilerFieldBehavior
+        ITranspilerValueBehaviour
     {
         public string Name { get; }
         public SpirvPointerType PointerType { get; }
@@ -22,7 +22,7 @@ namespace cilspirv.Transpiler
         public TranspilerVariable(string name, SpirvPointerType pointerType) =>
             (Name, PointerType) = (name, pointerType);
 
-        public IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        public virtual IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
         {
             yield return new OpVariable()
             {
@@ -32,7 +32,7 @@ namespace cilspirv.Transpiler
             };
         }
 
-        public IEnumerator<Instruction> GenerateDebugInfo(IInstructionGeneratorContext context)
+        public virtual IEnumerator<Instruction> GenerateDebugInfo(IInstructionGeneratorContext context)
         {
             if (!string.IsNullOrEmpty(Name))
                 yield return new OpName()
@@ -50,7 +50,7 @@ namespace cilspirv.Transpiler
                 entryFunction.Interface.Add(this);
         }
 
-        IEnumerable<Instruction> ITranspilerFieldBehavior.Load(ITranspilerFieldContext context)
+        IEnumerable<Instruction> ITranspilerValueBehaviour.Load(ITranspilerValueContext context)
         {
             MarkUsageIn(context.Function);
             var result = new ValueStackEntry(this, context.CreateID(), ElementType);
@@ -63,14 +63,14 @@ namespace cilspirv.Transpiler
             };
         }
 
-        IEnumerable<Instruction> ITranspilerFieldBehavior.LoadAddress(ITranspilerFieldContext context)
+        IEnumerable<Instruction> ITranspilerValueBehaviour.LoadAddress(ITranspilerValueContext context)
         {
             MarkUsageIn(context.Function);
             context.Result = new ValueStackEntry(this, context.IDOf(this), PointerType);
             return Enumerable.Empty<Instruction>();
         }
 
-        IEnumerable<Instruction> ITranspilerFieldBehavior.Store(ITranspilerFieldContext context, ValueStackEntry value)
+        IEnumerable<Instruction> ITranspilerValueBehaviour.Store(ITranspilerValueContext context, ValueStackEntry value)
         {
             MarkUsageIn(context.Function);
             yield return new OpStore()

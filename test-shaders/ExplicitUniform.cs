@@ -35,7 +35,7 @@ namespace test_shaders
         public void Frag(
             [Input] in FSInput input,
 
-            [Uniform, Binding(0, 0)] Uniforms uniforms,
+            [Uniform, Binding(0, 0)] in Uniforms uniforms,
 
             [Output, Location(0)] out Vector4 output)
         {

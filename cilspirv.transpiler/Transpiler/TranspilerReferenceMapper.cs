@@ -20,7 +20,11 @@ namespace cilspirv.Transpiler
             var elementType = library.TryMapType(byRefType.ElementType);
             if (elementType == null)
                 return null;
-            return elementType;
+            return new MappedByReferenceType(elementType);
         }
+    }
+
+    internal record MappedByReferenceType(IMappedFromCILType ElementType) : IMappedFromCILType
+    {
     }
 }

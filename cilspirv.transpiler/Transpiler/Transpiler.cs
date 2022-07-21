@@ -26,6 +26,7 @@ namespace cilspirv.Transpiler
             {
                 options = value;
                 generatorContext.Options = value;
+                Library.Options = options;
             }
         }
 

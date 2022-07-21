@@ -16,23 +16,24 @@ namespace cilspirv.Transpiler
     {
         partial class GenInstructions
         {
-            private class FieldContext : ITranspilerFieldContext
+            private class ValueContext : ITranspilerValueContext
             {
                 private readonly GenInstructions gen;
+                private readonly StackEntry? parent;
                 private StackEntry? result;
 
                 public TranspilerLibrary Library => gen.Library;
                 public TranspilerModule Module => gen.Module;
                 public TranspilerFunction Function => gen.Function;
                 public TranspilerOptions Options => gen.Options;
-                public StackEntry Parent { get; }
+                public StackEntry Parent => parent ?? throw new InvalidOperationException("Current context has no parent value");
 
                 public StackEntry Result
                 {
                     get => result ?? throw new InvalidOperationException("Result of field access was not set");
                     private set => result = value;
                 }
-                StackEntry ITranspilerFieldContext.Result
+                StackEntry ITranspilerValueContext.Result
                 {
                     set
                     {
@@ -42,13 +43,79 @@ namespace cilspirv.Transpiler
                     }
                 }
 
-                public FieldContext(GenInstructions gen, StackEntry parent) =>
-                    (this.gen, Parent) = (gen, parent);
+                public ValueContext(GenInstructions gen, StackEntry parent) =>
+                    (this.gen, this.parent) = (gen, parent);
+
+                public ValueContext(GenInstructions gen) => this.gen = gen;
 
                 public ID CreateID() => gen.context.CreateID();
                 public ID CreateIDFor(IInstructionGeneratable generatable) => gen.context.CreateIDFor(generatable);
                 public ID IDOf(IInstructionGeneratable generatable) => gen.context.IDOf(generatable);
                 public IEnumerable<T> OfType<T>() where T : IInstructionGeneratable => gen.context.OfType<T>();
+            }
+
+            private void LoadValueAddress(StackEntry? parent, ITranspilerValueBehaviour behaviour)
+            {
+                var context = parent == null
+                    ? new ValueContext(this)
+                    : new ValueContext(this, parent);
+                var instructions = behaviour.LoadAddress(context)?.ToArray()
+                    ?? throw new InvalidOperationException("Either Load or LoadAddress have to be defined");
+                if (context.Result is not ValueStackEntry resultValue)
+                    throw new InvalidOperationException("LoadAddress did not result in a value");
+                if (resultValue.Type is not SpirvPointerType)
+                    throw new InvalidOperationException("LoadAddress did not result in a pointer");
+                Block.Instructions.AddRange(instructions);
+                Stack.Add(resultValue);
+            }
+
+            private void LoadValue(StackEntry? parent, ITranspilerValueBehaviour behaviour)
+            {
+                var context = parent == null
+                    ? new ValueContext(this)
+                    : new ValueContext(this, parent);
+                var instructions = behaviour.Load(context)?.ToArray();
+                if (instructions != null)
+                {
+                    if (context.Result is not ValueStackEntry)
+                        throw new InvalidOperationException("Load value did not result in a value");
+                    Block.Instructions.AddRange(instructions);
+                    Stack.Add(context.Result);
+                    return;
+                }
+
+                LoadValueAddress(parent, behaviour);
+                var pointer = (ValueStackEntry)Pop();
+                var pointerType = (SpirvPointerType)pointer.Type;
+                var resultId = context.CreateID();
+                Add(new OpLoad()
+                {
+                    Result = resultId,
+                    ResultType = context.IDOf(pointerType.Type!),
+                    Pointer = pointer.ID
+                });
+                Stack.Add(new ValueStackEntry(behaviour, resultId, pointerType.Type!));
+            }
+
+            private void StoreValue(StackEntry? parent, ValueStackEntry value, ITranspilerValueBehaviour behaviour)
+            {
+                var context = parent == null
+                    ? new ValueContext(this)
+                    : new ValueContext(this, parent);
+                var instructions = behaviour.Store(context, value)?.ToArray();
+                if (instructions != null)
+                {
+                    Block.Instructions.AddRange(instructions);
+                    return;
+                }
+
+                LoadValueAddress(parent, behaviour);
+                var pointer = (ValueStackEntry)Pop();
+                Add(new OpStore()
+                {
+                    Pointer = pointer.ID,
+                    Object = value.ID
+                });
             }
 
             private void LoadArgument(int argI)
@@ -58,152 +125,67 @@ namespace cilspirv.Transpiler
                     Stack.Add(new StackEntry(new ThisModuleTag()));
                     return;
                 }
-                Stack.Add(Library.MapParameter(ILMethod.Parameters[argI], Function) switch
-                {
-                    TranspilerVarGroup varGroup => new StackEntry(varGroup),
-                    TranspilerVariable variable => GetGlobalVariable(variable),
-                    TranspilerParameter parameter => new ValueStackEntry(parameter, context.IDOf(parameter), parameter.Type),
-                    _ => throw new NotSupportedException("Unsupported parameter type")
-                });
 
-                StackEntry GetGlobalVariable(TranspilerVariable variable)
+                switch(Library.MapParameter(ILMethod.Parameters[argI], Function))
                 {
-                    variable.MarkUsageIn(Function);
-                    return new ValueStackEntry(variable, context.IDOf(variable), variable.PointerType);
+                    case TranspilerVarGroup varGroup: Stack.Add(new StackEntry(varGroup)); break;
+                    case ITranspilerValueBehaviour value: LoadValue(parent: null, value); break;
+                    default: throw new NotSupportedException("Unsupported parameter type");
                 }
             }
 
             private void StoreArgument(int argI)
             {
-                if (Pop() is not ValueStackEntry value)
-                    throw new InvalidOperationException("Top of stack is not a value");
-
-                var parameter = Library.MapParameter(ILMethod.Parameters[argI], Function);
-                if (parameter is not TranspilerVariable variable)
-                    throw new NotSupportedException("Real parameters cannot be written into");
-                variable.MarkUsageIn(Function);
-                Add(new OpStore()
+                var value = Pop() as ValueStackEntry ?? throw new InvalidOperationException("Top of stack is not a value");
+                switch (Library.MapParameter(ILMethod.Parameters[argI], Function))
                 {
-                    Pointer = context.IDOf(variable),
-                    Object = value.ID
-                });
+                    case TranspilerVarGroup: throw new InvalidOperationException("Variable groups cannot be written to");
+                    case ITranspilerValueBehaviour valueBehaviour: StoreValue(parent: null, value, valueBehaviour); break;
+                    default: throw new NotSupportedException("Unsupported parameter type");
+                }
             }
 
-            private void LoadLocal(int variableI)
-            {
-                var id = context.CreateID();
-                var spirvVariable = Function.Variables[variableI];
-                Add(new OpLoad()
-                {
-                    Result = id,
-                    ResultType = context.IDOf(spirvVariable.ElementType),
-                    Pointer = context.IDOf(spirvVariable)
-                });
-                Stack.Add(new ValueStackEntry(spirvVariable, id, spirvVariable.ElementType));
-            }
+            private void LoadLocal(int variableI) =>
+                LoadValue(parent: null, Function.Variables[variableI]);
 
-            private void PushLocalAddress(VariableReference ilVariableRef)
-            {
-                var spirvVariable = Function.Variables[ilVariableRef.Index];
-                Stack.Add(new ValueStackEntry(spirvVariable, context.IDOf(spirvVariable), spirvVariable.PointerType));
-            }
+            private void LoadLocalAddress(VariableReference ilVariableRef) =>
+                LoadValueAddress(parent: null, Function.Variables[ilVariableRef.Index]);
 
             private void StoreLocal(int variableI)
             {
                 // TODO: Coercing
-                var spirvVariable = Function.Variables[variableI];
-                if (Pop() is not ValueStackEntry value)
-                    throw new InvalidOperationException($"Stack top is not a SPIRV entry");
-                if (value.Type != spirvVariable.ElementType)
-                    throw new InvalidOperationException($"Cannot store {value.Type} in variable of type {spirvVariable.ElementType}");
-
-                Add(new OpStore()
-                {
-                    Pointer = context.IDOf(spirvVariable),
-                    Object = value.ID
-                });
+                var value = Pop() as ValueStackEntry ?? throw new InvalidOperationException("Top of stack is not a value");
+                var variable = Function.Variables[variableI];
+                if (value.Type != variable.ElementType)
+                    throw new InvalidOperationException($"Cannot store {value.Type} in variable of type {variable.ElementType}");
+                StoreValue(parent: null, value, variable);
             }
 
-            private ITranspilerFieldBehavior GetFieldBehavior(StackEntry parent, FieldReference fieldRef) =>
+            private ITranspilerValueBehaviour GetFieldBehavior(StackEntry parent, FieldReference fieldRef) =>
                 parent.Tag is TranspilerVarGroup varGroup ? varGroup.Variables.First(v => v.Name == fieldRef.FullName)
-                : Library.MapField(fieldRef) is ITranspilerFieldBehavior fieldBehavior ? fieldBehavior
+                : Library.MapField(fieldRef) is ITranspilerValueBehaviour fieldBehavior ? fieldBehavior
                 : throw new NotSupportedException("Unsupported field parent or field type");
 
             private void LoadField(FieldReference fieldRef)
             {
                 var parent = Pop();
-                var fieldBehavior = GetFieldBehavior(parent, fieldRef);
-                var context = new FieldContext(this, parent);
-                var instructions = fieldBehavior.Load(context);
-
-                StackEntry result;
-                if (instructions == null)
-                {
-                    instructions = fieldBehavior.LoadAddress(context = new FieldContext(this, parent))?.ToArray()
-                        ?? throw new InvalidOperationException("Either Load or LoadAddress have to be defined");
-                    if (context.Result is not ValueStackEntry resultValue)
-                        throw new InvalidOperationException("Field LoadAddress did not result in a value");
-                    if (resultValue.Type is not SpirvPointerType resultPointerType)
-                        throw new InvalidOperationException("Field LoadAddress did not result in a pointer");
-
-                    var newResultId = context.CreateID();
-                    result = new ValueStackEntry(fieldBehavior, newResultId, resultPointerType.Type!);
-                    Block.Instructions.AddRange(instructions);
-                    Add(new OpLoad()
-                    {
-                        Result = newResultId,
-                        ResultType = context.IDOf(resultPointerType.Type!),
-                        Pointer = resultValue.ID
-                    });
-                }
-                else
-                {
-                    Block.Instructions.AddRange(instructions);
-                    result = context.Result;
-                }
-
-                Stack.Add(result);
+                var fieldBehaviour = GetFieldBehavior(parent, fieldRef);
+                LoadValue(parent, fieldBehaviour);
             }
 
             private void LoadFieldAddress(FieldReference fieldRef)
             {
                 var parent = Pop();
                 var fieldBehavior = GetFieldBehavior(parent, fieldRef);
-                var context = new FieldContext(this, parent);
-                var instructions = fieldBehavior.LoadAddress(context)?.ToArray()
-                    ?? throw new InvalidOperationException($"LoadAddress is not supported for field {fieldRef.FullName}");
-
-                Block.Instructions.AddRange(instructions);
-                Stack.Add(context.Result);
+                LoadValueAddress(parent, fieldBehavior);
             }
 
             private void StoreField(FieldReference fieldRef)
             {
                 var value = Pop() as ValueStackEntry ?? throw new InvalidOperationException("Top of stack is not a value");
-
                 var parent = Pop();
                 var fieldBehavior = GetFieldBehavior(parent, fieldRef);
-                var context = new FieldContext(this, parent);
-                var instructions = fieldBehavior.Store(context, value);
-                if (instructions != null)
-                {
-                    Block.Instructions.AddRange(instructions);
-                    return;
-                }
-
-                instructions = fieldBehavior.LoadAddress(context = new FieldContext(this, parent))?.ToArray()
-                    ?? throw new InvalidOperationException("Either Load or LoadAddress have to be defined");
-                if (context.Result is not ValueStackEntry resultValue)
-                    throw new InvalidOperationException("Field LoadAddress did not result in a value");
-                if (resultValue.Type is not SpirvPointerType resultPointerType)
-                    throw new InvalidOperationException("Field LoadAddress did not result in a pointer");
-
-                Block.Instructions.AddRange(instructions);
-                Add(new OpStore()
-                {
-                    Pointer = resultValue.ID,
-                    Object = value.ID
-                });
+                StoreValue(parent, value, fieldBehavior);
             }
 
             private void LoadObject()

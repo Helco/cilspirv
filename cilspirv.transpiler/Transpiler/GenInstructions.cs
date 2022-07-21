@@ -156,8 +156,8 @@ namespace cilspirv.Transpiler
                         case (Code.Ldloc_1): LoadLocal(1); break;
                         case (Code.Ldloc_2): LoadLocal(2); break;
                         case (Code.Ldloc_3): LoadLocal(3); break;
-                        case (Code.Ldloca): PushLocalAddress((VariableReference)ilInstr.Operand); break;
-                        case (Code.Ldloca_S): PushLocalAddress((VariableReference)ilInstr.Operand); break;
+                        case (Code.Ldloca): LoadLocalAddress((VariableReference)ilInstr.Operand); break;
+                        case (Code.Ldloca_S): LoadLocalAddress((VariableReference)ilInstr.Operand); break;
 
                         case (Code.Stloc): StoreLocal((ushort)ilInstr.Operand); break;
                         case (Code.Stloc_S): StoreLocal((byte)ilInstr.Operand); break;
