@@ -4,6 +4,7 @@ using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
 using System.Collections.Immutable;
+using cilspirv.Transpiler.Values;
 
 namespace cilspirv.Transpiler
 {
@@ -20,7 +21,7 @@ namespace cilspirv.Transpiler
         public ISet<TranspilerExtInstructionSet> ExtInstructionSets { get; } = new HashSet<TranspilerExtInstructionSet>();
         public ISet<TranspilerFunction> Functions { get; } = new HashSet<TranspilerFunction>();
         public IEnumerable<TranspilerEntryFunction> EntryPoints => Functions.OfType<TranspilerEntryFunction>();
-        public ISet<TranspilerVariable> GlobalVariables { get; } = new HashSet<TranspilerVariable>();
+        public ISet<Variable> GlobalVariables { get; } = new HashSet<Variable>();
 
         /// <summary>Available capabilities including implicitly declared ones</summary>
         public IReadOnlySet<Capability> AllCapabilities
@@ -50,7 +51,7 @@ namespace cilspirv.Transpiler
             }
         }
 
-        public IEnumerable<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        public IEnumerable<Instruction> GenerateInstructions(IIDMapper context)
         {
             foreach (var cap in Capabilities)
                 yield return new OpCapability()
@@ -133,7 +134,7 @@ namespace cilspirv.Transpiler
                 yield return instr;
         }
 
-        private IEnumerable<SpirvType> GetOrderedTypeList(IInstructionGeneratorContext context)
+        private IEnumerable<SpirvType> GetOrderedTypeList(IIDMapper context)
         {
             var rootTypes = context.OfType<SpirvType>();
             var remainingTypes = rootTypes

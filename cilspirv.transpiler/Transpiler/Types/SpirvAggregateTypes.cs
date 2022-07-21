@@ -13,7 +13,7 @@ namespace cilspirv.Transpiler
 
         public override string ToString() => $"{ComponentType}Vec{ComponentCount}";
         public override IEnumerable<SpirvType> Dependencies => new[] { ComponentType! }; // scalar types have no further dependencies
-        internal override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        internal override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpTypeVector()
             {
@@ -33,7 +33,7 @@ namespace cilspirv.Transpiler
 
         public override string ToString() => $"{ComponentType}Matrix{RowCount}x{ColumnCount}";
         public override IEnumerable<SpirvType> Dependencies => new SpirvType[] { ColumnType!, ComponentType! };
-        internal override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        internal override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpTypeMatrix()
             {
@@ -51,7 +51,7 @@ namespace cilspirv.Transpiler
 
         public override string ToString() => $"{ElementType}[{Length}]";
         public override IEnumerable<SpirvType> Dependencies => new[] { ElementType! }.Concat(ElementType!.Dependencies);
-        internal override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        internal override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             var lengthId = context.CreateID();
             yield return new OpConstant()
@@ -79,7 +79,7 @@ namespace cilspirv.Transpiler
 
         public override string ToString() => $"{ElementType}[]";
         public override IEnumerable<SpirvType> Dependencies => new[] { ElementType! }.Concat(ElementType!.Dependencies);
-        internal override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        internal override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpTypeRuntimeArray()
             {

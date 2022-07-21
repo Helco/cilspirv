@@ -39,7 +39,7 @@ namespace cilspirv.Transpiler
 
         private partial class GenInstructions
         {
-            private readonly IInstructionGeneratorContext context;
+            private readonly IIDMapper context;
             private readonly ID thisID;
             private readonly Dictionary<int, BlockInfo> blocksByOffset;
             private readonly Dictionary<IControlFlowBlock, BlockInfo> blocksByCfa;
@@ -59,7 +59,7 @@ namespace cilspirv.Transpiler
 
             public GenInstructions(Transpiler transpiler, TranspilerDefinedFunction function, MethodDefinition ilMethod, IReadOnlyList<IControlFlowBlock> cfaBlocks)
             {
-                context = transpiler.generatorContext;
+                context = transpiler.idMapper;
                 Library = transpiler.Library;
                 Module = transpiler.Module;
                 Options = transpiler.Options;

@@ -10,7 +10,7 @@ namespace cilspirv.Transpiler
     {
         public List<Instruction> Instructions { get; } = new List<Instruction>();
 
-        public IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context) =>
+        public IEnumerator<Instruction> GenerateInstructions(IIDMapper context) =>
             Instructions.Prepend(new OpLabel()
             {
                 Result = context.CreateIDFor(this)

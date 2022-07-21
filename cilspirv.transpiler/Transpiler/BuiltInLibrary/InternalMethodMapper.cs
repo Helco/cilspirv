@@ -10,12 +10,12 @@ using Mono.Cecil;
 
 namespace cilspirv.Transpiler
 {
-    internal class TranspilerInternalMethodMapper : ITranspilerLibraryMapper
+    internal class InternalMethodMapper : ITranspilerLibraryMapper
     {
         private readonly TranspilerLibrary library;
         private readonly Dictionary<string, GenerateCallDelegate> methods = new Dictionary<string, GenerateCallDelegate>();
 
-        public TranspilerInternalMethodMapper(TranspilerLibrary library) => this.library = library;
+        public InternalMethodMapper(TranspilerLibrary library) => this.library = library;
 
         public IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => null;
 

@@ -11,7 +11,7 @@ namespace cilspirv.Transpiler
 {
     internal partial class Transpiler
     {
-        private readonly InstructionGenerator generatorContext = new InstructionGenerator();
+        private readonly IDMapper idMapper = new IDMapper();
         private readonly Queue<(TranspilerDefinedFunction function, MethodBody ilBody)> missingBodies =
             new Queue<(TranspilerDefinedFunction function, MethodBody ilBody)>();
         private TranspilerOptions options = new TranspilerOptions();
@@ -25,7 +25,7 @@ namespace cilspirv.Transpiler
             init
             {
                 options = value;
-                generatorContext.Options = value;
+                idMapper.Options = value;
                 Library.Options = options;
             }
         }
@@ -38,10 +38,10 @@ namespace cilspirv.Transpiler
 
         public void WriteSpirvModule(System.IO.Stream stream, bool leaveOpen = false) => new SpirvModule()
         {
-            Instructions = Module.GenerateInstructions(generatorContext).ToArray(),
-            Bound = generatorContext.Bound,
+            Instructions = Module.GenerateInstructions(idMapper).ToArray(),
+            Bound = idMapper.Bound,
             SpirvVersion = new Version(1, 3)
-        }.Write(stream, leaveOpen, generatorContext.MapFromTemporaryID);
+        }.Write(stream, leaveOpen, idMapper.MapFromTemporaryID);
 
         public TranspilerFunction TranspileEntryPoint(MethodDefinition ilMethod) =>
             Library.TryMapInternalMethod(ilMethod, isEntryPoint: true) ??
@@ -71,7 +71,7 @@ namespace cilspirv.Transpiler
                 if (!ilBody.Method.DebugInformation.TryGetName(ilVariable, out var varName))
                     varName = $"v{nextVarName++}";
                 var type = Library.MapType(ilVariable.VariableType);
-                definedFunction.Variables.Add(new TranspilerVariable(varName, new SpirvPointerType()
+                definedFunction.Variables.Add(new Values.Variable(varName, new SpirvPointerType()
                 {
                     Type = type as SpirvType ?? throw new InvalidOperationException("Local variables can only be SPIRV types"),
                     StorageClass = StorageClass.Function

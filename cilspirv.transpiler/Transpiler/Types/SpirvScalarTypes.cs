@@ -9,7 +9,7 @@ namespace cilspirv.Transpiler
     public record SpirvBooleanType : SpirvScalarType
     {
         public override string ToString() => "Bool";
-        internal override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        internal override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpTypeBool() { Result = context.CreateIDFor(this) };
         }
@@ -21,7 +21,7 @@ namespace cilspirv.Transpiler
         public bool IsSigned { get; init; }
 
         public override string ToString() => $"{(IsSigned ? "U" : "")}Int{Width}";
-        internal override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        internal override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpTypeInt()
             {
@@ -37,7 +37,7 @@ namespace cilspirv.Transpiler
         public int Width { get; init; }
 
         public override string ToString() => $"Float{Width}";
-        internal override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        internal override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpTypeFloat()
             {

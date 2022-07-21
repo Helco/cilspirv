@@ -14,9 +14,9 @@ namespace cilspirv.Transpiler
 
         protected TranspilerConstant(SpirvType type) => Type = type;
 
-        public abstract IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context);
+        public abstract IEnumerator<Instruction> GenerateInstructions(IIDMapper context);
 
-        public IEnumerator<Instruction> GenerateDebugInfo(IInstructionGeneratorContext context)
+        public IEnumerator<Instruction> GenerateDebugInfo(IIDMapper context)
         {
             if (Name != null)
                 yield return new OpName()
@@ -44,7 +44,7 @@ namespace cilspirv.Transpiler
         public override int GetHashCode() =>
             Value.Aggregate(base.GetHashCode(), HashCode.Combine);
 
-        public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        public override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpConstant()
             {
@@ -61,7 +61,7 @@ namespace cilspirv.Transpiler
 
         public TranspilerBooleanConstant(bool value) : base(new SpirvBooleanType()) => Value = value;
 
-        public override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        public override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return Value
                 ? new OpConstantTrue()

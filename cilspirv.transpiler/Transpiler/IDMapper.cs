@@ -7,7 +7,17 @@ using cilspirv.Spirv;
 
 namespace cilspirv.Transpiler
 {
-    internal class InstructionGenerator : IInstructionGeneratorContext
+    internal interface IIDMapper
+    {
+        TranspilerOptions Options { get; }
+
+        ID CreateID();
+        ID CreateIDFor(IInstructionGeneratable generatable);
+        ID IDOf(IInstructionGeneratable generatable);
+        IEnumerable<T> OfType<T>() where T : IInstructionGeneratable;
+    }
+
+    internal class IDMapper : IIDMapper
     {
         private const uint TemporaryIDThreshold = 0xA0000000;
 

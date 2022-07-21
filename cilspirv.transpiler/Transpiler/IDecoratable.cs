@@ -13,10 +13,10 @@ namespace cilspirv.Transpiler
 
     internal interface IDecoratableInstructionGeneratable : IInstructionGeneratable, IDecoratable
     {
-        IEnumerable<Instruction> GenerateDecorations(IInstructionGeneratorContext context)
+        IEnumerable<Instruction> GenerateDecorations(IIDMapper context)
             => BaseGenerateDecorations(context);
 
-        IEnumerable<Instruction> BaseGenerateDecorations(IInstructionGeneratorContext context)
+        IEnumerable<Instruction> BaseGenerateDecorations(IIDMapper context)
         {
             var id = context.IDOf(this);
             foreach (var entry in Decorations)

@@ -9,10 +9,12 @@ using cilspirv.Spirv;
 using ILInstruction = Mono.Cecil.Cil.Instruction;
 using SpirvInstruction = cilspirv.Spirv.Instruction;
 using System.Collections.Immutable;
+using cilspirv.Transpiler.Values;
+using cilspirv.Transpiler.BuiltInLibrary;
 
 namespace cilspirv.Transpiler
 {
-    internal interface ITranspilerContext : IInstructionGeneratorContext
+    internal interface ITranspilerContext : IIDMapper
     {
         TranspilerLibrary Library { get; }
         TranspilerModule Module { get; }
@@ -69,9 +71,9 @@ namespace cilspirv.Transpiler
         private readonly Dictionary<string, IMappedFromCILType> mappedTypes = new Dictionary<string, IMappedFromCILType>();
         private readonly Dictionary<string, ITranspilerValueBehaviour> mappedFields = new Dictionary<string, ITranspilerValueBehaviour>();
         private readonly Dictionary<string, ITranspilerValueBehaviour> mappedParameters = new Dictionary<string, ITranspilerValueBehaviour>();
-        private readonly TranspilerStructMapper structMapper;
-        private readonly TranspilerReferenceMapper referenceMapper;
-        private readonly TranspilerInternalMethodMapper methodMapper;
+        private readonly StructMapper structMapper;
+        private readonly ReferenceMapper referenceMapper;
+        private readonly InternalMethodMapper methodMapper;
 
         public TranspilerOptions Options { get; set; } = new TranspilerOptions();
 
@@ -96,9 +98,9 @@ namespace cilspirv.Transpiler
             this.ilModuleType = ilModuleType;
             this.module = module;
             this.queueMethodBody = queueMethodBody;
-            structMapper = new TranspilerStructMapper(this, module);
-            referenceMapper = new TranspilerReferenceMapper(this);
-            methodMapper = new TranspilerInternalMethodMapper(this);
+            structMapper = new StructMapper(this, module);
+            referenceMapper = new ReferenceMapper(this);
+            methodMapper = new InternalMethodMapper(this);
         }
 
         public IMappedFromCILType? TryMapType(TypeReference ilTypeRef)
@@ -144,14 +146,14 @@ namespace cilspirv.Transpiler
 
             mapped = MapType(fieldRef.FieldType) switch
             {
-                TranspilerVarGroup varGroup => varGroup,
+                VarGroup varGroup => varGroup,
                 TranspilerVarGroupTemplate template => InstantiateTemplateFor(fieldRef.FullName, fieldRef.Resolve(), template),
                 SpirvType realType when (fieldRef.DeclaringType.FullName == ilModuleType.FullName) => ScanAndMapGlobalVariable(realType),
 
                 SpirvType realType => MapType(fieldRef.DeclaringType) switch
                 {
                     SpirvStructType declaringStructType => declaringStructType.Members.First(m => m.Name == fieldRef.Name),
-                    TranspilerVarGroup varGroup => varGroup.Variables.First(v => v.Name == fieldRef.FullName),
+                    VarGroup varGroup => varGroup.Variables.First(v => v.Name == fieldRef.FullName),
 
                     _ => TryMapFieldBehavior(fieldRef) ?? throw new NotSupportedException("Unsupported field container type")
                 },
@@ -161,7 +163,7 @@ namespace cilspirv.Transpiler
             mappedFields[fieldRef.FullName] = mapped;
             return mapped;
 
-            TranspilerVariable ScanAndMapGlobalVariable(SpirvType realType)
+            Variable ScanAndMapGlobalVariable(SpirvType realType)
             {
                 var storageClass = TryScanStorageClass(fieldRef.Resolve())
                     ?? throw new InvalidOperationException($"Could not scan storage class for field {fieldRef.FullName}");
@@ -170,7 +172,7 @@ namespace cilspirv.Transpiler
             }
         }
 
-        private TranspilerVarGroup InstantiateTemplateFor(string elementName, ICustomAttributeProvider element, TranspilerVarGroupTemplate template)
+        private VarGroup InstantiateTemplateFor(string elementName, ICustomAttributeProvider element, TranspilerVarGroupTemplate template)
         {
             var storageClass = TryScanStorageClass(element);
             if (storageClass == null)
@@ -204,13 +206,13 @@ namespace cilspirv.Transpiler
 
             mapped = paramType switch
             {
-                TranspilerVarGroup varGroup => varGroup,
+                VarGroup varGroup => varGroup,
                 TranspilerVarGroupTemplate template => InstantiateTemplateFor(mappingName, paramDef, template),
                 SpirvType realType when storageClass != null => CreateGlobalVariable(realType, paramDef.Name, storageClass.Value, decorations),
                 SpirvType realType => MapSpirvParameter(realType),
-                MappedByReferenceType byRef => byRef.ElementType switch
+                MappedFromRefCILType byRef => byRef.ElementType switch
                 {
-                    TranspilerVarGroup varGroup => varGroup, // ignore by-ref for VarGroup(Template)
+                    VarGroup varGroup => varGroup, // ignore by-ref for VarGroup(Template)
                     TranspilerVarGroupTemplate template => InstantiateTemplateFor(mappingName, paramDef, template),
                     SpirvType realType when storageClass.HasValue => CreateGlobalVariable(realType, paramDef.Name, storageClass.Value, decorations, byRef: true),
                     _ => throw new NotSupportedException("Unsupported by-reference parameter type")
@@ -220,11 +222,11 @@ namespace cilspirv.Transpiler
             mappedParameters[mappingName] = mapped;
             return mapped;
 
-            TranspilerParameter MapSpirvParameter(SpirvType realType)
+            Parameter MapSpirvParameter(SpirvType realType)
             {
                 if (function is TranspilerEntryFunction)
                     throw new InvalidOperationException("Entry point parameters require a storage class");
-                var parameter = new TranspilerParameter(function.Parameters.Count, paramDef.Name, realType)
+                var parameter = new Parameter(function.Parameters.Count, paramDef.Name, realType)
                 {
                     Decorations = decorations.ToHashSet()
                 };
@@ -236,14 +238,14 @@ namespace cilspirv.Transpiler
         private bool IsBlockStructure(SpirvType type) =>
             type is SpirvStructType && type.Decorations.Any(d => d.Kind == Decoration.Block);
 
-        public TranspilerVariable CreateGlobalVariable(SpirvType realType, string name, StorageClass storageClass, IEnumerable<DecorationEntry> decorations, bool byRef = false)
+        private Variable CreateGlobalVariable(SpirvType realType, string name, StorageClass storageClass, IEnumerable<DecorationEntry> decorations, bool byRef = false)
         {
             if (Options.ImplicitUniformBlockStructures && storageClass == StorageClass.Uniform && !IsBlockStructure(realType))
                 return CreateImplicitBlockVariable(realType, name, decorations, byRef);
 
             if (byRef) // the variable will be a double pointer
                 realType = MakePointer(realType);
-            var variable = new TranspilerVariable(name, MakePointer(realType))
+            var variable = new Variable(name, MakePointer(realType))
             {
                 Decorations = decorations.ToHashSet()
             };
@@ -257,7 +259,7 @@ namespace cilspirv.Transpiler
             };
         }
 
-        private TranspilerImplicitBlockVariable CreateImplicitBlockVariable(SpirvType realType, string name, IEnumerable<DecorationEntry> decorations, bool byRef)
+        private ImplicitBlockVariable CreateImplicitBlockVariable(SpirvType realType, string name, IEnumerable<DecorationEntry> decorations, bool byRef)
         {
             var implicitStruct = new SpirvStructType()
             {
@@ -270,7 +272,7 @@ namespace cilspirv.Transpiler
                     Decorations.Block()
                 }.ToHashSet()
             };
-            var variable = new TranspilerImplicitBlockVariable(name, implicitStruct, realType, decorations, byRef);
+            var variable = new ImplicitBlockVariable(name, implicitStruct, realType, decorations, byRef);
             module.GlobalVariables.Add(variable);
             return variable;
         }
@@ -282,7 +284,7 @@ namespace cilspirv.Transpiler
             {
                 if (!ilMethod.HasBody)
                     throw new InvalidOperationException("An entry point method has to have a body");
-                if (returnType is not SpirvVoidType && returnType is not TranspilerVarGroup)
+                if (returnType is not SpirvVoidType && returnType is not VarGroup)
                     throw new InvalidOperationException("An entry point can only return void or a variable group");
             }
             else

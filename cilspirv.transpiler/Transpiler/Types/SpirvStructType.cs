@@ -22,7 +22,7 @@ namespace cilspirv.Transpiler
         public override int GetHashCode() =>
             Members.Aggregate(base.GetHashCode(), HashCode.Combine);
 
-        internal override IEnumerator<Instruction> GenerateInstructions(IInstructionGeneratorContext context)
+        internal override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
             yield return new OpTypeStruct()
             {
@@ -33,12 +33,12 @@ namespace cilspirv.Transpiler
             };
         }
 
-        IEnumerable<Instruction> IDecoratableInstructionGeneratable.GenerateDecorations(IInstructionGeneratorContext context) =>
+        IEnumerable<Instruction> IDecoratableInstructionGeneratable.GenerateDecorations(IIDMapper context) =>
             (this as IDecoratableInstructionGeneratable).BaseGenerateDecorations(context).Concat(
                 Members.SelectMany((member, memberI) =>
                     member.GenerateDecorations(context, context.IDOf(this), memberI)));
 
-        internal override IEnumerator<Instruction> GenerateDebugInfo(IInstructionGeneratorContext context)
+        internal override IEnumerator<Instruction> GenerateDebugInfo(IIDMapper context)
         {
             var structID = context.IDOf(this);
             if (Name != null)
@@ -88,7 +88,7 @@ namespace cilspirv.Transpiler
             HashCode.Combine(EqualityContract, Index, Name, Type),
             HashCode.Combine);
 
-        internal IEnumerable<Instruction> GenerateDecorations(IInstructionGeneratorContext context, ID structID, int memberI)
+        internal IEnumerable<Instruction> GenerateDecorations(IIDMapper context, ID structID, int memberI)
         {
             foreach (var entry in Decorations)
             {
