@@ -3,21 +3,21 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using cilspirv.Transpiler;
 using cilspirv.Spirv;
 using cilspirv.Library;
+using cilspirv.Transpiler.Declarations;
 
 namespace cilspirv.Transpiler
 {
     internal partial class Transpiler
     {
-        private readonly IDMapper idMapper = new IDMapper();
         private readonly Queue<(TranspilerDefinedFunction function, MethodBody ilBody)> missingBodies =
             new Queue<(TranspilerDefinedFunction function, MethodBody ilBody)>();
         private TranspilerOptions options = new TranspilerOptions();
 
         public TypeDefinition ILModuleType { get; }
-        public TranspilerModule Module { get; } = new TranspilerModule();
+        public IDMapper IDMapper { get; } = new IDMapper();
+        public Module Module { get; } = new Module();
         public TranspilerLibrary Library { get; }
         public TranspilerOptions Options
         {
@@ -25,7 +25,7 @@ namespace cilspirv.Transpiler
             init
             {
                 options = value;
-                idMapper.Options = value;
+                IDMapper.Options = value;
                 Library.Options = options;
             }
         }
@@ -38,12 +38,12 @@ namespace cilspirv.Transpiler
 
         public void WriteSpirvModule(System.IO.Stream stream, bool leaveOpen = false) => new SpirvModule()
         {
-            Instructions = Module.GenerateInstructions(idMapper).ToArray(),
-            Bound = idMapper.Bound,
+            Instructions = Module.GenerateInstructions(IDMapper).ToArray(),
+            Bound = IDMapper.Bound,
             SpirvVersion = new Version(1, 3)
-        }.Write(stream, leaveOpen, idMapper.MapFromTemporaryID);
+        }.Write(stream, leaveOpen, IDMapper.MapFromTemporaryID);
 
-        public TranspilerFunction TranspileEntryPoint(MethodDefinition ilMethod) =>
+        public Function TranspileEntryPoint(MethodDefinition ilMethod) =>
             Library.TryMapInternalMethod(ilMethod, isEntryPoint: true) ??
             throw new ArgumentException("Could not map entry point method");
 

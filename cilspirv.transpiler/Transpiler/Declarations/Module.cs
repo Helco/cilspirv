@@ -5,11 +5,11 @@ using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
 using System.Collections.Immutable;
 using cilspirv.Transpiler.Values;
+using cilspirv;
 
-namespace cilspirv.Transpiler
+namespace cilspirv.Transpiler.Declarations
 {
-
-    internal class TranspilerModule
+    internal class Module
     {
         private readonly ObservableHashSet<Capability> capabilities = new ObservableHashSet<Capability>();
         private readonly HashSet<Capability> allCapabilities = new HashSet<Capability>();
@@ -18,8 +18,8 @@ namespace cilspirv.Transpiler
         public MemoryModel MemoryModel { get; set; }
         public ISet<Capability> Capabilities => capabilities;
         public ISet<string> Extensions { get; } = new HashSet<string>();
-        public ISet<TranspilerExtInstructionSet> ExtInstructionSets { get; } = new HashSet<TranspilerExtInstructionSet>();
-        public ISet<TranspilerFunction> Functions { get; } = new HashSet<TranspilerFunction>();
+        public ISet<ExtInstructionSet> ExtInstructionSets { get; } = new HashSet<ExtInstructionSet>();
+        public ISet<Function> Functions { get; } = new HashSet<Function>();
         public IEnumerable<TranspilerEntryFunction> EntryPoints => Functions.OfType<TranspilerEntryFunction>();
         public ISet<Variable> GlobalVariables { get; } = new HashSet<Variable>();
 
@@ -84,7 +84,7 @@ namespace cilspirv.Transpiler
                     Mode = ExecutionMode.OriginUpperLeft
                 };
 
-            // TODO: Execution modes
+            // TODO: Allow specification of execution modes
 
             // In order for the types to be complete and properly orderable we need to
             // first generate all that could request such types
@@ -98,7 +98,7 @@ namespace cilspirv.Transpiler
                 .ToArray();
 
             var constants = context
-                .OfType<TranspilerConstant>()
+                .OfType<Constant>()
                 .ToArray() // types requested by constants can change the collection
                 .SelectMany(c => c.GenerateInstructions(context))
                 .ToArray();

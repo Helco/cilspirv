@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
+using cilspirv.Transpiler.Declarations;
 using Mono.Cecil;
 
 namespace cilspirv.Transpiler
@@ -37,7 +38,7 @@ namespace cilspirv.Transpiler
             return mapped;
         }
 
-        private GenerateCallDelegate GenerateCallFor(TranspilerFunction function) => context => new[]
+        private GenerateCallDelegate GenerateCallFor(Function function) => context => new[]
         {
             new OpFunctionCall()
             {

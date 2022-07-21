@@ -11,14 +11,15 @@ using SpirvInstruction = cilspirv.Spirv.Instruction;
 using System.Collections.Immutable;
 using cilspirv.Transpiler.Values;
 using cilspirv.Transpiler.BuiltInLibrary;
+using cilspirv.Transpiler.Declarations;
 
 namespace cilspirv.Transpiler
 {
     internal interface ITranspilerContext : IIDMapper
     {
         TranspilerLibrary Library { get; }
-        TranspilerModule Module { get; }
-        TranspilerFunction Function { get; }
+        Module Module { get; }
+        Function Function { get; }
     }
 
     internal interface ITranspilerMethodContext : ITranspilerContext
@@ -65,7 +66,7 @@ namespace cilspirv.Transpiler
     internal class TranspilerLibrary 
     {
         private readonly TypeDefinition ilModuleType;
-        private readonly TranspilerModule module;
+        private readonly Module module;
         private readonly Action<TranspilerDefinedFunction, MethodBody> queueMethodBody;
         private readonly Dictionary<string, GenerateCallDelegate> mappedMethods = new Dictionary<string, GenerateCallDelegate>();
         private readonly Dictionary<string, IMappedFromCILType> mappedTypes = new Dictionary<string, IMappedFromCILType>();
@@ -93,7 +94,7 @@ namespace cilspirv.Transpiler
             new AttributeScanner()
         };
 
-        public TranspilerLibrary(TypeDefinition ilModuleType, TranspilerModule module, Action<TranspilerDefinedFunction, MethodBody> queueMethodBody)
+        public TranspilerLibrary(TypeDefinition ilModuleType, Module module, Action<TranspilerDefinedFunction, MethodBody> queueMethodBody)
         {
             this.ilModuleType = ilModuleType;
             this.module = module;
@@ -194,7 +195,7 @@ namespace cilspirv.Transpiler
             .Select(scanner => scanner.TryScanStorageClass(element))
             .FirstOrDefault(c => c.HasValue);
 
-        public ITranspilerValueBehaviour MapParameter(ParameterDefinition paramDef, TranspilerFunction function)
+        public ITranspilerValueBehaviour MapParameter(ParameterDefinition paramDef, Function function)
         {
             var mappingName = $"{function.Name}#{paramDef.Name}";
             if (mappedParameters.TryGetValue(mappingName, out var mapped))
@@ -277,7 +278,7 @@ namespace cilspirv.Transpiler
             return variable;
         }
 
-        public TranspilerFunction? TryMapInternalMethod(MethodDefinition ilMethod, bool isEntryPoint)
+        public Function? TryMapInternalMethod(MethodDefinition ilMethod, bool isEntryPoint)
         {
             var returnType = MapType(ilMethod.ReturnType);
             if (isEntryPoint)
@@ -296,7 +297,7 @@ namespace cilspirv.Transpiler
             var function =
                 isEntryPoint ? new TranspilerEntryFunction(ilMethod.Name, ExtractExecutionModel(ilMethod))
                 : ilMethod.HasBody ? new TranspilerDefinedFunction(ilMethod.Name, (SpirvType)returnType)
-                : new TranspilerFunction(ilMethod.Name, (SpirvType)returnType);
+                : new Function(ilMethod.Name, (SpirvType)returnType);
 
             if (ilMethod.HasThis && ilMethod.DeclaringType.FullName != ilModuleType.FullName)
                 throw new NotSupportedException("Real instance methods are not supported yet");

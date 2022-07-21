@@ -4,11 +4,12 @@ using System.Collections.Immutable;
 using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
+using cilspirv.Transpiler.Declarations;
 using cilspirv.Transpiler.Values;
 
-namespace cilspirv.Transpiler
+namespace cilspirv.Transpiler.Declarations
 {
-    internal class TranspilerFunction : IDecoratableInstructionGeneratable, IDebugInstructionGeneratable
+    internal class Function : IDecoratableInstructionGeneratable, IDebugInstructionGeneratable
     {
         public string Name { get; }
         public SpirvType ReturnType { get; set; }
@@ -22,7 +23,7 @@ namespace cilspirv.Transpiler
             ParameterTypes = Parameters.Select(p => p.Type).ToImmutableArray()
         };
 
-        public TranspilerFunction(string name, SpirvType returnType) =>
+        public Function(string name, SpirvType returnType) =>
             (Name, ReturnType) = (name, returnType);
 
         public IEnumerator<Instruction> GenerateInstructions(IIDMapper context) =>
@@ -35,7 +36,7 @@ namespace cilspirv.Transpiler
                 FunctionControl = FunctionControl
             }).Concat(GenerateBody(context))
             .Append(new OpFunctionEnd())
-            .GetEnumerator();           
+            .GetEnumerator();
 
         protected virtual IEnumerable<Instruction> GenerateBody(IIDMapper context) => Enumerable.Empty<Instruction>();
 
@@ -48,10 +49,13 @@ namespace cilspirv.Transpiler
             };
         }
     }
+}
 
-    internal class TranspilerDefinedFunction : TranspilerFunction
+namespace cilspirv.Transpiler
+{
+    internal class TranspilerDefinedFunction : Function
     {
-        public IList<TranspilerBlock> Blocks { get; } = new List<TranspilerBlock>();
+        public IList<Block> Blocks { get; } = new List<Block>();
         public IList<Variable> Variables { get; } = new List<Variable>();
 
         public TranspilerDefinedFunction(string name, SpirvType returnType) : base(name, returnType) { }

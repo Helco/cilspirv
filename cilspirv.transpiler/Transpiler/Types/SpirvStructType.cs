@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
+using cilspirv.Transpiler.Declarations;
 
 namespace cilspirv.Transpiler
 {
@@ -140,7 +141,7 @@ namespace cilspirv.Transpiler
                 Base = parentValue.ID,
                 Indexes = ImmutableArray.Create(
                     context.IDOf(
-                        new TranspilerNumericConstant(Index)))
+                        new NumericConstant(Index)))
             };
         }
     }

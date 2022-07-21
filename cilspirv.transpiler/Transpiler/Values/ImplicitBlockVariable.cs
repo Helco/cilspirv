@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
+using cilspirv.Transpiler.Declarations;
 
 namespace cilspirv.Transpiler.Values
 {
@@ -59,7 +60,7 @@ namespace cilspirv.Transpiler.Values
                 Base = context.IDOf(this),
                 Indexes = new[]
                 {
-                    context.IDOf(new TranspilerNumericConstant(0))
+                    context.IDOf(new NumericConstant(0))
                 }.ToImmutableArray()
             };
         }
