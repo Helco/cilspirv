@@ -108,7 +108,7 @@ namespace cilspirv.Transpiler.BuiltInLibrary
                 if (fieldType is not SpirvType fieldSpirvType)
                     throw new InvalidOperationException("Invalid field type in variable group structure");
 
-                var variable = new Variable(field.FullName, new SpirvPointerType()
+                var variable = new GlobalVariable(field.FullName, new SpirvPointerType()
                 {
                     Type = fieldSpirvType,
                     StorageClass = (fieldStorageClasses[field] ?? structStorageClass)!.Value,

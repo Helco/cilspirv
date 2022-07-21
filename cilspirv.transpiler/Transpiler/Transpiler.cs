@@ -71,7 +71,7 @@ namespace cilspirv.Transpiler
                 if (!ilBody.Method.DebugInformation.TryGetName(ilVariable, out var varName))
                     varName = $"v{nextVarName++}";
                 var type = Library.MapType(ilVariable.VariableType);
-                definedFunction.Variables.Add(new Values.Variable(varName, new SpirvPointerType()
+                definedFunction.Variables.Add(new Values.LocalVariable(varName, new SpirvPointerType()
                 {
                     Type = type as SpirvType ?? throw new InvalidOperationException("Local variables can only be SPIRV types"),
                     StorageClass = StorageClass.Function

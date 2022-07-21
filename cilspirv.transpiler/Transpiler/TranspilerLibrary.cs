@@ -245,7 +245,7 @@ namespace cilspirv.Transpiler
 
             if (byRef) // the variable will be a double pointer
                 realType = MakePointer(realType);
-            var variable = new Variable(name, MakePointer(realType))
+            var variable = new GlobalVariable(name, MakePointer(realType))
             {
                 Decorations = decorations.ToHashSet()
             };
