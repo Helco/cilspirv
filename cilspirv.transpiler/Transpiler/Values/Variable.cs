@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
+using cilspirv.Transpiler.Declarations;
 
 namespace cilspirv.Transpiler.Values
 {
@@ -54,7 +55,7 @@ namespace cilspirv.Transpiler.Values
                 };
         }
 
-        public void MarkUsageIn(TranspilerFunction function)
+        public void MarkUsageIn(Function function)
         {
             if (function is not TranspilerEntryFunction entryFunction)
                 return;

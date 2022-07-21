@@ -5,14 +5,14 @@ using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
 
-namespace cilspirv.Transpiler
+namespace cilspirv.Transpiler.Declarations
 {
-    internal abstract record TranspilerConstant : IDebugInstructionGeneratable
+    internal abstract record Constant : IDebugInstructionGeneratable
     {
         public string? Name { get; init; }
         public SpirvType Type { get; }
 
-        protected TranspilerConstant(SpirvType type) => Type = type;
+        protected Constant(SpirvType type) => Type = type;
 
         public abstract IEnumerator<Instruction> GenerateInstructions(IIDMapper context);
 
@@ -27,17 +27,17 @@ namespace cilspirv.Transpiler
         }
     }
 
-    internal record TranspilerNumericConstant : TranspilerConstant
+    internal record NumericConstant : Constant
     {
         public ImmutableArray<LiteralNumber> Value { get; }
 
-        public TranspilerNumericConstant(ImmutableArray<LiteralNumber> value, SpirvNumericType type) : base(type) => Value = value;
-        public TranspilerNumericConstant(int value) : base(new SpirvIntegerType() { Width = 32, IsSigned = true }) => Value = LiteralNumber.ArrayFor(value);
-        public TranspilerNumericConstant(long value) : base(new SpirvIntegerType() { Width = 64, IsSigned = true }) => Value = LiteralNumber.ArrayFor(value);
-        public TranspilerNumericConstant(float value) : base(new SpirvFloatingType() { Width = 32 }) => Value = LiteralNumber.ArrayFor(value);
-        public TranspilerNumericConstant(double value) : base(new SpirvFloatingType() { Width = 64 }) => Value = LiteralNumber.ArrayFor(value);
+        public NumericConstant(ImmutableArray<LiteralNumber> value, SpirvNumericType type) : base(type) => Value = value;
+        public NumericConstant(int value) : base(new SpirvIntegerType() { Width = 32, IsSigned = true }) => Value = LiteralNumber.ArrayFor(value);
+        public NumericConstant(long value) : base(new SpirvIntegerType() { Width = 64, IsSigned = true }) => Value = LiteralNumber.ArrayFor(value);
+        public NumericConstant(float value) : base(new SpirvFloatingType() { Width = 32 }) => Value = LiteralNumber.ArrayFor(value);
+        public NumericConstant(double value) : base(new SpirvFloatingType() { Width = 64 }) => Value = LiteralNumber.ArrayFor(value);
 
-        public virtual bool Equals(TranspilerNumericConstant? other) =>
+        public virtual bool Equals(NumericConstant? other) =>
             base.Equals(other) &&
             Value.ValueEquals(other.Value);
 
@@ -55,11 +55,11 @@ namespace cilspirv.Transpiler
         }
     }
 
-    internal sealed record TranspilerBooleanConstant : TranspilerConstant
+    internal sealed record BooleanConstant : Constant
     {
         public bool Value { get; }
 
-        public TranspilerBooleanConstant(bool value) : base(new SpirvBooleanType()) => Value = value;
+        public BooleanConstant(bool value) : base(new SpirvBooleanType()) => Value = value;
 
         public override IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {

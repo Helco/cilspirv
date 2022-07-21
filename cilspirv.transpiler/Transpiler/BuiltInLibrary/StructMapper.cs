@@ -6,6 +6,7 @@ using Mono.Cecil;
 using cilspirv.Spirv;
 using cilspirv.Transpiler.Values;
 using cilspirv;
+using cilspirv.Transpiler.Declarations;
 
 namespace cilspirv.Transpiler.BuiltInLibrary
 {
@@ -26,9 +27,9 @@ namespace cilspirv.Transpiler.BuiltInLibrary
 
         private readonly Dictionary<string, IMappedFromCILType> structures = new Dictionary<string, IMappedFromCILType>();
         private readonly TranspilerLibrary library;
-        private readonly TranspilerModule module;
+        private readonly Module module;
 
-        public StructMapper(TranspilerLibrary library, TranspilerModule module)
+        public StructMapper(TranspilerLibrary library, Module module)
         {
             this.library = library;
             this.module = module;

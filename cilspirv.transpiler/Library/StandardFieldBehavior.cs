@@ -5,6 +5,7 @@ using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
 using cilspirv.Transpiler;
+using cilspirv.Transpiler.Declarations;
 
 namespace cilspirv.Library
 {
@@ -37,7 +38,7 @@ namespace cilspirv.Library
                 Base = parentValue.ID,
                 Indexes = ImmutableArray.Create(
                     context.IDOf(
-                        new TranspilerNumericConstant(memberIndex)))
+                        new NumericConstant(memberIndex)))
             };
         }
     }

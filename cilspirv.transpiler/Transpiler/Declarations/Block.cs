@@ -4,9 +4,9 @@ using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
 
-namespace cilspirv.Transpiler
+namespace cilspirv.Transpiler.Declarations
 {
-    internal class TranspilerBlock : IInstructionGeneratable
+    internal class Block : IInstructionGeneratable
     {
         public List<Instruction> Instructions { get; } = new List<Instruction>();
 
