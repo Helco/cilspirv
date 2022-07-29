@@ -104,6 +104,28 @@ namespace cilspirv.Spirv
             }
         }
 
+        public void Disassemble(TextWriter writer)
+        {
+            writer.Write("SPIRV ");
+            writer.WriteLine(SpirvVersion);
+            writer.Write("Generator ");
+            writer.Write(GeneratorToolID.ToString("X4"));
+            writer.Write(' ');
+            writer.WriteLine(GeneratorVersion);
+            foreach (var instruction in Instructions)
+            {
+                instruction.Disassemble(writer);
+                writer.WriteLine();
+            }
+        }
+
+        public string Disassemble()
+        {
+            using var writer = new StringWriter();
+            Disassemble(writer);
+            return writer.ToString();
+        }
+
         public uint CalculateBound() => Instructions.SelectMany(i => i.AllIDs).Max().Value;
 
         // from https://stackoverflow.com/questions/19560436/bitwise-endian-swap-for-various-types

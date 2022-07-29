@@ -1,5 +1,6 @@
 // This file was generated. Do not modify.
 using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -67,6 +68,22 @@ namespace cilspirv.Spirv.Ops
             if (!ExtraOperands.IsDefaultOrEmpty)
                 foreach (var o in ExtraOperands)
                     o.Write(codes, ref i, mapID);
+        }
+
+        public override void Disassemble(TextWriter writer)
+        {
+            base.Disassemble(writer);
+            writer.Write(' ');
+            writer.Write(ResultType);
+            writer.Write(' ');
+            writer.Write(Set);
+            writer.Write(' ');
+            writer.Write(Instruction);
+            foreach (var value in Operands)
+            {
+                writer.Write(' ');
+                writer.Write(value);
+            }
         }
     }
 }

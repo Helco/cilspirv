@@ -43,11 +43,15 @@ namespace cilspirv.Transpiler
             SpirvVersion = new Version(1, 3)
         }.Write(stream, leaveOpen, IDMapper.MapFromTemporaryID);
 
-        public Function TranspileEntryPoint(MethodDefinition ilMethod) =>
+        public Function MarkEntryPoint(MethodDefinition ilMethod) =>
             Library.TryMapInternalMethod(ilMethod, isEntryPoint: true) ??
             throw new ArgumentException("Could not map entry point method");
 
-        public void TranspileAllMethodBodies()
+        public Function MarkNonEntryFunction(MethodDefinition ilMethod) =>
+            Library.TryMapInternalMethod(ilMethod, isEntryPoint: false) ??
+            throw new ArgumentException("Could not map function");
+
+        public void TranspileBodies()
         {
             while(missingBodies.Any())
             {

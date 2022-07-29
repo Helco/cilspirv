@@ -11,10 +11,10 @@ namespace cilspirv.SourceGen
         {
             var instructions = coreGrammar.instructions.Where(i => i.@class != "@exclude" && i.@class != "Reserved");
             foreach (var instruction in instructions)
-                GenerateInstruction(instruction, basePath);
+                GenerateInstruction(coreGrammar, instruction, basePath);
         }
 
-        private static void GenerateInstruction(CoreGrammar.Instruction instruction, string basePath)
+        private static void GenerateInstruction(CoreGrammar.Rootobject coreGrammar, CoreGrammar.Instruction instruction, string basePath)
         {
             instruction.operands ??= Array.Empty<CoreGrammar.Operand>();
             var duplicateGroups = instruction.operands
@@ -43,12 +43,15 @@ namespace cilspirv.SourceGen
             output.WriteLines(CodeCtor());
             output.WriteLine();
             output.WriteLines(Write());
+            output.WriteLine();
+            output.WriteLines(Disassemble());
             output.WriteLines(Footer());
 
             IEnumerable<string> Header()
             {
                 yield return "// This file was generated. Do not modify.";
                 yield return "using System;";
+                yield return "using System.IO;";
                 yield return "using System.Linq;";
                 yield return "using System.Collections.Generic;";
                 yield return "using System.Collections.Immutable;";
@@ -200,7 +203,7 @@ namespace cilspirv.SourceGen
 
             IEnumerable<string> Write()
             {
-                yield return $"        public override void Write(Span<uint> codes, Func<ID, uint> mapID)";
+                yield return "        public override void Write(Span<uint> codes, Func<ID, uint> mapID)";
                 yield return "        {";
                 yield return "            if (codes.Length < WordCount)";
                 yield return "                throw new ArgumentException(\"Output span too small\", nameof(codes));";
@@ -235,6 +238,48 @@ namespace cilspirv.SourceGen
                 yield return "                    o.Write(codes, ref i, mapID);";
 
                 yield return "        }";
+            }
+
+            IEnumerable<string> Disassemble()
+            {
+                if (instruction.operands.All(o => o.kind == "IdResult"))
+                    yield break;
+
+                yield return "        public override void Disassemble(TextWriter writer)";
+                yield return "        {";
+                yield return "            base.Disassemble(writer);";
+                foreach (var operand in instruction.operands)
+                {
+                    if (operand.kind == "IdResult")
+                        continue;
+                    var name = MapOperandName(operand);
+                    if (operand.quantifier == "*")
+                    {
+                        yield return $"            foreach (var value in {name})";
+                        yield return "            {";
+                        yield return "                writer.Write(' ');";
+                        yield return "                " + DisassembleBaseOperand(operand, "value");
+                        yield return "            }";
+                    }
+                    else
+                    {
+                        yield return "            writer.Write(' ');";
+                        yield return "            " + DisassembleBaseOperand(operand, name);
+                    }
+                }
+                yield return "        }";
+            }
+
+            string DisassembleBaseOperand(CoreGrammar.Operand operand, string valueIdentifier)
+            {
+                if (operand.kind == "LiteralContextDependentNumber")
+                {
+                    // unfortunately no way to get the context
+                    // fortunately this only seems to apply for OpConstant and can only be 4/8 byte int/float
+                    return $"writer.Write(string.Join(\"\", {valueIdentifier}.Select(n => n.Value.ToString(\"X8\"))));";
+                }
+                else
+                    return $"writer.Write({valueIdentifier});";
             }
 
             static IEnumerable<string> Footer()

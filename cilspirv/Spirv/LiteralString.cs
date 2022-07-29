@@ -63,7 +63,7 @@ namespace cilspirv.Spirv
 
         public static implicit operator LiteralString(string str) => new LiteralString(str);
 
-        public override string ToString() => string.Format("\"{0}\"({1} char{2})", Value, (Value?.Length ?? -1), (Value?.Length ?? -1) > 1 ? "s" : "");
+        public override string ToString() => Value == null ? "null" : $"\"{Value}\"";
 
         public bool Equals(LiteralString other) => Value == other.Value;
         public override int GetHashCode() => Value?.GetHashCode() ?? 0;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using cilspirv.Spirv.Ops;
@@ -117,6 +118,16 @@ namespace cilspirv.Spirv
             var result = codes.Skip(i).Take(end - i).Select(n => (LiteralNumber)n).ToImmutableArray();
             i = end;
             return result;
+        }
+
+        public virtual void Disassemble(TextWriter writer)
+        {
+            if (ResultID.HasValue)
+            {
+                writer.Write(ResultID);
+                writer.Write(" = ");
+            }
+            writer.Write(OpCode);
         }
     }
 }

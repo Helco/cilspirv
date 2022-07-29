@@ -1,5 +1,6 @@
 // This file was generated. Do not modify.
 using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -92,6 +93,38 @@ namespace cilspirv.Spirv.Ops
             if (!ExtraOperands.IsDefaultOrEmpty)
                 foreach (var o in ExtraOperands)
                     o.Write(codes, ref i, mapID);
+        }
+
+        public override void Disassemble(TextWriter writer)
+        {
+            base.Disassemble(writer);
+            writer.Write(' ');
+            writer.Write(ResultType);
+            writer.Write(' ');
+            writer.Write(Queue);
+            writer.Write(' ');
+            writer.Write(Flags);
+            writer.Write(' ');
+            writer.Write(NDRange);
+            writer.Write(' ');
+            writer.Write(NumEvents);
+            writer.Write(' ');
+            writer.Write(WaitEvents);
+            writer.Write(' ');
+            writer.Write(RetEvent);
+            writer.Write(' ');
+            writer.Write(Invoke);
+            writer.Write(' ');
+            writer.Write(Param);
+            writer.Write(' ');
+            writer.Write(ParamSize);
+            writer.Write(' ');
+            writer.Write(ParamAlign);
+            foreach (var value in LocalSize)
+            {
+                writer.Write(' ');
+                writer.Write(value);
+            }
         }
     }
 }
