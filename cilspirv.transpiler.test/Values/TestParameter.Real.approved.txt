@@ -1,0 +1,15 @@
+﻿SPIRV 1.3
+Generator 002A 1.0
+OpMemoryModel Logical Simple
+OpName #2 "Real"
+OpName #3 "a"
+OpName #6 "System.Int32"
+#6 = OpTypeInt 32 1
+#7 = OpTypeFunction #6 #6
+#5 = OpConstant #6 00000002
+#2 = OpFunction #6 None #7
+#3 = OpFunctionParameter #6
+#4 = OpLabel
+#1 = OpIMul #6 #3 #5
+OpReturnValue #1
+OpFunctionEnd
