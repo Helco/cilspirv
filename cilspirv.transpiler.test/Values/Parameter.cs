@@ -53,11 +53,11 @@ namespace cilspirv.transpiler.test.Values
         }
 
         [Test] public void Real() => VerifyFunction(nameof(Modules.Parameter.Real));
-        [Test] public void Ref() => VerifyFunction(nameof(Modules.Parameter.Ref));
+        //[Test] public void Ref() => VerifyFunction(nameof(Modules.Parameter.Ref)); // TODO: support by-reference function parameters
         [Test] public void Var() => VerifyFunction(nameof(Modules.Parameter.Var));
-        [Test] public void RefVar() => VerifyFunction(nameof(Modules.Parameter.RefVar));
-        [Test] public void RealValueStruct() => VerifyFunction(nameof(Modules.Parameter.RealValueStruct));
-        [Test] public void RefValueStruct() => VerifyFunction(nameof(Modules.Parameter.RefValueStruct));
+        //[Test] public void RefVar() => VerifyFunction(nameof(Modules.Parameter.RefVar));
+        //[Test] public void RealValueStruct() => VerifyFunction(nameof(Modules.Parameter.RealValueStruct)); // value structs cannot be supported directly as SPIR-V parameters have no address
+        //[Test] public void RefValueStruct() => VerifyFunction(nameof(Modules.Parameter.RefValueStruct));
         [Test] public void VarStruct_() => VerifyFunction(nameof(Modules.Parameter.VarStruct_));
         [Test] public void RefVarStruct() => VerifyFunction(nameof(Modules.Parameter.RefVarStruct));
     }
