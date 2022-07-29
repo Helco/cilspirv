@@ -23,8 +23,11 @@ namespace cilspirv.Transpiler.Values
             return Enumerable.Empty<Instruction>();
         }
 
-        IEnumerable<Instruction> ITranspilerValueBehaviour.Load(ITranspilerValueContext context) =>
-            throw new InvalidOperationException("Cannot load a variable group");
+        IEnumerable<Instruction> ITranspilerValueBehaviour.Load(ITranspilerValueContext context)
+        {
+            context.Result = new StackEntry(this);
+            return Enumerable.Empty<Instruction>();
+        }
 
         IEnumerable<Instruction> ITranspilerValueBehaviour.Store(ITranspilerValueContext context, ValueStackEntry value) =>
             throw new InvalidOperationException("Cannot store a variable group");

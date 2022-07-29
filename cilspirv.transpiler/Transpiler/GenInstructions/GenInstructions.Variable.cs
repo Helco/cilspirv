@@ -76,8 +76,6 @@ namespace cilspirv.Transpiler
             var instructions = behaviour.Load(context)?.ToArray();
             if (instructions != null)
             {
-                if (context.Result is not ValueStackEntry)
-                    throw new InvalidOperationException("Load value did not result in a value");
                 Block.Instructions.AddRange(instructions);
                 Stack.Add(context.Result);
                 return;
@@ -185,7 +183,7 @@ namespace cilspirv.Transpiler
             StoreValue(parent, value, fieldBehavior);
         }
 
-        private void LoadObject()
+        private void LoadIndirect()
         {
             if (Pop() is not ValueStackEntry pointer)
                 throw new InvalidOperationException("LoadObject source is not a value");
@@ -202,7 +200,7 @@ namespace cilspirv.Transpiler
             Stack.Add(new ValueStackEntry(resultId, pointerType.Type!));
         }
 
-        private void StoreObject()
+        private void StoreIndirect()
         {
             if (Pop() is not ValueStackEntry value)
                 throw new InvalidOperationException("StoreObject source is not a value");

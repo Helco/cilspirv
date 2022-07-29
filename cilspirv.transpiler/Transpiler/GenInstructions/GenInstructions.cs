@@ -169,8 +169,28 @@ namespace cilspirv.Transpiler
                     case (Code.Ldflda): LoadFieldAddress((FieldReference)ilInstr.Operand); break;
                     case (Code.Stfld): StoreField((FieldReference)ilInstr.Operand); break;
 
-                    case (Code.Ldobj): LoadObject(); break;
-                    case (Code.Stobj): StoreObject(); break;
+                    case (Code.Ldind_I): // TODO: Add type verification for all indirect loads
+                    case (Code.Ldind_I1):
+                    case (Code.Ldind_I2):
+                    case (Code.Ldind_I4):
+                    case (Code.Ldind_I8):
+                    case (Code.Ldind_R4):
+                    case (Code.Ldind_R8):
+                    case (Code.Ldind_Ref):
+                    case (Code.Ldind_U1):
+                    case (Code.Ldind_U2):
+                    case (Code.Ldind_U4):
+                    case (Code.Ldobj): LoadIndirect(); break;
+
+                    case (Code.Stind_I): // TODO: Add type verification for all indirect stores
+                    case (Code.Stind_I1):
+                    case (Code.Stind_I2):
+                    case (Code.Stind_I4):
+                    case (Code.Stind_I8):
+                    case (Code.Stind_R4):
+                    case (Code.Stind_R8):
+                    case (Code.Stind_Ref):
+                    case (Code.Stobj): StoreIndirect(); break;
 
                     case (Code.Conv_I):
                     case (Code.Conv_Ovf_I):
