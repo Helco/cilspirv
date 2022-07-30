@@ -7,8 +7,6 @@ using ApprovalTests;
 using ApprovalTests.Reporters;
 using NUnit.Framework;
 
-[assembly: UseReporter(typeof(DiffReporter))]
-
 namespace cilspirv.Transpiler.test
 {
     public class TestControlFlowAnalysis

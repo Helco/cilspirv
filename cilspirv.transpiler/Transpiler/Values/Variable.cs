@@ -57,7 +57,7 @@ namespace cilspirv.Transpiler.Values
 
         public void MarkUsageIn(Function function)
         {
-            if (function is not TranspilerEntryFunction entryFunction)
+            if (function is not EntryFunction entryFunction)
                 return;
             if (StorageClass == StorageClass.Input || StorageClass == StorageClass.Output)
                 entryFunction.Interface.Add(this);

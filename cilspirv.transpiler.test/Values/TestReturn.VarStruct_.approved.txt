@@ -1,0 +1,17 @@
+﻿SPIRV 1.3
+Generator 002A 1.0
+OpMemoryModel Logical Simple
+OpEntryPoint Fragment #1 "VarStruct_"
+OpExecutionMode #1 OriginUpperLeft
+OpName #1 "VarStruct_"
+OpName #3 "System.Int32 cilspirv.transpiler.test.Values.Modules.Return/VarStruct::m"
+OpName #5 "System.Int32"
+#4 = OpTypeVoid
+#5 = OpTypeInt 32 1
+#6 = OpTypeFunction #4
+#7 = OpTypePointer Output #5
+#3 = OpVariable #7 Output 
+#1 = OpFunction #4 None #6
+#2 = OpLabel
+OpReturn
+OpFunctionEnd

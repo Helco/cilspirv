@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
-using cilspirv.Transpiler.Declarations;
 using cilspirv.Transpiler.Values;
 
 namespace cilspirv.Transpiler.Declarations
@@ -12,7 +11,8 @@ namespace cilspirv.Transpiler.Declarations
     internal class Function : IDecoratableInstructionGeneratable, IDebugInstructionGeneratable
     {
         public string Name { get; }
-        public SpirvType ReturnType { get; set; }
+        public SpirvType ReturnType { get; }
+        public ITranspilerValueBehaviour? ReturnValue { get; set; }
         public IList<Parameter> Parameters { get; } = new List<Parameter>();
         public IReadOnlySet<DecorationEntry> Decorations { get; set; } = new HashSet<DecorationEntry>();
         public FunctionControl FunctionControl { get; set; }
@@ -49,16 +49,13 @@ namespace cilspirv.Transpiler.Declarations
             };
         }
     }
-}
 
-namespace cilspirv.Transpiler
-{
-    internal class TranspilerDefinedFunction : Function
+    internal class DefinedFunction : Function
     {
         public IList<Block> Blocks { get; } = new List<Block>();
         public IList<Variable> Variables { get; } = new List<Variable>();
 
-        public TranspilerDefinedFunction(string name, SpirvType returnType) : base(name, returnType) { }
+        public DefinedFunction(string name, SpirvType returnType) : base(name, returnType) { }
 
         protected override IEnumerable<Instruction> GenerateBody(IIDMapper context)
         {
@@ -78,12 +75,12 @@ namespace cilspirv.Transpiler
         }
     }
 
-    internal class TranspilerEntryFunction : TranspilerDefinedFunction
+    internal class EntryFunction : DefinedFunction
     {
         public ExecutionModel ExecutionModel { get; }
         public ISet<Variable> Interface { get; } = new HashSet<Variable>();
 
-        public TranspilerEntryFunction(string name, ExecutionModel model) : base(name, new SpirvVoidType())
+        public EntryFunction(string name, ExecutionModel model) : base(name, new SpirvVoidType())
             => ExecutionModel = model;
 
         public Instruction GenerateEntryPoint(IIDMapper context) => new OpEntryPoint()

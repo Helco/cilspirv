@@ -67,11 +67,12 @@ namespace cilspirv.Transpiler
     {
         private readonly TypeDefinition ilModuleType;
         private readonly Module module;
-        private readonly Action<TranspilerDefinedFunction, MethodBody> queueMethodBody;
+        private readonly Action<DefinedFunction, MethodBody> queueMethodBody;
         private readonly Dictionary<string, GenerateCallDelegate> mappedMethods = new Dictionary<string, GenerateCallDelegate>();
         private readonly Dictionary<string, IMappedFromCILType> mappedTypes = new Dictionary<string, IMappedFromCILType>();
         private readonly Dictionary<string, ITranspilerValueBehaviour> mappedFields = new Dictionary<string, ITranspilerValueBehaviour>();
         private readonly Dictionary<string, ITranspilerValueBehaviour> mappedParameters = new Dictionary<string, ITranspilerValueBehaviour>();
+        private readonly Dictionary<string, Function> mappedFunctions = new Dictionary<string, Function>();
         private readonly StructMapper structMapper;
         private readonly ReferenceMapper referenceMapper;
         private readonly InternalMethodMapper methodMapper;
@@ -94,7 +95,7 @@ namespace cilspirv.Transpiler
             new AttributeScanner()
         };
 
-        public TranspilerLibrary(TypeDefinition ilModuleType, Module module, Action<TranspilerDefinedFunction, MethodBody> queueMethodBody)
+        public TranspilerLibrary(TypeDefinition ilModuleType, Module module, Action<DefinedFunction, MethodBody> queueMethodBody)
         {
             this.ilModuleType = ilModuleType;
             this.module = module;
@@ -225,7 +226,7 @@ namespace cilspirv.Transpiler
 
             Parameter MapSpirvParameter(SpirvType realType)
             {
-                if (function is TranspilerEntryFunction)
+                if (function is EntryFunction)
                     throw new InvalidOperationException("Entry point parameters require a storage class");
                 var parameter = new Parameter(function.Parameters.Count, paramDef.Name, realType)
                 {
@@ -239,8 +240,10 @@ namespace cilspirv.Transpiler
         private bool IsBlockStructure(SpirvType type) =>
             type is SpirvStructType && type.Decorations.Any(d => d.Kind == Decoration.Block);
 
-        private Variable CreateGlobalVariable(SpirvType realType, string name, StorageClass storageClass, IEnumerable<DecorationEntry> decorations, bool byRef = false)
+        private Variable CreateGlobalVariable(SpirvType realType, string name, StorageClass storageClass, IEnumerable<DecorationEntry>? decorations = null, bool byRef = false)
         {
+            decorations ??= Enumerable.Empty<DecorationEntry>();
+
             if (Options.ImplicitUniformBlockStructures && storageClass == StorageClass.Uniform && !IsBlockStructure(realType))
                 return CreateImplicitBlockVariable(realType, name, decorations, byRef);
 
@@ -278,26 +281,49 @@ namespace cilspirv.Transpiler
             return variable;
         }
 
+        private (SpirvType, ITranspilerValueBehaviour?) MapReturnValue(MethodDefinition ilMethod, bool isEntryPoint)
+        {
+            var mappedType = MapType(ilMethod.ReturnType);
+            var storageClass = TryScanStorageClass(ilMethod.MethodReturnType);
+            var isActualValue = mappedType is SpirvType && storageClass == null;
+
+            var returnType = isActualValue ? mappedType as SpirvType : new SpirvVoidType();
+            if (isEntryPoint && isActualValue)
+                throw new InvalidOperationException("Entry-point functions can only return global variables or variable groups");
+            if (!isEntryPoint && !isActualValue)
+                throw new InvalidOperationException("Non-entry point functions can only return SPIRV values");
+
+            ITranspilerValueBehaviour? behaviour = mappedType switch
+            {
+                SpirvVoidType => null,
+                VarGroup => null,
+                TranspilerVarGroupTemplate => null,
+                SpirvType realType when storageClass != null => new VariableReturn(CreateGlobalVariable(realType, "#return", storageClass.Value)),
+                SpirvType realType => new ValueReturn(realType),
+                MappedFromRefCILType => throw new NotSupportedException("By-ref return types are not supported"),
+                _ => throw new NotSupportedException("Unsupported return type")
+            };
+
+            return (returnType!, behaviour);
+        }
+
         public Function? TryMapInternalMethod(MethodDefinition ilMethod, bool isEntryPoint)
         {
-            var returnType = MapType(ilMethod.ReturnType);
-            if (isEntryPoint)
-            {
-                if (!ilMethod.HasBody)
-                    throw new InvalidOperationException("An entry point method has to have a body");
-                if (returnType is not SpirvVoidType && returnType is not VarGroup)
-                    throw new InvalidOperationException("An entry point can only return void or a variable group");
-            }
-            else
-            {
-                if (returnType is not SpirvType)
-                    throw new InvalidOperationException("A function can only return SPIRV types");
-            }
+            var mappingName = ilMethod.FullName;
+            if (mappedFunctions.TryGetValue(mappingName, out var mapped))
+                return mapped;
 
-            var function =
-                isEntryPoint ? new TranspilerEntryFunction(ilMethod.Name, ExtractExecutionModel(ilMethod))
-                : ilMethod.HasBody ? new TranspilerDefinedFunction(ilMethod.Name, (SpirvType)returnType)
-                : new Function(ilMethod.Name, (SpirvType)returnType);
+            var (returnType, returnValue) = MapReturnValue(ilMethod, isEntryPoint);
+
+            var function = 0 switch
+            {
+                _ when isEntryPoint && ilMethod.HasBody => new EntryFunction(ilMethod.Name, ExtractExecutionModel(ilMethod)),
+                _ when isEntryPoint && !ilMethod.HasBody => throw new InvalidOperationException("An entry point method has to have a body"),
+                _ when !isEntryPoint && ilMethod.HasBody => new DefinedFunction(ilMethod.Name, returnType),
+                _ when !isEntryPoint && !ilMethod.HasBody => new Function(ilMethod.Name, returnType),
+                _ => throw new NotImplementedException("Unexpected branch")
+            };
+            function.ReturnValue = returnValue;
 
             if (ilMethod.HasThis && ilMethod.DeclaringType.FullName != ilModuleType.FullName)
                 throw new NotSupportedException("Real instance methods are not supported yet");
@@ -305,8 +331,9 @@ namespace cilspirv.Transpiler
             foreach (var parameter in ilMethod.Parameters)
                 MapParameter(parameter, function);
 
+            mappedFunctions.Add(mappingName, function);
             module.Functions.Add(function);
-            if (function is TranspilerDefinedFunction definedFunction)
+            if (function is DefinedFunction definedFunction)
                 queueMethodBody(definedFunction, ilMethod.Body);
             return function;
         }
