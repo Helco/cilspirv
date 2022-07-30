@@ -46,7 +46,7 @@ namespace cilspirv.Transpiler
         public TranspilerLibrary Library { get; }
         public Module Module { get; }
         public TranspilerOptions Options { get; }
-        public TranspilerDefinedFunction Function { get; }
+        public DefinedFunction Function { get; }
         public MethodDefinition ILMethod { get; }
 
         private ILInstruction? currentPrefix;
@@ -56,7 +56,7 @@ namespace cilspirv.Transpiler
         private Block Block => currentBlockInfo.block;
         private List<StackEntry> Stack => currentBlockInfo.Stack;
 
-        public GenInstructions(Transpiler transpiler, TranspilerDefinedFunction function, MethodDefinition ilMethod, IReadOnlyList<IControlFlowBlock> cfaBlocks)
+        public GenInstructions(Transpiler transpiler, DefinedFunction function, MethodDefinition ilMethod, IReadOnlyList<IControlFlowBlock> cfaBlocks)
         {
             context = transpiler.IDMapper;
             Library = transpiler.Library;

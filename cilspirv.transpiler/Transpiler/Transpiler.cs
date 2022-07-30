@@ -11,8 +11,8 @@ namespace cilspirv.Transpiler
 {
     internal partial class Transpiler
     {
-        private readonly Queue<(TranspilerDefinedFunction function, MethodBody ilBody)> missingBodies =
-            new Queue<(TranspilerDefinedFunction function, MethodBody ilBody)>();
+        private readonly Queue<(DefinedFunction function, MethodBody ilBody)> missingBodies =
+            new Queue<(DefinedFunction function, MethodBody ilBody)>();
         private TranspilerOptions options = new TranspilerOptions();
 
         public TypeDefinition ILModuleType { get; }
@@ -67,7 +67,7 @@ namespace cilspirv.Transpiler
             }
         }
 
-        private void TranspileVariables(TranspilerDefinedFunction definedFunction, MethodBody ilBody)
+        private void TranspileVariables(DefinedFunction definedFunction, MethodBody ilBody)
         {
             int nextVarName = 0;
             foreach (var ilVariable in ilBody.Variables)

@@ -20,7 +20,7 @@ namespace cilspirv.Transpiler.Declarations
         public ISet<string> Extensions { get; } = new HashSet<string>();
         public ISet<ExtInstructionSet> ExtInstructionSets { get; } = new HashSet<ExtInstructionSet>();
         public ISet<Function> Functions { get; } = new HashSet<Function>();
-        public IEnumerable<TranspilerEntryFunction> EntryPoints => Functions.OfType<TranspilerEntryFunction>();
+        public IEnumerable<EntryFunction> EntryPoints => Functions.OfType<EntryFunction>();
         public ISet<Variable> GlobalVariables { get; } = new HashSet<Variable>();
 
         /// <summary>Available capabilities including implicitly declared ones</summary>
@@ -74,10 +74,10 @@ namespace cilspirv.Transpiler.Declarations
                 MemoryModel = MemoryModel
             };
 
-            foreach (var entryPoint in Functions.OfType<TranspilerEntryFunction>())
+            foreach (var entryPoint in Functions.OfType<EntryFunction>())
                 yield return entryPoint.GenerateEntryPoint(context);
 
-            foreach (var entryPoint in Functions.OfType<TranspilerEntryFunction>().Where(e => e.ExecutionModel == ExecutionModel.Fragment))
+            foreach (var entryPoint in Functions.OfType<EntryFunction>().Where(e => e.ExecutionModel == ExecutionModel.Fragment))
                 yield return new OpExecutionMode()
                 {
                     EntryPoint = context.IDOf(entryPoint),
@@ -89,7 +89,7 @@ namespace cilspirv.Transpiler.Declarations
             // In order for the types to be complete and properly orderable we need to
             // first generate all that could request such types
             var functionInstructions = Functions
-                .OrderBy(f => f is TranspilerDefinedFunction ? 1 : -1) // declarations first
+                .OrderBy(f => f is DefinedFunction ? 1 : -1) // declarations first
                 .SelectMany(f => f.GenerateInstructions(context))
                 .ToArray();
 

@@ -1,0 +1,16 @@
+﻿SPIRV 1.3
+Generator 002A 1.0
+OpMemoryModel Logical Simple
+OpName #1 "ValueStruct_"
+OpName #2 "m"
+OpName #4 "System.Int32"
+OpName #5 "ValueStruct"
+OpMemberName #5 0 "m"
+#4 = OpTypeInt 32 1
+#5 = OpTypeStruct #4
+#6 = OpTypeFunction #5 #5
+#1 = OpFunction #5 None #6
+#2 = OpFunctionParameter #5
+#3 = OpLabel
+OpReturnValue #2
+OpFunctionEnd

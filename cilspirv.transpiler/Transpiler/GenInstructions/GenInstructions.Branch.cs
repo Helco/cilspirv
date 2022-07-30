@@ -82,17 +82,14 @@ namespace cilspirv.Transpiler
         private void Return()
         {
             // TODO: Check return type and coerce
-            if (Function.ReturnType is SpirvVoidType)
-                Add(new OpReturn());
-            else
+            if (Function.ReturnValue != null)
             {
                 if (Pop() is not ValueStackEntry returnValue)
                     throw new InvalidOperationException("Top of stack is not SPIRV entry");
-                Add(new OpReturnValue()
-                {
-                    Value = returnValue.ID
-                });
+                StoreValue(parent: null, returnValue, Function.ReturnValue);
             }
+            else
+                Add(new OpReturn());
         }
 
         private void Branch(ILInstruction me)
