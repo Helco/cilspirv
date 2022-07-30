@@ -288,7 +288,7 @@ namespace cilspirv.Transpiler
             var isActualValue = mappedType is SpirvType && storageClass == null;
 
             var returnType = isActualValue ? mappedType as SpirvType : new SpirvVoidType();
-            if (isEntryPoint && isActualValue)
+            if (isEntryPoint && isActualValue && mappedType is not SpirvVoidType)
                 throw new InvalidOperationException("Entry-point functions can only return global variables or variable groups");
             if (!isEntryPoint && !isActualValue)
                 throw new InvalidOperationException("Non-entry point functions can only return SPIRV values");

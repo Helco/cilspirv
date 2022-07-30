@@ -27,6 +27,10 @@ namespace cilspirv.transpiler.test.Values.Modules
         }
         [EntryPoint(ExecutionModel.Fragment)]
         public VarStruct VarStruct_(VarStruct s) => s;
+
+        public void NonEntryVoid() { }
+        [EntryPoint(ExecutionModel.Fragment)]
+        public void EntryVoid() { }
     }
 }
 
@@ -38,5 +42,7 @@ namespace cilspirv.transpiler.test.Values
         [Test] public void Var() => VerifyEntryPoint(nameof(Modules.Return.Var));
         [Test] public void ValueStruct_() => VerifyNonEntryFunction(nameof(Modules.Return.ValueStruct_));
         [Test] public void VarStruct_() => VerifyEntryPoint(nameof(Modules.Return.VarStruct_));
+        [Test] public void NonEntryVoid() => VerifyNonEntryFunction(nameof(Modules.Return.NonEntryVoid));
+        [Test] public void EntryVoid() => VerifyEntryPoint(nameof(Modules.Return.EntryVoid));
     }
 }
