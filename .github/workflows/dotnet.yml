@@ -27,5 +27,7 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
+    - name: Install SPIRV-Tools
+      run: sudo apt-get install spirv-tools
     - name: Test
       run: dotnet test --no-build --verbosity normal
