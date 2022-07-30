@@ -23,7 +23,7 @@ namespace cilspirv.transpiler.test.Values.Modules
 
         public struct VarStruct
         {
-            [Input] public int m;
+            [Output] public int m;
         }
 
         public int VarStruct_(VarStruct s) => s.m * 2;

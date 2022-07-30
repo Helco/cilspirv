@@ -1,14 +1,16 @@
 ﻿SPIRV 1.3
 Generator 002A 1.0
+OpCapability Shader
+OpCapability Linkage
 OpMemoryModel Logical Simple
 OpName #3 "VarStruct_"
 OpName #5 "System.Int32 cilspirv.transpiler.test.Values.Modules.Parameter/VarStruct::m"
 OpName #7 "System.Int32"
 #7 = OpTypeInt 32 1
 #8 = OpTypeFunction #7
-#9 = OpTypePointer Input #7
+#9 = OpTypePointer Output #7
 #6 = OpConstant #7 00000002
-#5 = OpVariable #9 Input 
+#5 = OpVariable #9 Output 
 #3 = OpFunction #7 None #8
 #4 = OpLabel
 #1 = OpLoad #7 #5 

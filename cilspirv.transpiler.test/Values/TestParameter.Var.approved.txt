@@ -1,5 +1,7 @@
 ﻿SPIRV 1.3
 Generator 002A 1.0
+OpCapability Shader
+OpCapability Linkage
 OpMemoryModel Logical Simple
 OpName #3 "Var"
 OpName #5 "a"
