@@ -133,7 +133,10 @@ namespace cilspirv.Transpiler
 
         public IValueBehaviour MapField(FieldReference fieldRef, object? parentTag)
         {
-            if (mappedFields.TryGetValue(fieldRef.FullName, out var mapped))
+            string mappingName = fieldRef.FullName;
+            if (parentTag is VarGroup parentVarGroup) // VarGroups may be instanced so FullName is not unique
+                mappingName += "@" + parentVarGroup.Name;
+            if (mappedFields.TryGetValue(mappingName, out var mapped))
                 return mapped;
 
             mapped = MapType(fieldRef.FieldType) switch
@@ -155,7 +158,7 @@ namespace cilspirv.Transpiler
 
                 _ => throw new NotSupportedException("Unsupported field type")
             };
-            mappedFields[fieldRef.FullName] = mapped;
+            mappedFields[mappingName] = mapped;
             return mapped;
 
             Variable ScanAndMapGlobalVariable(SpirvType realType)

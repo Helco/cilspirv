@@ -93,11 +93,11 @@ namespace cilspirv.test.veldrid
 
             ShaderDescription vertexShaderDesc = new ShaderDescription(
                 ShaderStages.Vertex,
-                File.ReadAllBytes("ExplicitUniform.spv"),
+                File.ReadAllBytes("Discard.spv"),
                 "Vert");
             ShaderDescription fragmentShaderDesc = new ShaderDescription(
                 ShaderStages.Fragment,
-                File.ReadAllBytes("ExplicitUniform.spv"),
+                File.ReadAllBytes("Discard.spv"),
                 "Frag");
 
             //_shaders = factory.CreateFromSpirv(vertexShaderDesc, fragmentShaderDesc);
@@ -154,8 +154,8 @@ namespace cilspirv.test.veldrid
                 depthClipEnabled: true,
                 scissorTestEnabled: false);
             pipelineDescription.PrimitiveTopology = PrimitiveTopology.TriangleStrip;
-            pipelineDescription.ResourceLayouts = new[] { resourceLayout };
-            //pipelineDescription.ResourceLayouts = System.Array.Empty<ResourceLayout>();
+            //pipelineDescription.ResourceLayouts = new[] { resourceLayout };
+            pipelineDescription.ResourceLayouts = System.Array.Empty<ResourceLayout>();
             pipelineDescription.ShaderSet = new ShaderSetDescription(
                 vertexLayouts: new VertexLayoutDescription[] { vertexLayout },
                 shaders: _shaders);
@@ -179,7 +179,7 @@ namespace cilspirv.test.veldrid
             _commandList.SetVertexBuffer(0, _vertexBuffer);
             _commandList.SetIndexBuffer(_indexBuffer, IndexFormat.UInt16);
             _commandList.SetPipeline(_pipeline);
-            _commandList.SetGraphicsResourceSet(0, resourceSet);
+            //_commandList.SetGraphicsResourceSet(0, resourceSet);
             // Issue a Draw command for a single instance with 4 indices.
             _commandList.DrawIndexed(
                 indexCount: 4,
