@@ -60,12 +60,10 @@ namespace cilspirv.Transpiler
                 : new ValueContext(this, parent);
             var instructions = behaviour.LoadAddress(context)?.ToArray()
                 ?? throw new InvalidOperationException("Either Load or LoadAddress have to be defined");
-            if (context.Result is not ValueStackEntry resultValue)
-                throw new InvalidOperationException("LoadAddress did not result in a value");
-            if (resultValue.Type is not SpirvPointerType)
-                throw new InvalidOperationException("LoadAddress did not result in a pointer");
+            if (context.Result is ValueStackEntry resultValue && resultValue.Type is not SpirvPointerType)
+                throw new InvalidOperationException("LoadAddress did returned a non-pointer value");
             Block.Instructions.AddRange(instructions);
-            Stack.Add(resultValue);
+            Stack.Add(context.Result);
         }
 
         private void LoadValue(StackEntry? parent, IValueBehaviour behaviour)

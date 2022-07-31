@@ -21,17 +21,19 @@ namespace cilspirv.transpiler.test
     {
         private TypeDefinition ThisModuleType => ThisModule.GetType(typeof(T).FullName);
 
-        protected void VerifyFunction(string functionName, bool isEntryPoint)
+        protected void VerifyModule(params (string functionName, bool isEntryPoint)[] functions)
         {
-            var method = ThisModuleType.Methods.First(m => m.Name == functionName);
-
             var transpiler = new Transpiler.Transpiler(ThisModuleType);
             transpiler.Module.Capabilities.Add(Capability.Shader);
             transpiler.Module.Capabilities.Add(Capability.Linkage); // there might be no entry point
-            if (isEntryPoint)
-                transpiler.MarkEntryPoint(method);
-            else
-                transpiler.MarkNonEntryFunction(method);
+            foreach (var (functionName, isEntryPoint) in functions)
+            {
+                var method = ThisModuleType.Methods.First(m => m.Name == functionName);
+                if (isEntryPoint)
+                    transpiler.MarkEntryPoint(method);
+                else
+                    transpiler.MarkNonEntryFunction(method);
+            }
             transpiler.TranspileBodies();
 
             using var memoryStream = new MemoryStream();
@@ -61,7 +63,7 @@ namespace cilspirv.transpiler.test
             Assert.AreEqual(0, process.ExitCode);
         }
 
-        protected void VerifyEntryPoint(string functionName) => VerifyFunction(functionName, true);
-        protected void VerifyNonEntryFunction(string functionName) => VerifyFunction(functionName, false);
+        protected void VerifyEntryPoint(string functionName) => VerifyModule((functionName, true));
+        protected void VerifyNonEntryFunction(string functionName) => VerifyModule((functionName, false));
     }
 }
