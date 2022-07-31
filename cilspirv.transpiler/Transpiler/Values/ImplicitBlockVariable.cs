@@ -18,7 +18,8 @@ namespace cilspirv.Transpiler.Values
         {
             BlockName = $"{actualName}#Block";
             BlockType = blockType;
-            BlockPointerType = MakePointerType(BlockType, decorations);
+            BlockPointerType = MakePointerType(BlockType);
+            Decorations = decorations.ToHashSet();
         }
 
         private static SpirvPointerType MakePointerType(SpirvType baseType, IEnumerable<DecorationEntry>? decorations = null) => new SpirvPointerType()
