@@ -135,6 +135,13 @@ namespace cilspirv.Spirv
             }
         }
 
+        public ImmutableArray<uint> ToWords()
+        {
+            var array = new uint[WordCount];
+            Write(array, i => i.Value);
+            return array.ToImmutableArray();
+        }
+
         public override string ToString() => Kind switch
         {
             ExtraOperandKind.Numeric => StrOf(numeric),

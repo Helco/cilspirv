@@ -7,7 +7,7 @@ OpExecutionMode #3 OriginUpperLeft
 OpName #3 "RefVar"
 OpName #5 "a"
 OpName #7 "System.Int32"
-OpDecorate #5 Location
+OpDecorate #5 Location 0
 #7 = OpTypeInt 32 1
 #8 = OpTypeVoid
 #9 = OpTypeFunction #8

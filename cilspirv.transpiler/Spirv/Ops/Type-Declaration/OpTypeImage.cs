@@ -89,6 +89,7 @@ namespace cilspirv.Spirv.Ops
             writer.Write(ImageFormat);
             writer.Write(' ');
             writer.Write(AccessQualifier);
+            DisassembleExtras(writer);
         }
     }
 }

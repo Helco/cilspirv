@@ -71,6 +71,7 @@ namespace cilspirv.Spirv.Ops
             writer.Write(Vector2);
             writer.Write(' ');
             writer.Write(PackedVectorFormat);
+            DisassembleExtras(writer);
         }
     }
 }

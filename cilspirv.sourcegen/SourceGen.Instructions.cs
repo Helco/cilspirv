@@ -267,6 +267,20 @@ namespace cilspirv.SourceGen
                         yield return "            " + DisassembleBaseOperand(operand, name);
                     }
                 }
+
+                yield return instruction.opname switch
+                {
+                    "OpDecorate" => "            DisassembleExtraNumbers(writer);",
+                    "OpMemberDecorate" => "            DisassembleExtraNumbers(writer);",
+                    "OpDecorateId" => "            DisassembleExtraIDs(writer);",
+                    "OpMemberDecorateId" => "            DisassembleExtraIDs(writer);",
+                    "OpDecorateString" => "            DisassembleExtraStrings(writer);",
+                    "OpDecorateStringGOOGLE" => "            DisassembleExtraStrings(writer);",
+                    "OpMemberDecorateString" => "            DisassembleExtraStrings(writer);",
+                    "OpMemberDecorateStringGOOGLE" => "            DisassembleExtraStrings(writer);",
+                    _ => "            DisassembleExtras(writer);"
+                };
+
                 yield return "        }";
             }
 

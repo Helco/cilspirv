@@ -11,9 +11,9 @@ OpName #7 "#return"
 OpName #8 "System.Int32 cilspirv.transpiler.test.Values.Modules.TemplateStructs/Simple::m"
 OpName #9 "System.Int32 cilspirv.transpiler.test.Values.Modules.TemplateStructs/Simple::m"
 OpName #12 "System.Int32"
-OpDecorate #7 Location
-OpDecorate #8 Location
-OpDecorate #9 Location
+OpDecorate #7 Location 0
+OpDecorate #8 Location 0
+OpDecorate #9 Location 0
 #12 = OpTypeInt 32 1
 #13 = OpTypeVoid
 #14 = OpTypeFunction #13

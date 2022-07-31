@@ -6,7 +6,7 @@ OpMemoryModel Logical Simple
 OpName #3 "RefVarTemplateStruct"
 OpName #5 "System.Int32 cilspirv.transpiler.test.Values.Modules.Parameter/VarTemplateStruct::m"
 OpName #7 "System.Int32"
-OpDecorate #5 Location
+OpDecorate #5 Location 0
 #7 = OpTypeInt 32 1
 #8 = OpTypeFunction #7
 #9 = OpTypePointer Input #7

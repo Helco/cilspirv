@@ -67,6 +67,7 @@ namespace cilspirv.Spirv.Ops
             writer.Write(Height);
             writer.Write(' ');
             writer.Write(Data);
+            DisassembleExtras(writer);
         }
     }
 }

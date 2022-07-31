@@ -56,6 +56,7 @@ namespace cilspirv.Spirv.Ops
             writer.Write(ColumnType);
             writer.Write(' ');
             writer.Write(ColumnCount);
+            DisassembleExtras(writer);
         }
     }
 }

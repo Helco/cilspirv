@@ -6,7 +6,7 @@ OpEntryPoint Fragment #1 "Var" #3
 OpExecutionMode #1 OriginUpperLeft
 OpName #1 "Var"
 OpName #3 "#return"
-OpDecorate #3 Location
+OpDecorate #3 Location 0
 #5 = OpTypeVoid
 #6 = OpTypeInt 32 1
 #7 = OpTypeFunction #5
