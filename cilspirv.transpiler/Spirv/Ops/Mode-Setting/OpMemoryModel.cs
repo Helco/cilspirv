@@ -50,6 +50,7 @@ namespace cilspirv.Spirv.Ops
             writer.Write(AddressingModel);
             writer.Write(' ');
             writer.Write(MemoryModel);
+            DisassembleExtras(writer);
         }
     }
 }

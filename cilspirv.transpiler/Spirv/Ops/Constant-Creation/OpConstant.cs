@@ -56,6 +56,7 @@ namespace cilspirv.Spirv.Ops
             writer.Write(ResultType);
             writer.Write(' ');
             writer.Write(string.Join("", Value.Select(n => n.Value.ToString("X8"))));
+            DisassembleExtras(writer);
         }
     }
 }

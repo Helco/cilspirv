@@ -129,5 +129,48 @@ namespace cilspirv.Spirv
             }
             writer.Write(OpCode);
         }
+
+        protected void DisassembleExtras(TextWriter writer)
+        {
+            foreach (var operand in ExtraOperands)
+            {
+                writer.Write(' ');
+                writer.Write(operand);
+            }
+        }
+
+        protected void DisassembleExtraNumbers(TextWriter writer)
+        {
+            foreach (var operand in ExtraOperands.SelectMany(o => o.ToWords()))
+            {
+                writer.Write(' ');
+                writer.Write(operand);
+            }
+        }
+
+        protected void DisassembleExtraIDs(TextWriter writer)
+        {
+            var extraIds = ExtraOperands
+                .SelectMany(o => o.ToWords())
+                .Select(r => new ID(r));
+            foreach (var operand in extraIds)
+            {
+                writer.Write(' ');
+                writer.Write(operand);
+            }
+        }
+
+        protected void DisassembleExtraStrings(TextWriter writer)
+        {
+            var extraStrings = ExtraOperands
+                .SelectMany(o => o.ToWords())
+                .SegmentsByLast(w => w < 0xff_ff_ff)
+                .Select(words => new LiteralString(words.ToArray()));
+            foreach (var operand in extraStrings)
+            {
+                writer.Write(' ');
+                writer.Write(operand);
+            }
+        }
     }
 }

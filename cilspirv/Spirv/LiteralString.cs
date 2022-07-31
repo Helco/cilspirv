@@ -47,9 +47,19 @@ namespace cilspirv.Spirv
 
         public LiteralString(string value) => Value = value;
 
+        public LiteralString(IReadOnlyList<uint> code)
+        {
+            (Value, _) = Parse(code, 0);
+        }
+
         public LiteralString(IReadOnlyList<uint> code, ref int i)
         {
-            var startI = i;
+            (Value, i) = Parse(code, i);
+        }
+
+        private static (string, int) Parse(IReadOnlyList<uint> code, int startI)
+        {
+            int i = startI;
             for (; i < code.Count && code[i] > 0x01000000; i++) ;
 
             var uintBuffer = new uint[i - startI + 1];
@@ -58,7 +68,8 @@ namespace cilspirv.Spirv
 
             var byteBuffer = MemoryMarshal.AsBytes(uintBuffer.AsSpan());
             var byteLength = byteBuffer.IndexOf((byte)0);
-            Value = Encoding.UTF8.GetString(byteBuffer.Slice(0, byteLength));
+            var value = Encoding.UTF8.GetString(byteBuffer.Slice(0, byteLength));
+            return (value, i);
         }
 
         public static implicit operator LiteralString(string str) => new LiteralString(str);

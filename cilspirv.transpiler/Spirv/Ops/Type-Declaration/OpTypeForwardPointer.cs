@@ -52,6 +52,7 @@ namespace cilspirv.Spirv.Ops
             writer.Write(PointerType);
             writer.Write(' ');
             writer.Write(StorageClass);
+            DisassembleExtras(writer);
         }
     }
 }

@@ -67,6 +67,7 @@ namespace cilspirv.Spirv.Ops
             writer.Write(Param);
             writer.Write(' ');
             writer.Write(SamplerFilterMode);
+            DisassembleExtras(writer);
         }
     }
 }

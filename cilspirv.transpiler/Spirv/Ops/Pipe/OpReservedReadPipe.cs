@@ -82,6 +82,7 @@ namespace cilspirv.Spirv.Ops
             writer.Write(PacketSize);
             writer.Write(' ');
             writer.Write(PacketAlignment);
+            DisassembleExtras(writer);
         }
     }
 }

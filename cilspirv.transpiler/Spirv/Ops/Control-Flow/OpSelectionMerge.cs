@@ -51,6 +51,7 @@ namespace cilspirv.Spirv.Ops
             writer.Write(MergeBlock);
             writer.Write(' ');
             writer.Write(SelectionControl);
+            DisassembleExtras(writer);
         }
     }
 }

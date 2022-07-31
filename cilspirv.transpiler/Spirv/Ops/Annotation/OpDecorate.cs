@@ -51,6 +51,7 @@ namespace cilspirv.Spirv.Ops
             writer.Write(Target);
             writer.Write(' ');
             writer.Write(Decoration);
+            DisassembleExtraNumbers(writer);
         }
     }
 }
