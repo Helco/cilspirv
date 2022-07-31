@@ -12,7 +12,7 @@ namespace cilspirv.transpiler.test.Values.Modules
         public int Real(int a) => a * 2;
         public void Ref(ref int a) => a = 45;
         public int Var([Input] int a) => a * 2;
-        public void RefVar([Input] ref int a) => a *= 2;
+        public void RefVar([Output] ref int a) => a *= 2;
 
         public struct ValueStruct
         {
@@ -38,9 +38,10 @@ namespace cilspirv.transpiler.test.Values
         [Test] public void Real() => VerifyNonEntryFunction(nameof(Modules.Parameter.Real));
         //[Test] public void Ref() => VerifyFunction(nameof(Modules.Parameter.Ref)); // TODO: support by-reference function parameters
         [Test] public void Var() => VerifyNonEntryFunction(nameof(Modules.Parameter.Var));
-        //[Test] public void RefVar() => VerifyFunction(nameof(Modules.Parameter.RefVar));
+        [Test] public void RefVar() => VerifyNonEntryFunction(nameof(Modules.Parameter.RefVar));
         //[Test] public void RealValueStruct() => VerifyFunction(nameof(Modules.Parameter.RealValueStruct)); // value structs cannot be supported directly as SPIR-V parameters have no address
-        //[Test] public void RefValueStruct() => VerifyFunction(nameof(Modules.Parameter.RefValueStruct));
+        
+        //[Test] public void RefValueStruct() => VerifyNonEntryFunction(nameof(Modules.Parameter.RefValueStruct));
         [Test] public void VarStruct_() => VerifyNonEntryFunction(nameof(Modules.Parameter.VarStruct_));
         [Test] public void RefVarStruct() => VerifyNonEntryFunction(nameof(Modules.Parameter.RefVarStruct));
     }

@@ -62,7 +62,7 @@ namespace cilspirv.Transpiler
 
     public record SpirvMember :
         IDecoratable,
-        ITranspilerValueBehaviour
+        IValueBehaviour
     {
         public int Index { get; }
         public string Name { get; }
@@ -120,7 +120,7 @@ namespace cilspirv.Transpiler
             }
         }
 
-        IEnumerable<Instruction> ITranspilerValueBehaviour.LoadAddress(ITranspilerValueContext context)
+        IEnumerable<Instruction> IValueBehaviour.LoadAddress(ITranspilerValueContext context)
         {
             if (context.Parent is not ValueStackEntry parentValue)
                 throw new InvalidOperationException("Struct member parent is not a value");

@@ -7,7 +7,7 @@ using cilspirv.Transpiler.Declarations;
 
 namespace cilspirv.Transpiler.Values
 {
-    internal class ImplicitBlockVariable : Variable, ITranspilerValueBehaviour
+    internal class ImplicitBlockVariable : GlobalVariable, IValueBehaviour
     {
         public string BlockName { get; }
         public SpirvType BlockType { get; }
@@ -48,7 +48,7 @@ namespace cilspirv.Transpiler.Values
                 };
         }
 
-        IEnumerable<Instruction> ITranspilerValueBehaviour.LoadAddress(ITranspilerValueContext context)
+        IEnumerable<Instruction> IValueBehaviour.LoadAddress(ITranspilerValueContext context)
         {
             MarkUsageIn(context.Function);
             var resultId = context.CreateID();

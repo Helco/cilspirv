@@ -12,7 +12,7 @@ namespace cilspirv.Transpiler.Declarations
     {
         public string Name { get; }
         public SpirvType ReturnType { get; }
-        public ITranspilerValueBehaviour? ReturnValue { get; set; }
+        public IValueBehaviour? ReturnValue { get; set; }
         public IList<Parameter> Parameters { get; } = new List<Parameter>();
         public IReadOnlySet<DecorationEntry> Decorations { get; set; } = new HashSet<DecorationEntry>();
         public FunctionControl FunctionControl { get; set; }

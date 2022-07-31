@@ -9,7 +9,7 @@ namespace cilspirv.Transpiler.Values
     internal class Parameter :
         IDecoratableInstructionGeneratable,
         IDebugInstructionGeneratable,
-        ITranspilerValueBehaviour
+        IValueBehaviour
     {
         public int SpirvIndex { get; } // this can be different from the CLI arg index
         public string Name { get; }
@@ -36,13 +36,13 @@ namespace cilspirv.Transpiler.Values
             };
         }
 
-        IEnumerable<Instruction>? ITranspilerValueBehaviour.Load(ITranspilerValueContext context)
+        IEnumerable<Instruction>? IValueBehaviour.Load(ITranspilerValueContext context)
         {
             context.Result = new ValueStackEntry(this, context.IDOf(this), Type);
             return Enumerable.Empty<Instruction>();
         }
 
-        IEnumerable<Instruction>? ITranspilerValueBehaviour.Store(ITranspilerValueContext context, ValueStackEntry value) =>
+        IEnumerable<Instruction>? IValueBehaviour.Store(ITranspilerValueContext context, ValueStackEntry value) =>
             throw new InvalidOperationException($"Cannot store values into parameters");
     }
 }

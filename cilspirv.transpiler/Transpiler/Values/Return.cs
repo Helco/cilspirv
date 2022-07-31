@@ -7,7 +7,7 @@ using cilspirv.Transpiler.Declarations;
 
 namespace cilspirv.Transpiler.Values
 {
-    internal abstract class Return : ITranspilerValueBehaviour
+    internal abstract class Return : IValueBehaviour
     {
         public IEnumerable<Instruction> Load(ITranspilerValueContext context) =>
             throw new InvalidOperationException("Cannot load a return value");
@@ -47,7 +47,7 @@ namespace cilspirv.Transpiler.Values
 
         public override IEnumerable<Instruction> Store(ITranspilerValueContext context, ValueStackEntry value)
         {
-            var storeInstructions = ((ITranspilerValueBehaviour)Variable).Store(context, value);
+            var storeInstructions = ((IValueBehaviour)Variable).Store(context, value);
             return storeInstructions!.Append(new OpReturn());
         }
     }
