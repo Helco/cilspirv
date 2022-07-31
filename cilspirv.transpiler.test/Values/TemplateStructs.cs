@@ -15,21 +15,21 @@ namespace cilspirv.transpiler.test.Values.Modules
         }
 
         [EntryPoint(ExecutionModel.Fragment)]
-        [return: Output]
+        [return: Output, Location(0)]
         public int RefFrag([Input] in Simple simple) => simple.m * 2;
 
         [EntryPoint(ExecutionModel.Vertex)]
         public void RefVert([Output] out Simple simple) => simple.m = 42;
 
         [EntryPoint(ExecutionModel.Fragment)]
-        [return: Output]
+        [return: Output, Location(0)]
         public int ValFrag([Input] Simple simple) => simple.m * 2;
 
         [EntryPoint(ExecutionModel.Vertex)]
         public void ValVert([Output] Simple simple) => simple.m = 42;
 
         [EntryPoint(ExecutionModel.Vertex)]
-        [return: Output]
+        [return: Output, Location(0)]
         public Simple ValReturnVert() => new() { m = 42 };
     }
 }

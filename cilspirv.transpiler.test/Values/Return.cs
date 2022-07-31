@@ -12,7 +12,7 @@ namespace cilspirv.transpiler.test.Values.Modules
         public int Real() => 24;
 
         [EntryPoint(ExecutionModel.Fragment)]
-        [return: Output]
+        [return: Output, Location(0)]
         public int Var() => 32;
 
         public struct ValueStruct

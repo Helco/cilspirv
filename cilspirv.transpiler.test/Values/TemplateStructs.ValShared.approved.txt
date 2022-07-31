@@ -1,7 +1,6 @@
 ﻿SPIRV 1.3
 Generator 002A 1.0
 OpCapability Shader
-OpCapability Linkage
 OpMemoryModel Logical Simple
 OpEntryPoint Fragment #3 "ValFrag" #8 #7
 OpEntryPoint Vertex #5 "ValVert" #9
@@ -12,6 +11,7 @@ OpName #7 "#return"
 OpName #8 "System.Int32 cilspirv.transpiler.test.Values.Modules.TemplateStructs/Simple::m"
 OpName #9 "System.Int32 cilspirv.transpiler.test.Values.Modules.TemplateStructs/Simple::m"
 OpName #12 "System.Int32"
+OpDecorate #7 Location
 OpDecorate #8 Location
 OpDecorate #9 Location
 #12 = OpTypeInt 32 1
