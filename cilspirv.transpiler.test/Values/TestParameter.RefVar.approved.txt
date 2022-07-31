@@ -3,10 +3,11 @@ Generator 002A 1.0
 OpCapability Shader
 OpCapability Linkage
 OpMemoryModel Logical Simple
+OpEntryPoint Fragment #3 "RefVar" #5
+OpExecutionMode #3 OriginUpperLeft
 OpName #3 "RefVar"
 OpName #5 "a"
 OpName #7 "System.Int32"
-OpName #8 "System.Void"
 #7 = OpTypeInt 32 1
 #8 = OpTypeVoid
 #9 = OpTypeFunction #8
