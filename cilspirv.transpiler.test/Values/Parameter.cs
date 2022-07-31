@@ -28,6 +28,13 @@ namespace cilspirv.transpiler.test.Values.Modules
 
         public int VarStruct_(VarStruct s) => s.m * 2;
         public void RefVarStruct(ref VarStruct s) => s.m *= 2;
+
+        public struct VarTemplateStruct
+        {
+            [Location(0)] public int m;
+        }
+        public int VarTemplateStruct_([Input] VarTemplateStruct s) => s.m * 2;
+        public int RefVarTemplateStruct([Input] in VarTemplateStruct s) => s.m * 2;
     }
 }
 
@@ -44,5 +51,7 @@ namespace cilspirv.transpiler.test.Values
         //[Test] public void RefValueStruct() => VerifyNonEntryFunction(nameof(Modules.Parameter.RefValueStruct));
         [Test] public void VarStruct_() => VerifyNonEntryFunction(nameof(Modules.Parameter.VarStruct_));
         [Test] public void RefVarStruct() => VerifyNonEntryFunction(nameof(Modules.Parameter.RefVarStruct));
+        [Test] public void VarTemplateStruct() => VerifyNonEntryFunction(nameof(Modules.Parameter.VarTemplateStruct_));
+        [Test] public void RefVarTemplateStruct() => VerifyNonEntryFunction(nameof(Modules.Parameter.RefVarTemplateStruct));
     }
 }

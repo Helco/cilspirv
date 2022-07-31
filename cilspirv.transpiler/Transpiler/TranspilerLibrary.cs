@@ -131,7 +131,7 @@ namespace cilspirv.Transpiler
         public IMappedFromCILType MapType(TypeReference ilTypeRef) => TryMapType(ilTypeRef)
             ?? throw new ArgumentException($"Cannot map type {ilTypeRef.FullName}");
 
-        public IValueBehaviour MapField(FieldReference fieldRef)
+        public IValueBehaviour MapField(FieldReference fieldRef, object? parentTag)
         {
             if (mappedFields.TryGetValue(fieldRef.FullName, out var mapped))
                 return mapped;
@@ -139,13 +139,16 @@ namespace cilspirv.Transpiler
             mapped = MapType(fieldRef.FieldType) switch
             {
                 VarGroup varGroup => varGroup,
-                TranspilerVarGroupTemplate template => InstantiateTemplateFor(fieldRef.FullName, fieldRef.Resolve(), template),
+                VarGroupTemplate template => InstantiateTemplateFor(fieldRef.FullName, fieldRef.Resolve(), template),
                 SpirvType realType when (fieldRef.DeclaringType.FullName == ilModuleType.FullName) => ScanAndMapGlobalVariable(realType),
 
                 SpirvType realType => MapType(fieldRef.DeclaringType) switch
                 {
                     SpirvStructType declaringStructType => declaringStructType.Members.First(m => m.Name == fieldRef.Name),
                     VarGroup varGroup => varGroup.Variables.First(v => v.Name == fieldRef.FullName),
+                    VarGroupTemplate => (parentTag as VarGroup ??
+                        throw new InvalidOperationException("Somehow a field is mapped from a variable group template without an instance of that template"))
+                        .Variables.First(v => v.Name == fieldRef.FullName),
 
                     _ => TryMapFieldBehavior(fieldRef) ?? throw new NotSupportedException("Unsupported field container type")
                 },
@@ -164,7 +167,7 @@ namespace cilspirv.Transpiler
             }
         }
 
-        private VarGroup InstantiateTemplateFor(string elementName, ICustomAttributeProvider element, TranspilerVarGroupTemplate template)
+        private VarGroup InstantiateTemplateFor(string elementName, ICustomAttributeProvider element, VarGroupTemplate template)
         {
             var storageClass = TryScanStorageClass(element);
             if (storageClass == null)
@@ -199,13 +202,13 @@ namespace cilspirv.Transpiler
             mapped = paramType switch
             {
                 VarGroup varGroup => varGroup,
-                TranspilerVarGroupTemplate template => InstantiateTemplateFor(mappingName, paramDef, template),
+                VarGroupTemplate template => InstantiateTemplateFor(mappingName, paramDef, template),
                 SpirvType realType when storageClass != null => CreateGlobalVariable(realType, paramDef.Name, storageClass.Value, decorations),
                 SpirvType realType => MapSpirvParameter(realType),
                 MappedFromRefCILType byRef => byRef.ElementType switch
                 {
                     VarGroup varGroup => varGroup, // ignore by-ref for VarGroup(Template)
-                    TranspilerVarGroupTemplate template => InstantiateTemplateFor(mappingName, paramDef, template),
+                    VarGroupTemplate template => InstantiateTemplateFor(mappingName, paramDef, template),
                     SpirvType realType when storageClass.HasValue => new GlobalVariableReference(CreateGlobalVariable(realType, paramDef.Name, storageClass.Value, decorations)),
                     _ => throw new NotSupportedException("Unsupported by-reference parameter type")
                 },
@@ -285,7 +288,7 @@ namespace cilspirv.Transpiler
             {
                 SpirvVoidType => null,
                 VarGroup => null,
-                TranspilerVarGroupTemplate => null,
+                VarGroupTemplate => null,
                 SpirvType realType when storageClass != null => new VariableReturn(CreateGlobalVariable(realType, "#return", storageClass.Value)),
                 SpirvType realType => new ValueReturn(realType),
                 MappedFromRefCILType => throw new NotSupportedException("By-ref return types are not supported"),

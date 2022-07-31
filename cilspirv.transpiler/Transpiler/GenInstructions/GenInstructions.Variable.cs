@@ -164,14 +164,14 @@ namespace cilspirv.Transpiler
         private void LoadField(FieldReference fieldRef)
         {
             var parent = Pop();
-            var fieldBehaviour = Library.MapField(fieldRef);
+            var fieldBehaviour = Library.MapField(fieldRef, parent.Tag);
             LoadValue(parent, fieldBehaviour);
         }
 
         private void LoadFieldAddress(FieldReference fieldRef)
         {
             var parent = Pop();
-            var fieldBehavior = Library.MapField(fieldRef);
+            var fieldBehavior = Library.MapField(fieldRef, parent.Tag);
             LoadValueAddress(parent, fieldBehavior);
         }
 
@@ -179,7 +179,7 @@ namespace cilspirv.Transpiler
         {
             var value = Pop() as ValueStackEntry ?? throw new InvalidOperationException("Top of stack is not a value");
             var parent = Pop();
-            var fieldBehavior = Library.MapField(fieldRef);
+            var fieldBehavior = Library.MapField(fieldRef, parent.Tag);
             StoreValue(parent, value, fieldBehavior);
         }
 
