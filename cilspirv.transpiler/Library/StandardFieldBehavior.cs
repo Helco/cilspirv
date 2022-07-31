@@ -5,10 +5,11 @@ using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
 using cilspirv.Transpiler;
+using cilspirv.Transpiler.Declarations;
 
 namespace cilspirv.Library
 {
-    public sealed record StandardFieldBehavior : ITranspilerFieldBehavior
+    public sealed record StandardFieldBehavior : IValueBehaviour
     {
         private readonly SpirvType type;
         private readonly int memberIndex;
@@ -16,7 +17,7 @@ namespace cilspirv.Library
         public StandardFieldBehavior(SpirvType type, int memberIndex) =>
             (this.type, this.memberIndex) = (type, memberIndex);
 
-        IEnumerable<Instruction> ITranspilerFieldBehavior.LoadAddress(ITranspilerFieldContext context)
+        IEnumerable<Instruction> IValueBehaviour.LoadAddress(ITranspilerValueContext context)
         {
             if (context.Parent is not ValueStackEntry parentValue)
                 throw new InvalidOperationException("Struct member parent is not a value");
@@ -37,7 +38,7 @@ namespace cilspirv.Library
                 Base = parentValue.ID,
                 Indexes = ImmutableArray.Create(
                     context.IDOf(
-                        new TranspilerNumericConstant(memberIndex)))
+                        new NumericConstant(memberIndex)))
             };
         }
     }

@@ -32,4 +32,22 @@ namespace cilspirv.Library
         })
         { }
     }
+
+    public class BlockAttribute : DecorationAttribute
+    {
+        public BlockAttribute() : base(new[]
+        {
+            Block()
+        })
+        { }
+    }
+
+    public class OffsetAttribute : DecorationAttribute
+    {
+        public OffsetAttribute(uint offset) : base(new[]
+        {
+            Offset(offset)
+        })
+        { }
+    }
 }

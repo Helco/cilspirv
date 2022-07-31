@@ -8,14 +8,18 @@ using cilspirv.Spirv;
 
 using ILInstruction = Mono.Cecil.Cil.Instruction;
 using SpirvInstruction = cilspirv.Spirv.Instruction;
+using System.Collections.Immutable;
+using cilspirv.Transpiler.Values;
+using cilspirv.Transpiler.BuiltInLibrary;
+using cilspirv.Transpiler.Declarations;
 
 namespace cilspirv.Transpiler
 {
-    internal interface ITranspilerContext : IInstructionGeneratorContext
+    internal interface ITranspilerContext : IIDMapper
     {
         TranspilerLibrary Library { get; }
-        TranspilerModule Module { get; }
-        TranspilerFunction Function { get; }
+        Module Module { get; }
+        Function Function { get; }
     }
 
     internal interface ITranspilerMethodContext : ITranspilerContext
@@ -25,27 +29,18 @@ namespace cilspirv.Transpiler
         ID ResultID { get; set; }
     }
 
-    internal interface ITranspilerFieldContext : ITranspilerContext
+    internal interface ITranspilerValueContext : ITranspilerContext
     {
-        StackEntry Parent { get; }
+
+        StackEntry Parent { get; } // will throw if no applicable parent exists (e.g. variable access)
         StackEntry Result { set; }
-    }
-
-    internal interface ITranspilerFieldBehavior : IMappedFromCILField
-    {
-        // if LoadAddress is defined (returns not null) Load/Store will use standard OpLoad/OpStore 
-        // if LoadAddress is not defined, ldflda is not supported
-
-        IEnumerable<SpirvInstruction>? LoadAddress(ITranspilerFieldContext context) { return null; }
-        IEnumerable<SpirvInstruction>? Load(ITranspilerFieldContext context) { return null; }
-        IEnumerable<SpirvInstruction>? Store(ITranspilerFieldContext context, ValueStackEntry value) { return null; }
     }
 
     internal interface ITranspilerLibraryMapper
     {
         GenerateCallDelegate? TryMapMethod(MethodReference methodRef) { return null; }
         IMappedFromCILType? TryMapType(TypeReference ilTypeRef) { return null; }
-        ITranspilerFieldBehavior? TryMapFieldBehavior(FieldReference fieldRef) { return null; }
+        IValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) { return null; }
     }
 
     internal interface IITranspilerLibraryScanner
@@ -55,25 +50,24 @@ namespace cilspirv.Transpiler
     }
 
     internal delegate IEnumerable<SpirvInstruction> GenerateCallDelegate(ITranspilerMethodContext context);
-    internal delegate IEnumerable<SpirvInstruction> GenerateFieldDelegate(ITranspilerFieldContext context);
-    internal delegate IEnumerable<SpirvInstruction> GenerateFieldStoreDelegate(ITranspilerFieldContext context, ValueStackEntry value);
 
     internal interface IMappedFromCILType { }
-    internal interface IMappedFromCILField { }
-    internal interface IMappedFromCILParam { }
 
     internal class TranspilerLibrary 
     {
         private readonly TypeDefinition ilModuleType;
-        private readonly TranspilerModule module;
-        private readonly Action<TranspilerDefinedFunction, MethodBody> queueMethodBody;
+        private readonly Module module;
+        private readonly Action<DefinedFunction, MethodBody> queueMethodBody;
         private readonly Dictionary<string, GenerateCallDelegate> mappedMethods = new Dictionary<string, GenerateCallDelegate>();
         private readonly Dictionary<string, IMappedFromCILType> mappedTypes = new Dictionary<string, IMappedFromCILType>();
-        private readonly Dictionary<string, IMappedFromCILField> mappedFields = new Dictionary<string, IMappedFromCILField>();
-        private readonly Dictionary<string, IMappedFromCILParam> mappedParameters = new Dictionary<string, IMappedFromCILParam>();
-        private readonly TranspilerStructMapper structMapper;
-        private readonly TranspilerReferenceMapper referenceMapper;
-        private readonly TranspilerInternalMethodMapper methodMapper;
+        private readonly Dictionary<string, IValueBehaviour> mappedFields = new Dictionary<string, IValueBehaviour>();
+        private readonly Dictionary<string, IValueBehaviour> mappedParameters = new Dictionary<string, IValueBehaviour>();
+        private readonly Dictionary<string, Function> mappedFunctions = new Dictionary<string, Function>();
+        private readonly StructMapper structMapper;
+        private readonly ReferenceMapper referenceMapper;
+        private readonly InternalMethodMapper methodMapper;
+
+        public TranspilerOptions Options { get; set; } = new TranspilerOptions();
 
         public IEnumerable<ITranspilerLibraryMapper> AllMappers => Mappers.Reverse()
             .Append(structMapper)
@@ -91,14 +85,14 @@ namespace cilspirv.Transpiler
             new AttributeScanner()
         };
 
-        public TranspilerLibrary(TypeDefinition ilModuleType, TranspilerModule module, Action<TranspilerDefinedFunction, MethodBody> queueMethodBody)
+        public TranspilerLibrary(TypeDefinition ilModuleType, Module module, Action<DefinedFunction, MethodBody> queueMethodBody)
         {
             this.ilModuleType = ilModuleType;
             this.module = module;
             this.queueMethodBody = queueMethodBody;
-            structMapper = new TranspilerStructMapper(this, module);
-            referenceMapper = new TranspilerReferenceMapper(this);
-            methodMapper = new TranspilerInternalMethodMapper(this);
+            structMapper = new StructMapper(this, module);
+            referenceMapper = new ReferenceMapper(this);
+            methodMapper = new InternalMethodMapper(this);
         }
 
         public IMappedFromCILType? TryMapType(TypeReference ilTypeRef)
@@ -137,52 +131,46 @@ namespace cilspirv.Transpiler
         public IMappedFromCILType MapType(TypeReference ilTypeRef) => TryMapType(ilTypeRef)
             ?? throw new ArgumentException($"Cannot map type {ilTypeRef.FullName}");
 
-        public IMappedFromCILField MapField(FieldReference fieldRef)
+        public IValueBehaviour MapField(FieldReference fieldRef, object? parentTag)
         {
-            if (mappedFields.TryGetValue(fieldRef.FullName, out var mapped))
+            string mappingName = fieldRef.FullName;
+            if (parentTag is VarGroup parentVarGroup) // VarGroups may be instanced so FullName is not unique
+                mappingName += "@" + parentVarGroup.Name;
+            if (mappedFields.TryGetValue(mappingName, out var mapped))
                 return mapped;
 
             mapped = MapType(fieldRef.FieldType) switch
             {
-                TranspilerVarGroup varGroup => varGroup,
-                TranspilerVarGroupTemplate template => InstantiateTemplateFor(fieldRef.FullName, fieldRef.Resolve(), template),
-                SpirvType realType when (fieldRef.DeclaringType.FullName == ilModuleType.FullName) => MapGlobalVariable(realType),
+                VarGroup varGroup => varGroup,
+                VarGroupTemplate template => InstantiateTemplateFor(fieldRef.FullName, fieldRef.Resolve(), template),
+                SpirvType realType when (fieldRef.DeclaringType.FullName == ilModuleType.FullName) => ScanAndMapGlobalVariable(realType),
 
                 SpirvType realType => MapType(fieldRef.DeclaringType) switch
                 {
                     SpirvStructType declaringStructType => declaringStructType.Members.First(m => m.Name == fieldRef.Name),
-                    TranspilerVarGroup varGroup => varGroup.Variables.First(v => v.Name == fieldRef.FullName),
-                    _ when TryMapFieldBehavior(fieldRef) is ITranspilerFieldBehavior fieldBehavior => fieldBehavior,
+                    VarGroup varGroup => varGroup.Variables.First(v => v.Name == fieldRef.FullName),
+                    VarGroupTemplate => (parentTag as VarGroup ??
+                        throw new InvalidOperationException("Somehow a field is mapped from a variable group template without an instance of that template"))
+                        .Variables.First(v => v.Name == fieldRef.FullName),
 
-                    _ => throw new NotSupportedException("Unsupported field container type")
+                    _ => TryMapFieldBehavior(fieldRef) ?? throw new NotSupportedException("Unsupported field container type")
                 },
 
                 _ => throw new NotSupportedException("Unsupported field type")
             };
-            mappedFields[fieldRef.FullName] = mapped;
+            mappedFields[mappingName] = mapped;
             return mapped;
 
-            TranspilerVariable MapGlobalVariable(SpirvType realType)
+            Variable ScanAndMapGlobalVariable(SpirvType realType)
             {
                 var storageClass = TryScanStorageClass(fieldRef.Resolve())
                     ?? throw new InvalidOperationException($"Could not scan storage class for field {fieldRef.FullName}");
                 var decorations = ScanDecorations(fieldRef.Resolve());
-
-                var variable = new TranspilerVariable(fieldRef.FullName, new SpirvPointerType()
-                {
-                    Type = realType,
-                    StorageClass = storageClass
-                })
-                {
-                    Decorations = decorations.ToHashSet()
-                };
-
-                module.GlobalVariables.Add(variable);
-                return variable;
+                return CreateGlobalVariable(realType, fieldRef.Name, storageClass, decorations);
             }
         }
 
-        private TranspilerVarGroup InstantiateTemplateFor(string elementName, ICustomAttributeProvider element, TranspilerVarGroupTemplate template)
+        private VarGroup InstantiateTemplateFor(string elementName, ICustomAttributeProvider element, VarGroupTemplate template)
         {
             var storageClass = TryScanStorageClass(element);
             if (storageClass == null)
@@ -191,9 +179,9 @@ namespace cilspirv.Transpiler
             return structMapper.MapVarGroup($"{elementName}#VarGroup", template.TypeDefinition, storageClass);
         }
 
-        private ITranspilerFieldBehavior? TryMapFieldBehavior(FieldReference fieldRef) => AllMappers
-            .Select(mapper => mapper.TryMapFieldBehavior(fieldRef))
-            .FirstOrDefault(b => b != null);
+        private IValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) => AllMappers
+             .Select(mapper => mapper.TryMapFieldBehavior(fieldRef))
+             .FirstOrDefault(b => b != null);
 
         private IEnumerable<DecorationEntry> ScanDecorations(ICustomAttributeProvider element) => AllScanners
             .Select(scanner => scanner.TryScanDecorations(element))
@@ -204,7 +192,7 @@ namespace cilspirv.Transpiler
             .Select(scanner => scanner.TryScanStorageClass(element))
             .FirstOrDefault(c => c.HasValue);
 
-        public IMappedFromCILParam MapParameter(ParameterDefinition paramDef, TranspilerFunction function)
+        public IValueBehaviour MapParameter(ParameterDefinition paramDef, Function function)
         {
             var mappingName = $"{function.Name}#{paramDef.Name}";
             if (mappedParameters.TryGetValue(mappingName, out var mapped))
@@ -212,66 +200,128 @@ namespace cilspirv.Transpiler
 
             var paramType = MapType(paramDef.ParameterType);
             var storageClass = TryScanStorageClass(paramDef);
-            var decorations = ScanDecorations(paramDef).ToHashSet();
+            var decorations = ScanDecorations(paramDef);
 
             mapped = paramType switch
             {
-                TranspilerVarGroup varGroup => varGroup,
-                TranspilerVarGroupTemplate template => InstantiateTemplateFor(mappingName, paramDef, template),
-                SpirvType realType when storageClass != null => MapGlobalVariable(realType),
+                VarGroup varGroup => varGroup,
+                VarGroupTemplate template => InstantiateTemplateFor(mappingName, paramDef, template),
+                SpirvType realType when storageClass != null => CreateGlobalVariable(realType, paramDef.Name, storageClass.Value, decorations),
                 SpirvType realType => MapSpirvParameter(realType),
+                MappedFromRefCILType byRef => byRef.ElementType switch
+                {
+                    VarGroup varGroup => varGroup, // ignore by-ref for VarGroup(Template)
+                    VarGroupTemplate template => InstantiateTemplateFor(mappingName, paramDef, template),
+                    SpirvType realType when storageClass.HasValue => new GlobalVariableReference(CreateGlobalVariable(realType, paramDef.Name, storageClass.Value, decorations)),
+                    _ => throw new NotSupportedException("Unsupported by-reference parameter type")
+                },
                 _ => throw new NotSupportedException("Unsupported parameter type")
             };
             mappedParameters[mappingName] = mapped;
             return mapped;
 
-            IMappedFromCILParam MapGlobalVariable(SpirvType realType)
+            Parameter MapSpirvParameter(SpirvType realType)
             {
-                var variable = new TranspilerVariable(paramDef.Name, new SpirvPointerType()
-                {
-                    Type = realType,
-                    StorageClass = storageClass.Value,
-                })
-                {
-                    Decorations = decorations
-                };
-                module.GlobalVariables.Add(variable);
-                return variable;
-            }
-
-            TranspilerParameter MapSpirvParameter(SpirvType realType)
-            {
-                if (function is TranspilerEntryFunction)
+                if (function is EntryFunction)
                     throw new InvalidOperationException("Entry point parameters require a storage class");
-                var parameter = new TranspilerParameter(function.Parameters.Count, paramDef.Name, realType)
+                var parameter = new Parameter(function.Parameters.Count, paramDef.Name, realType)
                 {
-                    Decorations = decorations
+                    Decorations = decorations.ToHashSet()
                 };
                 function.Parameters.Add(parameter);
                 return parameter;
             }
         }
 
-        public TranspilerFunction? TryMapInternalMethod(MethodDefinition ilMethod, bool isEntryPoint)
-        {
-            var returnType = MapType(ilMethod.ReturnType);
-            if (isEntryPoint)
-            {
-                if (!ilMethod.HasBody)
-                    throw new InvalidOperationException("An entry point method has to have a body");
-                if (returnType is not SpirvVoidType && returnType is not TranspilerVarGroup)
-                    throw new InvalidOperationException("An entry point can only return void or a variable group");
-            }
-            else
-            {
-                if (returnType is not SpirvType)
-                    throw new InvalidOperationException("A function can only return SPIRV types");
-            }
+        private bool IsBlockStructure(SpirvType type) =>
+            type is SpirvStructType && type.Decorations.Any(d => d.Kind == Decoration.Block);
 
-            var function =
-                isEntryPoint ? new TranspilerEntryFunction(ilMethod.Name, ExtractExecutionModel(ilMethod))
-                : ilMethod.HasBody ? new TranspilerDefinedFunction(ilMethod.Name, (SpirvType)returnType)
-                : new TranspilerFunction(ilMethod.Name, (SpirvType)returnType);
+        private GlobalVariable CreateGlobalVariable(SpirvType realType, string name, StorageClass storageClass, IEnumerable<DecorationEntry>? decorations = null)
+        {
+            decorations ??= Enumerable.Empty<DecorationEntry>();
+
+            if (Options.ImplicitUniformBlockStructures && storageClass == StorageClass.Uniform && !IsBlockStructure(realType))
+                return CreateImplicitBlockVariable(realType, name, decorations, byRef: false);
+
+            var variable = new GlobalVariable(name, MakePointer(realType))
+            {
+                Decorations = decorations.ToHashSet()
+            };
+            module.GlobalVariables.Add(variable);
+            return variable;
+
+            SpirvPointerType MakePointer(SpirvType elementType) => new SpirvPointerType()
+            {
+                Type = elementType,
+                StorageClass = storageClass
+            };
+        }
+
+        private ImplicitBlockVariable CreateImplicitBlockVariable(SpirvType realType, string name, IEnumerable<DecorationEntry> decorations, bool byRef)
+        {
+            var implicitStruct = new SpirvStructType()
+            {
+                Members = new[]
+                {
+                    new SpirvMember(0, name, realType, new[] { Decorations.Offset(0) }.ToHashSet())
+                }.ToImmutableArray(),
+                Decorations = new[]
+                {
+                    Decorations.Block()
+                }.ToHashSet()
+            };
+            var variable = new ImplicitBlockVariable(name, implicitStruct, realType, decorations, byRef);
+            module.GlobalVariables.Add(variable);
+            return variable;
+        }
+
+        private (SpirvType, IValueBehaviour?) MapReturnValue(MethodDefinition ilMethod, bool isEntryPoint)
+        {
+            var mappedType = MapType(ilMethod.ReturnType);
+            var storageClass = TryScanStorageClass(ilMethod.MethodReturnType);
+            var decorations = ScanDecorations(ilMethod.MethodReturnType);
+            var isActualValue = mappedType is SpirvType && storageClass == null;
+
+            var returnType = isActualValue ? mappedType as SpirvType : new SpirvVoidType();
+            if (isEntryPoint && isActualValue && mappedType is not SpirvVoidType)
+                throw new InvalidOperationException("Entry-point functions can only return global variables or variable groups");
+            if (!isEntryPoint && !isActualValue)
+                throw new InvalidOperationException("Non-entry point functions can only return SPIRV values");
+
+            IValueBehaviour? behaviour = mappedType switch
+            {
+                SpirvVoidType => null,
+                VarGroup => null,
+                VarGroupTemplate => null,
+                SpirvType realType when storageClass != null => new VariableReturn(CreateGlobalVariable(realType, "#return", storageClass.Value, decorations)),
+                SpirvType realType => new ValueReturn(realType),
+                MappedFromRefCILType => throw new NotSupportedException("By-ref return types are not supported"),
+                _ => throw new NotSupportedException("Unsupported return type")
+            };
+
+            if (behaviour is not VariableReturn && decorations.Any())
+                throw new NotSupportedException("Unsupported return value decorations on non-variable");
+
+            return (returnType!, behaviour);
+        }
+
+        public Function? TryMapInternalMethod(MethodDefinition ilMethod, bool isEntryPoint)
+        {
+            var mappingName = ilMethod.FullName;
+            if (mappedFunctions.TryGetValue(mappingName, out var mapped))
+                return mapped;
+
+            var (returnType, returnValue) = MapReturnValue(ilMethod, isEntryPoint);
+
+            var function = 0 switch
+            {
+                _ when isEntryPoint && ilMethod.HasBody => new EntryFunction(ilMethod.Name, ExtractExecutionModel(ilMethod)),
+                _ when isEntryPoint && !ilMethod.HasBody => throw new InvalidOperationException("An entry point method has to have a body"),
+                _ when !isEntryPoint && ilMethod.HasBody => new DefinedFunction(ilMethod.Name, returnType),
+                _ when !isEntryPoint && !ilMethod.HasBody => new Function(ilMethod.Name, returnType),
+                _ => throw new NotImplementedException("Unexpected branch")
+            };
+            function.ReturnValue = returnValue;
 
             if (ilMethod.HasThis && ilMethod.DeclaringType.FullName != ilModuleType.FullName)
                 throw new NotSupportedException("Real instance methods are not supported yet");
@@ -279,8 +329,9 @@ namespace cilspirv.Transpiler
             foreach (var parameter in ilMethod.Parameters)
                 MapParameter(parameter, function);
 
+            mappedFunctions.Add(mappingName, function);
             module.Functions.Add(function);
-            if (function is TranspilerDefinedFunction definedFunction)
+            if (function is DefinedFunction definedFunction)
                 queueMethodBody(definedFunction, ilMethod.Body);
             return function;
         }

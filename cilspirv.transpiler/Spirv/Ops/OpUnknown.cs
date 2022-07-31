@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 
 namespace cilspirv.Spirv.Ops
@@ -28,6 +29,16 @@ namespace cilspirv.Spirv.Ops
                 throw new ArgumentException("Output span too small", nameof(codes));
             codes[0] = InstructionCode;
             Args.AsSpan().CopyTo(codes.Slice(1));
+        }
+
+        public override void Disassemble(TextWriter writer)
+        {
+            base.Disassemble(writer);
+            foreach (var arg in Args)
+            {
+                writer.Write(' ');
+                writer.Write(arg.ToString("X8"));
+            }
         }
     }
 }

@@ -53,5 +53,21 @@ namespace cilspirv
             }
             return -1;
         }
+
+        public static IEnumerable<IEnumerable<T>> SegmentsByLast<T>(this IEnumerable<T> set, Predicate<T> isLast)
+        {
+            int start = 0, i = 0;
+            foreach (var elem in set)
+            {
+                if (isLast(elem))
+                {
+                    yield return set.Skip(start).Take(i - start + 1);
+                    start = i + 1;
+                }
+                i++;
+            }
+            if (i > start)
+                yield return set.Skip(start);
+        }
     }
 }

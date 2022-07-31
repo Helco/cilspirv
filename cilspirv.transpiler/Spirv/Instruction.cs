@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using cilspirv.Spirv.Ops;
@@ -117,6 +118,59 @@ namespace cilspirv.Spirv
             var result = codes.Skip(i).Take(end - i).Select(n => (LiteralNumber)n).ToImmutableArray();
             i = end;
             return result;
+        }
+
+        public virtual void Disassemble(TextWriter writer)
+        {
+            if (ResultID.HasValue)
+            {
+                writer.Write(ResultID);
+                writer.Write(" = ");
+            }
+            writer.Write(OpCode);
+        }
+
+        protected void DisassembleExtras(TextWriter writer)
+        {
+            foreach (var operand in ExtraOperands)
+            {
+                writer.Write(' ');
+                writer.Write(operand);
+            }
+        }
+
+        protected void DisassembleExtraNumbers(TextWriter writer)
+        {
+            foreach (var operand in ExtraOperands.SelectMany(o => o.ToWords()))
+            {
+                writer.Write(' ');
+                writer.Write(operand);
+            }
+        }
+
+        protected void DisassembleExtraIDs(TextWriter writer)
+        {
+            var extraIds = ExtraOperands
+                .SelectMany(o => o.ToWords())
+                .Select(r => new ID(r));
+            foreach (var operand in extraIds)
+            {
+                writer.Write(' ');
+                writer.Write(operand);
+            }
+        }
+
+        protected void DisassembleExtraStrings(TextWriter writer)
+        {
+            var extraStrings = ExtraOperands
+                .SelectMany(o => o.ToWords())
+                .SegmentsByLast(w => w < 0xff_ff_ff)
+                .Select(words => new LiteralString(words.ToArray()));
+            foreach (var operand in extraStrings)
+            {
+                writer.Write(' ');
+                writer.Write(operand);
+            }
         }
     }
 }

@@ -1,0 +1,38 @@
+﻿SPIRV 1.3
+Generator 002A 1.0
+OpCapability Shader
+OpCapability Linkage
+OpMemoryModel Logical Simple
+OpEntryPoint Fragment #3 "Frag" #8 #7
+OpEntryPoint Vertex #5 "Vert" #8
+OpExecutionMode #3 OriginUpperLeft
+OpName #3 "Frag"
+OpName #5 "Vert"
+OpName #7 "#return"
+OpName #8 "System.Int32 cilspirv.transpiler.test.Values.Modules.TemplateStructs/Simple::m"
+OpName #9 "System.Int32 cilspirv.transpiler.test.Values.Modules.TemplateStructs/Simple::m"
+OpName #12 "System.Int32"
+OpDecorate #8 Location
+OpDecorate #9 Location
+#12 = OpTypeInt 32 1
+#13 = OpTypeVoid
+#14 = OpTypeFunction #13
+#15 = OpTypePointer Output #12
+#16 = OpTypePointer Input #12
+#10 = OpConstant #12 00000002
+#11 = OpConstant #12 0000002A
+#7 = OpVariable #15 Output 
+#8 = OpVariable #16 Input 
+#9 = OpVariable #15 Output 
+#3 = OpFunction #13 None #14
+#4 = OpLabel
+#1 = OpLoad #12 #8 
+#2 = OpIMul #12 #1 #10
+OpStore #7 #2 
+OpReturn
+OpFunctionEnd
+#5 = OpFunction #13 None #14
+#6 = OpLabel
+OpStore #9 #11 
+OpReturn
+OpFunctionEnd

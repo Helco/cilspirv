@@ -37,9 +37,9 @@ namespace cilspirv.testcli
                 unit.ExtractModuleAttributes();
                 foreach (var entryPoint in entryPoints)
                 {
-                    unit.TranspileEntryPoint(entryPoint);
+                    unit.MarkEntryPoint(entryPoint);
                 }
-                unit.TranspileAllMethodBodies();
+                unit.TranspileBodies();
                 unit.WriteSpirvModule(new FileStream($"{moduleTypeDef.Name}.spv", FileMode.Create));
             }
         }

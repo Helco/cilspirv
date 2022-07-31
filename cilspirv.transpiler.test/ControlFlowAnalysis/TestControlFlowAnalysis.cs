@@ -9,7 +9,6 @@ using NUnit.Framework;
 
 namespace cilspirv.Transpiler.test
 {
-    [UseReporter(typeof(DiffReporter))]
     public class TestControlFlowAnalysis
     {
         [DoesNotReturn]

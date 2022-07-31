@@ -3,21 +3,21 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using cilspirv.Transpiler;
 using cilspirv.Spirv;
 using cilspirv.Library;
+using cilspirv.Transpiler.Declarations;
 
 namespace cilspirv.Transpiler
 {
     internal partial class Transpiler
     {
-        private readonly InstructionGenerator generatorContext = new InstructionGenerator();
-        private readonly Queue<(TranspilerDefinedFunction function, MethodBody ilBody)> missingBodies =
-            new Queue<(TranspilerDefinedFunction function, MethodBody ilBody)>();
+        private readonly Queue<(DefinedFunction function, MethodBody ilBody)> missingBodies =
+            new Queue<(DefinedFunction function, MethodBody ilBody)>();
         private TranspilerOptions options = new TranspilerOptions();
 
         public TypeDefinition ILModuleType { get; }
-        public TranspilerModule Module { get; } = new TranspilerModule();
+        public IDMapper IDMapper { get; } = new IDMapper();
+        public Module Module { get; } = new Module();
         public TranspilerLibrary Library { get; }
         public TranspilerOptions Options
         {
@@ -25,7 +25,8 @@ namespace cilspirv.Transpiler
             init
             {
                 options = value;
-                generatorContext.Options = value;
+                IDMapper.Options = value;
+                Library.Options = options;
             }
         }
 
@@ -37,16 +38,20 @@ namespace cilspirv.Transpiler
 
         public void WriteSpirvModule(System.IO.Stream stream, bool leaveOpen = false) => new SpirvModule()
         {
-            Instructions = Module.GenerateInstructions(generatorContext).ToArray(),
-            Bound = generatorContext.Bound,
+            Instructions = Module.GenerateInstructions(IDMapper).ToArray(),
+            Bound = IDMapper.Bound,
             SpirvVersion = new Version(1, 3)
-        }.Write(stream, leaveOpen, generatorContext.MapFromTemporaryID);
+        }.Write(stream, leaveOpen, IDMapper.MapFromTemporaryID);
 
-        public TranspilerFunction TranspileEntryPoint(MethodDefinition ilMethod) =>
+        public Function MarkEntryPoint(MethodDefinition ilMethod) =>
             Library.TryMapInternalMethod(ilMethod, isEntryPoint: true) ??
             throw new ArgumentException("Could not map entry point method");
 
-        public void TranspileAllMethodBodies()
+        public Function MarkNonEntryFunction(MethodDefinition ilMethod) =>
+            Library.TryMapInternalMethod(ilMethod, isEntryPoint: false) ??
+            throw new ArgumentException("Could not map function");
+
+        public void TranspileBodies()
         {
             while(missingBodies.Any())
             {
@@ -62,7 +67,7 @@ namespace cilspirv.Transpiler
             }
         }
 
-        private void TranspileVariables(TranspilerDefinedFunction definedFunction, MethodBody ilBody)
+        private void TranspileVariables(DefinedFunction definedFunction, MethodBody ilBody)
         {
             int nextVarName = 0;
             foreach (var ilVariable in ilBody.Variables)
@@ -70,7 +75,7 @@ namespace cilspirv.Transpiler
                 if (!ilBody.Method.DebugInformation.TryGetName(ilVariable, out var varName))
                     varName = $"v{nextVarName++}";
                 var type = Library.MapType(ilVariable.VariableType);
-                definedFunction.Variables.Add(new TranspilerVariable(varName, new SpirvPointerType()
+                definedFunction.Variables.Add(new Values.LocalVariable(varName, new SpirvPointerType()
                 {
                     Type = type as SpirvType ?? throw new InvalidOperationException("Local variables can only be SPIRV types"),
                     StorageClass = StorageClass.Function
