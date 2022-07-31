@@ -23,9 +23,12 @@ namespace cilspirv.transpiler.test
 
         protected void VerifyModule(params (string functionName, bool isEntryPoint)[] functions)
         {
+            var hasEntryPoint = functions.Any(f => f.isEntryPoint);
+
             var transpiler = new Transpiler.Transpiler(ThisModuleType);
             transpiler.Module.Capabilities.Add(Capability.Shader);
-            transpiler.Module.Capabilities.Add(Capability.Linkage); // there might be no entry point
+            if (!hasEntryPoint)
+                transpiler.Module.Capabilities.Add(Capability.Linkage);
             foreach (var (functionName, isEntryPoint) in functions)
             {
                 var method = ThisModuleType.Methods.First(m => m.Name == functionName);
@@ -49,6 +52,7 @@ namespace cilspirv.transpiler.test
                 StartInfo =
                 {
                     FileName = "spirv-val",
+                    Arguments = hasEntryPoint ? "--target-env vulkan1.2" : "",
                     RedirectStandardInput = true,
                     RedirectStandardError = true
                 }

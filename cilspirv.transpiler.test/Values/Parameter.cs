@@ -12,7 +12,7 @@ namespace cilspirv.transpiler.test.Values.Modules
         public int Real(int a) => a * 2;
         public void Ref(ref int a) => a = 45;
         public int Var([Input] int a) => a * 2;
-        [EntryPoint(ExecutionModel.Fragment)] public void RefVar([Output] ref int a) => a *= 2;
+        [EntryPoint(ExecutionModel.Fragment)] public void RefVar([Output, Location(0)] ref int a) => a *= 2;
 
         public struct ValueStruct
         {
