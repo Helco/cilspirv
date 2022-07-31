@@ -53,7 +53,7 @@ namespace cilspirv.Transpiler
             public IEnumerable<T> OfType<T>() where T : IInstructionGeneratable => gen.context.OfType<T>();
         }
 
-        private void LoadValueAddress(StackEntry? parent, ITranspilerValueBehaviour behaviour)
+        private void LoadValueAddress(StackEntry? parent, IValueBehaviour behaviour)
         {
             var context = parent == null
                 ? new ValueContext(this)
@@ -68,7 +68,7 @@ namespace cilspirv.Transpiler
             Stack.Add(resultValue);
         }
 
-        private void LoadValue(StackEntry? parent, ITranspilerValueBehaviour behaviour)
+        private void LoadValue(StackEntry? parent, IValueBehaviour behaviour)
         {
             var context = parent == null
                 ? new ValueContext(this)
@@ -94,7 +94,7 @@ namespace cilspirv.Transpiler
             Stack.Add(new ValueStackEntry(behaviour, resultId, pointerType.Type!));
         }
 
-        private void StoreValue(StackEntry? parent, ValueStackEntry value, ITranspilerValueBehaviour behaviour)
+        private void StoreValue(StackEntry? parent, ValueStackEntry value, IValueBehaviour behaviour)
         {
             var context = parent == null
                 ? new ValueContext(this)
@@ -185,35 +185,24 @@ namespace cilspirv.Transpiler
 
         private void LoadIndirect()
         {
-            if (Pop() is not ValueStackEntry pointer)
-                throw new InvalidOperationException("LoadObject source is not a value");
-            if (pointer.Type is not SpirvPointerType pointerType)
-                throw new InvalidOperationException("LoadObject source is not a pointer value");
+            var pointer = Pop();
+            if (pointer.Tag is not IValueBehaviour valueBehaviour)
+                throw new InvalidOperationException("Cannot load non-values indirect");
 
-            var resultId = context.CreateID();
-            Add(new OpLoad()
-            {
-                Result = resultId,
-                ResultType = context.IDOf(pointerType.Type!),
-                Pointer = pointer.ID
-            });
-            Stack.Add(new ValueStackEntry(resultId, pointerType.Type!));
+            var context = new ValueContext(this, pointer);
+            Block.Instructions.AddRange(valueBehaviour.LoadIndirect(context));
+            Stack.Add(context.Result);
         }
 
         private void StoreIndirect()
         {
-            if (Pop() is not ValueStackEntry value)
-                throw new InvalidOperationException("StoreObject source is not a value");
-            if (Pop() is not ValueStackEntry dest)
-                throw new InvalidOperationException("StoreObject destination is not a value");
-            if (dest.Type is not SpirvPointerType)
-                throw new InvalidOperationException("StoreObject destination is not a pointer value");
+            var value = Pop();
+            var dest = Pop();
+            if (dest.Tag is not IValueBehaviour valueBehaviour)
+                throw new InvalidOperationException("Cannot store to non-values indirect");
 
-            Add(new OpStore()
-            {
-                Pointer = dest.ID,
-                Object = value.ID
-            });
+            var context = new ValueContext(this, dest);
+            Block.Instructions.AddRange(valueBehaviour.StoreIndirect(context, value));
         }
     }
 }

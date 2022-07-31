@@ -36,21 +36,11 @@ namespace cilspirv.Transpiler
         StackEntry Result { set; }
     }
 
-    internal interface ITranspilerValueBehaviour
-    {
-        // if Load/Store returns null, a standard OpLoad/OpStore is attempted using LoadAddress
-        // if LoadAddress is not defined, ldflda is not supported
-
-        IEnumerable<SpirvInstruction>? LoadAddress(ITranspilerValueContext context) { return null; }
-        IEnumerable<SpirvInstruction>? Load(ITranspilerValueContext context) { return null; }
-        IEnumerable<SpirvInstruction>? Store(ITranspilerValueContext context, ValueStackEntry value) { return null; }
-    }
-
     internal interface ITranspilerLibraryMapper
     {
         GenerateCallDelegate? TryMapMethod(MethodReference methodRef) { return null; }
         IMappedFromCILType? TryMapType(TypeReference ilTypeRef) { return null; }
-        ITranspilerValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) { return null; }
+        IValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) { return null; }
     }
 
     internal interface IITranspilerLibraryScanner
@@ -70,8 +60,8 @@ namespace cilspirv.Transpiler
         private readonly Action<DefinedFunction, MethodBody> queueMethodBody;
         private readonly Dictionary<string, GenerateCallDelegate> mappedMethods = new Dictionary<string, GenerateCallDelegate>();
         private readonly Dictionary<string, IMappedFromCILType> mappedTypes = new Dictionary<string, IMappedFromCILType>();
-        private readonly Dictionary<string, ITranspilerValueBehaviour> mappedFields = new Dictionary<string, ITranspilerValueBehaviour>();
-        private readonly Dictionary<string, ITranspilerValueBehaviour> mappedParameters = new Dictionary<string, ITranspilerValueBehaviour>();
+        private readonly Dictionary<string, IValueBehaviour> mappedFields = new Dictionary<string, IValueBehaviour>();
+        private readonly Dictionary<string, IValueBehaviour> mappedParameters = new Dictionary<string, IValueBehaviour>();
         private readonly Dictionary<string, Function> mappedFunctions = new Dictionary<string, Function>();
         private readonly StructMapper structMapper;
         private readonly ReferenceMapper referenceMapper;
@@ -141,7 +131,7 @@ namespace cilspirv.Transpiler
         public IMappedFromCILType MapType(TypeReference ilTypeRef) => TryMapType(ilTypeRef)
             ?? throw new ArgumentException($"Cannot map type {ilTypeRef.FullName}");
 
-        public ITranspilerValueBehaviour MapField(FieldReference fieldRef)
+        public IValueBehaviour MapField(FieldReference fieldRef)
         {
             if (mappedFields.TryGetValue(fieldRef.FullName, out var mapped))
                 return mapped;
@@ -183,7 +173,7 @@ namespace cilspirv.Transpiler
             return structMapper.MapVarGroup($"{elementName}#VarGroup", template.TypeDefinition, storageClass);
         }
 
-        private ITranspilerValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) => AllMappers
+        private IValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) => AllMappers
              .Select(mapper => mapper.TryMapFieldBehavior(fieldRef))
              .FirstOrDefault(b => b != null);
 
@@ -196,7 +186,7 @@ namespace cilspirv.Transpiler
             .Select(scanner => scanner.TryScanStorageClass(element))
             .FirstOrDefault(c => c.HasValue);
 
-        public ITranspilerValueBehaviour MapParameter(ParameterDefinition paramDef, Function function)
+        public IValueBehaviour MapParameter(ParameterDefinition paramDef, Function function)
         {
             var mappingName = $"{function.Name}#{paramDef.Name}";
             if (mappedParameters.TryGetValue(mappingName, out var mapped))
@@ -216,7 +206,7 @@ namespace cilspirv.Transpiler
                 {
                     VarGroup varGroup => varGroup, // ignore by-ref for VarGroup(Template)
                     TranspilerVarGroupTemplate template => InstantiateTemplateFor(mappingName, paramDef, template),
-                    SpirvType realType when storageClass.HasValue => CreateGlobalVariable(realType, paramDef.Name, storageClass.Value, decorations, byRef: true),
+                    SpirvType realType when storageClass.HasValue => new GlobalVariableReference(CreateGlobalVariable(realType, paramDef.Name, storageClass.Value, decorations)),
                     _ => throw new NotSupportedException("Unsupported by-reference parameter type")
                 },
                 _ => throw new NotSupportedException("Unsupported parameter type")
@@ -240,15 +230,13 @@ namespace cilspirv.Transpiler
         private bool IsBlockStructure(SpirvType type) =>
             type is SpirvStructType && type.Decorations.Any(d => d.Kind == Decoration.Block);
 
-        private Variable CreateGlobalVariable(SpirvType realType, string name, StorageClass storageClass, IEnumerable<DecorationEntry>? decorations = null, bool byRef = false)
+        private GlobalVariable CreateGlobalVariable(SpirvType realType, string name, StorageClass storageClass, IEnumerable<DecorationEntry>? decorations = null)
         {
             decorations ??= Enumerable.Empty<DecorationEntry>();
 
             if (Options.ImplicitUniformBlockStructures && storageClass == StorageClass.Uniform && !IsBlockStructure(realType))
-                return CreateImplicitBlockVariable(realType, name, decorations, byRef);
+                return CreateImplicitBlockVariable(realType, name, decorations, byRef: false);
 
-            if (byRef) // the variable will be a double pointer
-                realType = MakePointer(realType);
             var variable = new GlobalVariable(name, MakePointer(realType))
             {
                 Decorations = decorations.ToHashSet()
@@ -281,7 +269,7 @@ namespace cilspirv.Transpiler
             return variable;
         }
 
-        private (SpirvType, ITranspilerValueBehaviour?) MapReturnValue(MethodDefinition ilMethod, bool isEntryPoint)
+        private (SpirvType, IValueBehaviour?) MapReturnValue(MethodDefinition ilMethod, bool isEntryPoint)
         {
             var mappedType = MapType(ilMethod.ReturnType);
             var storageClass = TryScanStorageClass(ilMethod.MethodReturnType);
@@ -293,7 +281,7 @@ namespace cilspirv.Transpiler
             if (!isEntryPoint && !isActualValue)
                 throw new InvalidOperationException("Non-entry point functions can only return SPIRV values");
 
-            ITranspilerValueBehaviour? behaviour = mappedType switch
+            IValueBehaviour? behaviour = mappedType switch
             {
                 SpirvVoidType => null,
                 VarGroup => null,

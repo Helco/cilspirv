@@ -14,7 +14,7 @@ namespace cilspirv.Transpiler.Values
         }
     }
 
-    internal class GlobalVariable : Variable
+    internal class GlobalVariable : Variable, IValueBehaviour
     {
         public GlobalVariable(string name, SpirvPointerType pointerType) : base(name, pointerType)
         {
@@ -24,7 +24,7 @@ namespace cilspirv.Transpiler.Values
     internal abstract class Variable :
         IDecoratableInstructionGeneratable,
         IDebugInstructionGeneratable,
-        ITranspilerValueBehaviour
+        IValueBehaviour
     {
         public string Name { get; }
         public SpirvPointerType PointerType { get; }
@@ -63,7 +63,7 @@ namespace cilspirv.Transpiler.Values
                 entryFunction.Interface.Add(this);
         }
 
-        IEnumerable<Instruction> ITranspilerValueBehaviour.Load(ITranspilerValueContext context)
+        IEnumerable<Instruction> IValueBehaviour.Load(ITranspilerValueContext context)
         {
             MarkUsageIn(context.Function);
             var result = new ValueStackEntry(this, context.CreateID(), ElementType);
@@ -76,14 +76,14 @@ namespace cilspirv.Transpiler.Values
             };
         }
 
-        IEnumerable<Instruction> ITranspilerValueBehaviour.LoadAddress(ITranspilerValueContext context)
+        IEnumerable<Instruction> IValueBehaviour.LoadAddress(ITranspilerValueContext context)
         {
             MarkUsageIn(context.Function);
             context.Result = new ValueStackEntry(this, context.IDOf(this), PointerType);
             return Enumerable.Empty<Instruction>();
         }
 
-        IEnumerable<Instruction> ITranspilerValueBehaviour.Store(ITranspilerValueContext context, ValueStackEntry value)
+        IEnumerable<Instruction> IValueBehaviour.Store(ITranspilerValueContext context, ValueStackEntry value)
         {
             MarkUsageIn(context.Function);
             yield return new OpStore()
