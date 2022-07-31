@@ -279,6 +279,7 @@ namespace cilspirv.Transpiler
         {
             var mappedType = MapType(ilMethod.ReturnType);
             var storageClass = TryScanStorageClass(ilMethod.MethodReturnType);
+            var decorations = ScanDecorations(ilMethod.MethodReturnType);
             var isActualValue = mappedType is SpirvType && storageClass == null;
 
             var returnType = isActualValue ? mappedType as SpirvType : new SpirvVoidType();
@@ -292,11 +293,14 @@ namespace cilspirv.Transpiler
                 SpirvVoidType => null,
                 VarGroup => null,
                 VarGroupTemplate => null,
-                SpirvType realType when storageClass != null => new VariableReturn(CreateGlobalVariable(realType, "#return", storageClass.Value)),
+                SpirvType realType when storageClass != null => new VariableReturn(CreateGlobalVariable(realType, "#return", storageClass.Value, decorations)),
                 SpirvType realType => new ValueReturn(realType),
                 MappedFromRefCILType => throw new NotSupportedException("By-ref return types are not supported"),
                 _ => throw new NotSupportedException("Unsupported return type")
             };
+
+            if (behaviour is not VariableReturn && decorations.Any())
+                throw new NotSupportedException("Unsupported return value decorations on non-variable");
 
             return (returnType!, behaviour);
         }
