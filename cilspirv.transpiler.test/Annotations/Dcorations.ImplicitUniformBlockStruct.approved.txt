@@ -1,0 +1,29 @@
+﻿SPIRV 1.3
+Generator 002A 1.0
+OpCapability Shader
+OpMemoryModel Logical Simple
+OpEntryPoint Vertex #1 "ImplicitUniformBlockStruct"
+OpName #1 "ImplicitUniformBlockStruct"
+OpName #3 "u#Block"
+OpName #5 "System.Int32"
+OpName #7 "Uniforms"
+OpMemberName #7 0 "a"
+OpName #8 "{{UInt32}}"
+OpMemberName #8 0 "u"
+OpDecorate #3 Binding 5
+OpDecorate #3 DescriptorSet 0
+OpMemberDecorate #7 0 Offset 0
+OpDecorate #8 Block
+OpMemberDecorate #8 0 Offset 0
+#4 = OpTypeVoid
+#5 = OpTypeInt 32 1
+#6 = OpTypeFunction #4
+#7 = OpTypeStruct #5
+#8 = OpTypeStruct #7
+#9 = OpTypePointer Uniform #8
+#3 = OpVariable #9 Uniform 
+#1 = OpFunction #4 None #6
+#2 = OpLabel
+OpNop
+OpReturn
+OpFunctionEnd
