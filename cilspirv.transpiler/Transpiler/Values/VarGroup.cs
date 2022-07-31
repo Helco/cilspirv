@@ -32,17 +32,14 @@ namespace cilspirv.Transpiler.Values
         IEnumerable<Instruction> IValueBehaviour.Store(ITranspilerValueContext context, ValueStackEntry value) =>
             throw new InvalidOperationException("Cannot store a variable group");
     }
-}
 
-namespace cilspirv.Transpiler
-{
     // a variable group with missing storage class
-    internal sealed record TranspilerVarGroupTemplate : IMappedFromCILType
+    internal sealed record VarGroupTemplate : IMappedFromCILType
     {
         public TypeDefinition TypeDefinition { get; }
         public string Name => TypeDefinition.Name;
 
-        public TranspilerVarGroupTemplate(TypeDefinition typeDef) =>
+        public VarGroupTemplate(TypeDefinition typeDef) =>
             TypeDefinition = typeDef;
     }
 }

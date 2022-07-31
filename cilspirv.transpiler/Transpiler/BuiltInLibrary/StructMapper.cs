@@ -62,7 +62,7 @@ namespace cilspirv.Transpiler.BuiltInLibrary
 
             IMappedFromCILType structure =
                 fieldsHaveStorageClass ? MapVarGroup(ilTypeDef.Name, ilTypeDef, structStorageClass)
-                : fieldsHaveGlobalDecorations ? new TranspilerVarGroupTemplate(ilTypeDef)
+                : fieldsHaveGlobalDecorations ? new VarGroupTemplate(ilTypeDef)
                 : MapStructure();
 
             structures.Add(ilTypeDef.FullName, structure);
