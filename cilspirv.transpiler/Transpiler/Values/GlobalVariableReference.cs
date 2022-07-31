@@ -20,6 +20,7 @@ namespace cilspirv.Transpiler.Values
 
         IEnumerable<Instruction>? IValueBehaviour.Load(ITranspilerValueContext context)
         {
+            variable.MarkUsageIn(context.Function);
             context.Result = new ValueStackEntry(variable, context.IDOf(variable), variable.PointerType);
             return Enumerable.Empty<Instruction>();
         }
