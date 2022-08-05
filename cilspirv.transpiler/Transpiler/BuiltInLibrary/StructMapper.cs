@@ -75,7 +75,7 @@ namespace cilspirv.Transpiler.BuiltInLibrary
                 Members = ilTypeDef.Fields.Select(MapStructureMember).ToImmutableArray()
             };
 
-            SpirvMember MapStructureMember(FieldDefinition fieldDef, int index) => new SpirvMember(
+            StructMember MapStructureMember(FieldDefinition fieldDef, int index) => new StructMember(
                 index,
                 fieldDef.Name,
                 library.MapType(fieldDef.FieldType) as SpirvType ??
