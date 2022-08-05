@@ -47,10 +47,11 @@ namespace cilspirv.Transpiler.BuiltInLibrary
 
             var structStorageClass = ScanStorageClass(ilTypeDef);
             var structureDecorations = ScanDecorations(ilTypeDef);
-            var fieldStorageClasses = ilTypeDef.Fields
+            var instanceFields = ilTypeDef.Fields.Where(f => !f.IsStatic);
+            var fieldStorageClasses = instanceFields
                 .Select(field => (field, ScanStorageClass(field)))
                 .ToDictionary(t => t.field, t => t.Item2);
-            var fieldDecorations = ilTypeDef.Fields
+            var fieldDecorations = instanceFields
                 .SelectMany(field => ScanDecorations(field).Select(decoration => (field, decoration)))
                 .ToLookup(t => t.field, t => t.decoration);
 
@@ -72,7 +73,7 @@ namespace cilspirv.Transpiler.BuiltInLibrary
             {
                 UserName = ilTypeDef.Name,
                 Decorations = structureDecorations.ToHashSet(),
-                Members = ilTypeDef.Fields.Select(MapStructureMember).ToImmutableArray()
+                Members = instanceFields.Select(MapStructureMember).ToImmutableArray()
             };
 
             StructMember MapStructureMember(FieldDefinition fieldDef, int index) => new StructMember(
@@ -85,10 +86,11 @@ namespace cilspirv.Transpiler.BuiltInLibrary
 
         internal VarGroup MapVarGroup(string name, TypeDefinition ilTypeDef, StorageClass? structStorageClass)
         {
-            var fieldStorageClasses = ilTypeDef.Fields
+            var instanceFields = ilTypeDef.Fields.Where(f => !f.IsStatic);
+            var fieldStorageClasses = instanceFields
                 .Select(field => (field, ScanStorageClass(field)))
                 .ToDictionary(t => t.field, t => t.Item2);
-            var fieldDecorations = ilTypeDef.Fields
+            var fieldDecorations = instanceFields
                 .SelectMany(field => ScanDecorations(field).Select(decoration => (field, decoration)))
                 .ToLookup(t => t.field, t => t.decoration);
 
@@ -98,7 +100,7 @@ namespace cilspirv.Transpiler.BuiltInLibrary
                     string.Join(", ", missingStorageClassFields.Select(kv => kv.Key.Name)));
 
             var varGroup = new VarGroup(name, ilTypeDef);
-            foreach (var field in ilTypeDef.Fields)
+            foreach (var field in instanceFields)
             {
                 var fieldType = library.MapType(field.FieldType);
                 if (fieldType is VarGroup subVarGroup)
