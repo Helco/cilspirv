@@ -26,10 +26,10 @@ namespace test_shaders
         {
             public const int Size = (4 + 1 + 1 + 1) * sizeof(float);
 
-            public Vector4 tint;
-            public float vectorColorFactor;
-            public float tintFactor;
-            public float alphaReference;
+            [Offset(0)] public Vector4 tint;
+            [Offset(16)] public float vectorColorFactor;
+            [Offset(20)] public float tintFactor;
+            [Offset(24)] public float alphaReference;
         }
 
         private Vector4 WeighColor(Vector4 color, float factor) =>
