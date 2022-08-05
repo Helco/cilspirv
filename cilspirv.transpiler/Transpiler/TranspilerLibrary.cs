@@ -259,18 +259,7 @@ namespace cilspirv.Transpiler
 
         private ImplicitBlockVariable CreateImplicitBlockVariable(SpirvType realType, string name, IEnumerable<DecorationEntry> decorations, bool byRef)
         {
-            var implicitStruct = new SpirvStructType()
-            {
-                Members = new[]
-                {
-                    new SpirvMember(0, name, realType, new[] { Decorations.Offset(0) }.ToHashSet())
-                }.ToImmutableArray(),
-                Decorations = new[]
-                {
-                    Decorations.Block()
-                }.ToHashSet()
-            };
-            var variable = new ImplicitBlockVariable(name, implicitStruct, realType, decorations, byRef);
+            var variable = new ImplicitBlockVariable(name, realType, decorations, byRef);
             module.GlobalVariables.Add(variable);
             return variable;
         }

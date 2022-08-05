@@ -4,13 +4,13 @@ using System.Collections.Immutable;
 using System.Linq;
 using cilspirv.Spirv;
 using cilspirv.Spirv.Ops;
-using cilspirv.Transpiler.Declarations;
+using cilspirv.Transpiler.Values;
 
 namespace cilspirv.Transpiler
 {
     public record SpirvStructType : SpirvAggregateType, IDecoratableInstructionGeneratable
     {
-        public ImmutableArray<SpirvMember> Members { get; init; }
+        public ImmutableArray<StructMember> Members { get; init; }
 
         public override string ToString() => $"{{{string.Join(", ", Members.Select(m => m.Type))}}}";
 
@@ -57,92 +57,6 @@ namespace cilspirv.Transpiler
             });
             foreach (var instr in memberInstructions)
                 yield return instr;
-        }
-    }
-
-    public record SpirvMember :
-        IDecoratable,
-        IValueBehaviour
-    {
-        public int Index { get; }
-        public string Name { get; }
-        public SpirvType Type { get; }
-        public IReadOnlySet<DecorationEntry> Decorations { get; }
-
-        public SpirvMember(int index, string name, SpirvType type, IReadOnlySet<DecorationEntry>? decorations)
-        {
-            Index = index;
-            Name = name;
-            Type = type;
-            Decorations = decorations ?? new HashSet<DecorationEntry>();
-        }
-
-        public virtual bool Equals(SpirvMember? other) =>
-            other != null &&
-            EqualityContract == other.EqualityContract &&
-            Index == other.Index &&
-            Name == other.Name &&
-            Type == other.Type &&
-            Decorations.SetEquals(other.Decorations);
-
-        public override int GetHashCode() => Decorations.Aggregate(
-            HashCode.Combine(EqualityContract, Index, Name, Type),
-            HashCode.Combine);
-
-        internal IEnumerable<Instruction> GenerateDecorations(IIDMapper context, ID structID, int memberI)
-        {
-            foreach (var entry in Decorations)
-            {
-                var stringOperands = entry.ExtraOperands.Where(o => o.Kind == ExtraOperandKind.String).ToImmutableArray();
-                var idOperands = entry.ExtraOperands.Where(o => o.Kind == ExtraOperandKind.ID).ToImmutableArray();
-                var numericOperands = entry.ExtraOperands.Except(stringOperands.Concat(idOperands)).ToImmutableArray();
-                if (idOperands.Any())
-                    throw new InvalidOperationException("Cannot use ID operands for struct member decorations");
-
-                yield return new OpMemberDecorate()
-                {
-                    StructureType = structID,
-                    Member = memberI,
-                    Decoration = entry.Kind,
-                    ExtraOperands = numericOperands
-                };
-
-                if (stringOperands.Any())
-                {
-                    yield return new OpMemberDecorateString()
-                    {
-                        StructType = structID,
-                        Member = memberI,
-                        Decoration = entry.Kind,
-                        ExtraOperands = stringOperands
-                    };
-                }
-            }
-        }
-
-        IEnumerable<Instruction> IValueBehaviour.LoadAddress(ITranspilerValueContext context)
-        {
-            if (context.Parent is not ValueStackEntry parentValue)
-                throw new InvalidOperationException("Struct member parent is not a value");
-            if (parentValue.Type is not SpirvPointerType parentPointerType)
-                throw new InvalidOperationException("Struct member parent is not a pointer");
-
-            var resultType = new SpirvPointerType()
-            {
-                Type = Type,
-                StorageClass = parentPointerType.StorageClass
-            };
-            var result = new ValueStackEntry(this, context.CreateID(), resultType);
-            context.Result = result;
-            yield return new OpAccessChain()
-            {
-                Result = result.ID,
-                ResultType = context.IDOf(resultType),
-                Base = parentValue.ID,
-                Indexes = ImmutableArray.Create(
-                    context.IDOf(
-                        new NumericConstant(Index)))
-            };
         }
     }
 }

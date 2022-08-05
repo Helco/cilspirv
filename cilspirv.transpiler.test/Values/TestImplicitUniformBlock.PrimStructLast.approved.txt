@@ -1,0 +1,43 @@
+﻿SPIRV 1.3
+Generator 002A 1.0
+OpCapability Shader
+OpMemoryModel Logical Simple
+OpEntryPoint Fragment #4 "PrimStructLast" #6
+OpExecutionMode #4 OriginUpperLeft
+OpName #4 "PrimStructLast"
+OpName #6 "#return"
+OpName #7 "s#Block"
+OpName #9 "System.Int32"
+OpName #11 "PrimitiveStruct"
+OpMemberName #11 0 "a"
+OpMemberName #11 1 "b"
+OpMemberName #11 2 "c"
+OpName #15 "{{UInt32, UInt32, UInt32}}"
+OpMemberName #15 0 "s"
+OpDecorate #6 Location 0
+OpDecorate #7 Binding 0
+OpDecorate #7 DescriptorSet 0
+OpMemberDecorate #11 0 Offset 0
+OpMemberDecorate #11 1 Offset 4
+OpMemberDecorate #11 2 Offset 8
+OpDecorate #15 Block
+OpMemberDecorate #15 0 Offset 0
+#9 = OpTypeInt 32 1
+#10 = OpTypeVoid
+#11 = OpTypeStruct #9 #9 #9
+#12 = OpTypeFunction #10
+#13 = OpTypePointer Output #9
+#14 = OpTypePointer Uniform #11
+#15 = OpTypeStruct #11
+#16 = OpTypePointer Uniform #15
+#8 = OpConstant #9 00000000
+#6 = OpVariable #13 Output 
+#7 = OpVariable #16 Uniform 
+#4 = OpFunction #10 None #12
+#5 = OpLabel
+#1 = OpAccessChain #14 #7 #8
+#2 = OpLoad #11 #1 
+#3 = OpCompositeExtract #9 #2 2
+OpStore #6 #3 
+OpReturn
+OpFunctionEnd

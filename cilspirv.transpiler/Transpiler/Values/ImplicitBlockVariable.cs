@@ -13,11 +13,21 @@ namespace cilspirv.Transpiler.Values
         public SpirvType BlockType { get; }
         public SpirvPointerType BlockPointerType { get; }
 
-        public ImplicitBlockVariable(string actualName, SpirvType blockType, SpirvType actualType, IEnumerable<DecorationEntry> decorations, bool byRef)
+        public ImplicitBlockVariable(string actualName, SpirvType actualType, IEnumerable<DecorationEntry> decorations, bool byRef)
             : base(actualName, byRef ? MakePointerType(MakePointerType(actualType)) : MakePointerType(actualType))
         {
             BlockName = $"{actualName}#Block";
-            BlockType = blockType;
+            BlockType = new SpirvStructType()
+            {
+                Members = new[]
+                {
+                    new StructMember(0, actualName, actualType, new[] { Spirv.Decorations.Offset(0) }.ToHashSet())
+                }.ToImmutableArray(),
+                Decorations = new[]
+                {
+                    Spirv.Decorations.Block()
+                }.ToHashSet()
+            }; ;
             BlockPointerType = MakePointerType(BlockType);
             Decorations = decorations.ToHashSet();
         }
@@ -48,6 +58,9 @@ namespace cilspirv.Transpiler.Values
                     Name = BlockName
                 };
         }
+
+        IEnumerable<Instruction>? IValueBehaviour.Load(ITranspilerValueContext context) => null;
+        IEnumerable<Instruction>? IValueBehaviour.Store(ITranspilerValueContext context, ValueStackEntry value) => null;
 
         IEnumerable<Instruction> IValueBehaviour.LoadAddress(ITranspilerValueContext context)
         {

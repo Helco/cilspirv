@@ -16,14 +16,8 @@ namespace cilspirv.Transpiler.Values
             this.variable = variable;
         }
 
-        // when accessed, pretend to be a direct variable
-
-        IEnumerable<Instruction>? IValueBehaviour.Load(ITranspilerValueContext context)
-        {
-            variable.MarkUsageIn(context.Function);
-            context.Result = new ValueStackEntry(variable, context.IDOf(variable), variable.PointerType);
-            return Enumerable.Empty<Instruction>();
-        }
+        IEnumerable<Instruction>? IValueBehaviour.Load(ITranspilerValueContext context) =>
+            ((IValueBehaviour)variable).LoadAddress(context);
 
         IEnumerable<Instruction>? IValueBehaviour.Store(ITranspilerValueContext context, ValueStackEntry value) =>
             throw new InvalidOperationException("Cannot modify a global variable reference");
