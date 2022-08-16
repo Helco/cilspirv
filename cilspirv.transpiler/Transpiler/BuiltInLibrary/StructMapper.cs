@@ -130,12 +130,12 @@ namespace cilspirv.Transpiler.BuiltInLibrary
             return varGroup;
         }
 
-        private IEnumerable<DecorationEntry> ScanDecorations(ICustomAttributeProvider fieldDef) => library.AllScanners
+        private IEnumerable<DecorationEntry> ScanDecorations(ICustomAttributeProvider fieldDef) => library.AllMappers
             .Select(scanner => scanner.TryScanDecorations(fieldDef))
             .FirstOrDefault(Enumerable.Any)
             ?? Enumerable.Empty<DecorationEntry>();
 
-        private StorageClass? ScanStorageClass(ICustomAttributeProvider fieldDef) => library.AllScanners
+        private StorageClass? ScanStorageClass(ICustomAttributeProvider fieldDef) => library.AllMappers
             .Select(scanner => scanner.TryScanStorageClass(fieldDef))
             .FirstOrDefault(s => s.HasValue);
     }

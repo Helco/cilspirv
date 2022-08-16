@@ -8,7 +8,7 @@ using cilspirv.Spirv;
 
 namespace cilspirv.Library
 {
-    internal class AttributeScanner : IITranspilerLibraryScanner
+    internal class AttributeScanner : ITranspilerLibraryMapper
     {
         public StorageClass? TryScanStorageClass(ICustomAttributeProvider element)
         {
