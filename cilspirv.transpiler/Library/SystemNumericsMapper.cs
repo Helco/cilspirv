@@ -54,9 +54,11 @@ namespace cilspirv.Library
             { typeof(Vector2), SpirvVector2 },
             { typeof(Vector3), SpirvVector3 },
             { typeof(Vector4), SpirvVector4 },
-            { typeof(Quaternion), SpirvQuaternion},
-            { typeof(Matrix3x2), SpirvMatrix3x2},
-            { typeof(Matrix4x4), SpirvMatrix4x4},
+            { typeof(Quaternion), SpirvQuaternion },
+            { typeof(Matrix3x2), SpirvMatrix3x2 },
+            { typeof(Matrix4x4), SpirvMatrix4x4 },
+            { typeof(Matrix3x2), Decorations.RowMajor(), Decorations.MatrixStride(sizeof(float) * 3) },
+            { typeof(Matrix4x4), Decorations.RowMajor(), Decorations.MatrixStride(sizeof(float) * 4) }
         };
 
         private readonly ExternalMethodMapper methodMapper = new ExternalMethodMapper()
@@ -123,10 +125,6 @@ namespace cilspirv.Library
             AddFieldsFor<Quaternion>();
         }
 
-        public IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => typeMapper.TryMapType(ilTypeRef);
-        public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => methodMapper.TryMapMethod(methodRef);
-        public IValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) => typeMapper.TryMapFieldBehavior(fieldRef);
-
         private void AddFieldsFor<T>()
         {
             for (int i = 0; i < 3; i++)
@@ -138,5 +136,10 @@ namespace cilspirv.Library
             if (typeof(T).GetField("W") != null)
                 typeMapper.Add<T, float>("W", new StandardFieldBehavior(SpirvFloat32, 3));
         }
+
+        public IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => typeMapper.TryMapType(ilTypeRef);
+        public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => methodMapper.TryMapMethod(methodRef);
+        public IValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) => typeMapper.TryMapFieldBehavior(fieldRef);
+        public IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider element) => typeMapper.TryScanDecorations(element);
     }
 }

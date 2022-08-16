@@ -59,5 +59,13 @@ namespace cilspirv
 
         private static string FullNameOfReturnType(MethodBase methodBase) =>
             (methodBase as MethodInfo)?.ReturnType?.FullName ?? typeof(void).FullName!;
+
+        public static TypeReference? GetRelatedType(this ICustomAttributeProvider provider) => (provider switch
+        {
+            FieldDefinition field => field.FieldType,
+            ParameterDefinition param => param.ParameterType,
+            MethodReturnType returnType => returnType.ReturnType,
+            _ => null
+        });
     }
 }
