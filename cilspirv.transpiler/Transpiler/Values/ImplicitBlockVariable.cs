@@ -16,20 +16,30 @@ namespace cilspirv.Transpiler.Values
         public ImplicitBlockVariable(string actualName, SpirvType actualType, IEnumerable<DecorationEntry> decorations, bool byRef)
             : base(actualName, byRef ? MakePointerType(MakePointerType(actualType)) : MakePointerType(actualType))
         {
+            var memberDecorations = decorations
+                .Where(d => d.Kind.GetTargetKinds().HasFlag(DecorationTargetKinds.Member))
+                .Append(Spirv.Decorations.Offset(0))
+                .ToHashSet();
+            var typeDecorations = decorations
+                .Where(d => d.Kind.GetTargetKinds().HasFlag(DecorationTargetKinds.Structure))
+                .Append(Spirv.Decorations.Block())
+                .ToHashSet();
+            var variableDecorations = decorations
+                .Except(memberDecorations)
+                .Except(typeDecorations)
+                .ToHashSet();
+
             BlockName = $"{actualName}#Block";
             BlockType = new SpirvStructType()
             {
                 Members = new[]
                 {
-                    new StructMember(0, actualName, actualType, new[] { Spirv.Decorations.Offset(0) }.ToHashSet())
+                    new StructMember(0, actualName, actualType, memberDecorations)
                 }.ToImmutableArray(),
-                Decorations = new[]
-                {
-                    Spirv.Decorations.Block()
-                }.ToHashSet()
+                Decorations = typeDecorations
             }; ;
             BlockPointerType = MakePointerType(BlockType);
-            Decorations = decorations.ToHashSet();
+            Decorations = variableDecorations;
         }
 
         private static SpirvPointerType MakePointerType(SpirvType baseType, IEnumerable<DecorationEntry>? decorations = null) => new SpirvPointerType()

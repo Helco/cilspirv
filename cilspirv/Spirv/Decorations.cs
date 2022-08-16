@@ -3,7 +3,7 @@ using System;
 
 namespace cilspirv.Spirv
 {
-    public static class Decorations
+    public static partial class Decorations
     {
         public static DecorationEntry RelaxedPrecision() => new DecorationEntry(Decoration.RelaxedPrecision);
         public static DecorationEntry SpecId(uint specID) => new DecorationEntry(Decoration.SpecId, specID);

@@ -27,8 +27,8 @@ namespace test_shaders
         {
             public const int Size = sizeof(float) * (4 + 4 * 4);
 
-            public Vector4 actualColor;
-            public Matrix4x4 someMatrix;
+            [Offset(0)] public Vector4 actualColor;
+            [Offset(16)] public Matrix4x4 someMatrix;
         }
 
         [EntryPoint(ExecutionModel.Fragment)]

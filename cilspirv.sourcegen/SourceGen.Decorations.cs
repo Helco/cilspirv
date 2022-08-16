@@ -24,7 +24,7 @@ namespace cilspirv.SourceGen
             yield return "";
             yield return "namespace cilspirv.Spirv";
             yield return "{";
-            yield return "    public static class Decorations";
+            yield return "    public static partial class Decorations";
             yield return "    {";
         }
 

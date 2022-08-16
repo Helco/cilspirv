@@ -39,7 +39,7 @@ namespace cilspirv.Transpiler.Values
 
         internal IEnumerable<Instruction> GenerateDecorations(IIDMapper context, ID structID, int memberI)
         {
-            foreach (var entry in Decorations)
+            foreach (var entry in Decorations.OrderBy(e => (int)e.Kind).ThenBy(e => e.GetHashCode()))
             {
                 var stringOperands = entry.ExtraOperands.Where(o => o.Kind == ExtraOperandKind.String).ToImmutableArray();
                 var idOperands = entry.ExtraOperands.Where(o => o.Kind == ExtraOperandKind.ID).ToImmutableArray();

@@ -17,7 +17,8 @@ namespace cilspirv.transpiler.test.Annotations.Modules
         [Block]
         public struct UniformsBlock
         {
-            [Offset(0)] public int a;
+            [Offset(0)] public System.Numerics.Matrix4x4 m;
+            [Offset(64)] public int a;
         }
 
         [EntryPoint(ExecutionModel.Vertex)]
@@ -25,6 +26,12 @@ namespace cilspirv.transpiler.test.Annotations.Modules
 
         [EntryPoint(ExecutionModel.Vertex)]
         public void ImplicitUniformBlockStruct([Uniform, Binding(0, 5)] Uniforms u) { }
+
+        [EntryPoint(ExecutionModel.Vertex)]
+        public void ImplicitUniformMatrix([Uniform, Binding(0, 5)] System.Numerics.Matrix4x4 m) { }
+
+        [EntryPoint(ExecutionModel.Vertex)]
+        public void ImplicitUniformMatrixReference([Uniform, Binding(0, 5)] in System.Numerics.Matrix4x4 m) { }
     }
 }
 
@@ -45,5 +52,8 @@ namespace cilspirv.transpiler.test.Annotations
             {
                 ImplicitUniformBlockStructures = true
             });
+
+        [Test] public void ImplicitUniformMatrix() => VerifyEntryPoint(nameof(Modules.Decorations.ImplicitUniformMatrix));
+        [Test] public void ImplicitUniformMatrixReference() => VerifyEntryPoint(nameof(Modules.Decorations.ImplicitUniformMatrixReference));
     }
 }

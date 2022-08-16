@@ -1,0 +1,29 @@
+﻿SPIRV 1.3
+Generator 002A 1.0
+OpCapability Shader
+OpMemoryModel Logical Simple
+OpEntryPoint Vertex #1 "ImplicitUniformMatrixReference"
+OpName #1 "ImplicitUniformMatrixReference"
+OpName #3 "m#Block"
+OpName #8 "System.Numerics.Matrix4x4"
+OpName #9 "{Float32Matrix4x4}"
+OpMemberName #9 0 "m"
+OpDecorate #3 Binding 5
+OpDecorate #3 DescriptorSet 0
+OpDecorate #9 Block
+OpMemberDecorate #9 0 RowMajor
+OpMemberDecorate #9 0 MatrixStride 16
+OpMemberDecorate #9 0 Offset 0
+#4 = OpTypeVoid
+#5 = OpTypeFloat 32
+#6 = OpTypeFunction #4
+#7 = OpTypeVector #5 4
+#8 = OpTypeMatrix #7 4
+#9 = OpTypeStruct #8
+#10 = OpTypePointer Uniform #9
+#3 = OpVariable #10 Uniform 
+#1 = OpFunction #4 None #6
+#2 = OpLabel
+OpNop
+OpReturn
+OpFunctionEnd
