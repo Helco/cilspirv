@@ -38,15 +38,11 @@ namespace cilspirv.Transpiler
 
     internal interface ITranspilerLibraryMapper
     {
-        GenerateCallDelegate? TryMapMethod(MethodReference methodRef) { return null; }
-        IMappedFromCILType? TryMapType(TypeReference ilTypeRef) { return null; }
-        IValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) { return null; }
-    }
-
-    internal interface IITranspilerLibraryScanner
-    {
-        StorageClass? TryScanStorageClass(ICustomAttributeProvider fieldDef);
-        IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider fieldDef);
+        GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => null;
+        IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => null;
+        IValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) => null;
+        StorageClass? TryScanStorageClass(ICustomAttributeProvider fieldDef) => null;
+        IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider fieldDef) => Enumerable.Empty<DecorationEntry>();
     }
 
     internal delegate IEnumerable<SpirvInstruction> GenerateCallDelegate(ITranspilerMethodContext context);
@@ -73,15 +69,10 @@ namespace cilspirv.Transpiler
             .Append(structMapper)
             .Append(methodMapper)
             .Prepend(referenceMapper);
-        public IEnumerable<IITranspilerLibraryScanner> AllScanners => Scanners.Reverse();
 
         public IList<ITranspilerLibraryMapper> Mappers { get; } = new List<ITranspilerLibraryMapper>()
         {
-            new BuiltinTypeMapper()
-        };
-
-        public IList<IITranspilerLibraryScanner> Scanners { get; } = new List<IITranspilerLibraryScanner>()
-        {
+            new BuiltinTypeMapper(),
             new AttributeScanner()
         };
 
@@ -183,12 +174,12 @@ namespace cilspirv.Transpiler
              .Select(mapper => mapper.TryMapFieldBehavior(fieldRef))
              .FirstOrDefault(b => b != null);
 
-        private IEnumerable<DecorationEntry> ScanDecorations(ICustomAttributeProvider element) => AllScanners
+        private IEnumerable<DecorationEntry> ScanDecorations(ICustomAttributeProvider element) => AllMappers
             .Select(scanner => scanner.TryScanDecorations(element))
             .FirstOrDefault(c => c.Any())
             ?? Enumerable.Empty<DecorationEntry>();
 
-        private StorageClass? TryScanStorageClass(ICustomAttributeProvider element) => AllScanners
+        private StorageClass? TryScanStorageClass(ICustomAttributeProvider element) => AllMappers
             .Select(scanner => scanner.TryScanStorageClass(element))
             .FirstOrDefault(c => c.HasValue);
 
