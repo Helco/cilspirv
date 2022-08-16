@@ -132,7 +132,7 @@ namespace cilspirv.Transpiler.BuiltInLibrary
 
         private IEnumerable<DecorationEntry> ScanDecorations(ICustomAttributeProvider fieldDef) => library.AllMappers
             .Select(scanner => scanner.TryScanDecorations(fieldDef))
-            .FirstOrDefault(Enumerable.Any)
+            .SelectMany()
             ?? Enumerable.Empty<DecorationEntry>();
 
         private StorageClass? ScanStorageClass(ICustomAttributeProvider fieldDef) => library.AllMappers

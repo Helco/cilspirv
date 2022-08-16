@@ -13,6 +13,7 @@ namespace cilspirv.Library
         private readonly Dictionary<Type, SpirvType> mappedTypes = new Dictionary<Type, SpirvType>();
         private readonly Dictionary<string, SpirvType> typeByName = new Dictionary<string, SpirvType>();
         private readonly Dictionary<string, IValueBehaviour> fields = new Dictionary<string, IValueBehaviour>();
+        private readonly Dictionary<string, List<DecorationEntry>> typeDecorations = new Dictionary<string, List<DecorationEntry>>();
 
         public void Add(Type ilType, SpirvType spirvType)
         {
@@ -39,11 +40,30 @@ namespace cilspirv.Library
             ? fieldBehaviour
             : null;
 
+        public IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider provider)
+        {
+            var relatedType = provider.GetRelatedType();
+            if (relatedType?.IsByReference ?? false)
+                relatedType = relatedType.GetElementType();
+            return typeDecorations.TryGetValue(relatedType?.FullName ?? "", out var decorations)
+                ? decorations
+                : Enumerable.Empty<DecorationEntry>();
+        }
+
         public void Add<TParent, TField>(string fieldName, IValueBehaviour behavior) => Add(typeof(TParent), typeof(TField), fieldName, behavior);
         public void Add(Type ilParentType, Type ilFieldType, string fieldName, IValueBehaviour behavior)
         {
             var mappingName = $"{ilFieldType.FullName} {ilParentType.FullName}::{fieldName}";
             fields.Add(mappingName, behavior);
+        }
+
+        public void Add<TType>(params DecorationEntry[] decorations) => Add(typeof(TType), decorations);
+        public void Add(Type type, params DecorationEntry[] decorations)
+        {
+            if (!typeDecorations.TryGetValue(type.FullName!, out var decorationList))
+                typeDecorations.Add(type.FullName!, decorationList = new List<DecorationEntry>());
+
+            decorationList.AddRange(decorations);
         }
     }
 }

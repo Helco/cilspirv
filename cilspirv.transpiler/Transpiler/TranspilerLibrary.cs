@@ -176,7 +176,7 @@ namespace cilspirv.Transpiler
 
         private IEnumerable<DecorationEntry> ScanDecorations(ICustomAttributeProvider element) => AllMappers
             .Select(scanner => scanner.TryScanDecorations(element))
-            .FirstOrDefault(c => c.Any())
+            .SelectMany()
             ?? Enumerable.Empty<DecorationEntry>();
 
         private StorageClass? TryScanStorageClass(ICustomAttributeProvider element) => AllMappers
