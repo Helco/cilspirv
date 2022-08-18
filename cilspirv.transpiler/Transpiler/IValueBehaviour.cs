@@ -5,6 +5,13 @@ using SpirvInstruction = cilspirv.Spirv.Instruction;
 
 namespace cilspirv.Transpiler
 {
+    internal interface ITranspilerValueContext : ITranspilerContext
+    {
+
+        StackEntry Parent { get; } // will throw if no applicable parent exists (e.g. variable access)
+        StackEntry Result { set; }
+    }
+
     internal interface IValueBehaviour
     {
         // if Load/Store returns null, a standard OpLoad/OpStore is attempted using LoadAddress

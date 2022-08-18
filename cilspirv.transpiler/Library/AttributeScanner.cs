@@ -18,7 +18,7 @@ namespace cilspirv.Library
             return attr.Instantiate<StorageClassAttribute>().StorageClass;
         }
 
-        public IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider element) => element
+        public IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider element, IDecorationContext? _) => element
             .GetCustomAttributes<DecorationAttribute>(exactType: false)
             .SelectMany(attr => attr.Instantiate<DecorationAttribute>().Decorations);
     }

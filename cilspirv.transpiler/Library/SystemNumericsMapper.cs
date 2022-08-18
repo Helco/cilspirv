@@ -140,6 +140,6 @@ namespace cilspirv.Library
         public IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => typeMapper.TryMapType(ilTypeRef);
         public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => methodMapper.TryMapMethod(methodRef);
         public IValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) => typeMapper.TryMapFieldBehavior(fieldRef);
-        public IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider element) => typeMapper.TryScanDecorations(element);
+        public IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider element, IDecorationContext? ctx) => typeMapper.TryScanDecorations(element, ctx);
     }
 }

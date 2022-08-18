@@ -29,25 +29,7 @@ namespace cilspirv.Transpiler
         ID ResultID { get; set; }
     }
 
-    internal interface ITranspilerValueContext : ITranspilerContext
-    {
-
-        StackEntry Parent { get; } // will throw if no applicable parent exists (e.g. variable access)
-        StackEntry Result { set; }
-    }
-
-    internal interface ITranspilerLibraryMapper
-    {
-        GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => null;
-        IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => null;
-        IValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) => null;
-        StorageClass? TryScanStorageClass(ICustomAttributeProvider fieldDef) => null;
-        IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider fieldDef) => Enumerable.Empty<DecorationEntry>();
-    }
-
     internal delegate IEnumerable<SpirvInstruction> GenerateCallDelegate(ITranspilerMethodContext context);
-
-    internal interface IMappedFromCILType { }
 
     internal class TranspilerLibrary 
     {
@@ -174,8 +156,8 @@ namespace cilspirv.Transpiler
              .Select(mapper => mapper.TryMapFieldBehavior(fieldRef))
              .FirstOrDefault(b => b != null);
 
-        private IEnumerable<DecorationEntry> ScanDecorations(ICustomAttributeProvider element) => AllMappers
-            .Select(scanner => scanner.TryScanDecorations(element))
+        internal IEnumerable<DecorationEntry> ScanDecorations(ICustomAttributeProvider element, IDecorationContext? context = null) => AllMappers
+            .Select(scanner => scanner.TryScanDecorations(element, context))
             .SelectMany()
             ?? Enumerable.Empty<DecorationEntry>();
 

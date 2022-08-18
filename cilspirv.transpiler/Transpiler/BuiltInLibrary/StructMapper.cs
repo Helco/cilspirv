@@ -46,13 +46,13 @@ namespace cilspirv.Transpiler.BuiltInLibrary
                 return null;
 
             var structStorageClass = ScanStorageClass(ilTypeDef);
-            var structureDecorations = ScanDecorations(ilTypeDef);
+            var structureDecorations = library.ScanDecorations(ilTypeDef);
             var instanceFields = ilTypeDef.Fields.Where(f => !f.IsStatic);
             var fieldStorageClasses = instanceFields
                 .Select(field => (field, ScanStorageClass(field)))
                 .ToDictionary(t => t.field, t => t.Item2);
             var fieldDecorations = instanceFields
-                .SelectMany(field => ScanDecorations(field).Select(decoration => (field, decoration)))
+                .SelectMany(field => library.ScanDecorations(field).Select(decoration => (field, decoration))) // not specifying context to not confuse var group vs value struct
                 .ToLookup(t => t.field, t => t.decoration);
 
             var fieldsHaveStorageClass = fieldStorageClasses.Values.Any(v => v.HasValue);
@@ -81,7 +81,7 @@ namespace cilspirv.Transpiler.BuiltInLibrary
                 fieldDef.Name,
                 library.MapType(fieldDef.FieldType) as SpirvType ??
                     throw new InvalidOperationException("A structure can only hold fields to other SPIRV types"),
-                fieldDecorations[fieldDef].ToImmutableHashSet());
+                ScanMemberDecorations(fieldDef, false).ToImmutableHashSet());
         }
 
         internal VarGroup MapVarGroup(string name, TypeDefinition ilTypeDef, StorageClass? structStorageClass)
@@ -91,7 +91,7 @@ namespace cilspirv.Transpiler.BuiltInLibrary
                 .Select(field => (field, ScanStorageClass(field)))
                 .ToDictionary(t => t.field, t => t.Item2);
             var fieldDecorations = instanceFields
-                .SelectMany(field => ScanDecorations(field).Select(decoration => (field, decoration)))
+                .SelectMany(field => ScanMemberDecorations(field, true).Select(decoration => (field, decoration)))
                 .ToLookup(t => t.field, t => t.decoration);
 
             var missingStorageClassFields = fieldStorageClasses.Where(kv => !kv.Value.HasValue);
@@ -118,7 +118,7 @@ namespace cilspirv.Transpiler.BuiltInLibrary
                 })
                 {
                     Decorations = fieldDecorations[field]
-                        .Concat(ScanDecorations(ilTypeDef))
+                        .Concat(library.ScanDecorations(ilTypeDef))
                         .GroupBy(d => d.Kind)
                         .Select(g => g.First())
                         .ToImmutableHashSet()
@@ -130,13 +130,23 @@ namespace cilspirv.Transpiler.BuiltInLibrary
             return varGroup;
         }
 
-        private IEnumerable<DecorationEntry> ScanDecorations(ICustomAttributeProvider fieldDef) => library.AllMappers
-            .Select(scanner => scanner.TryScanDecorations(fieldDef))
-            .SelectMany()
-            ?? Enumerable.Empty<DecorationEntry>();
+        private IEnumerable<DecorationEntry> ScanMemberDecorations(FieldDefinition fieldDef, bool isVarGroup) =>
+            library.ScanDecorations(fieldDef, new FieldDecorationContext(isVarGroup));
 
         private StorageClass? ScanStorageClass(ICustomAttributeProvider fieldDef) => library.AllMappers
             .Select(scanner => scanner.TryScanStorageClass(fieldDef))
             .FirstOrDefault(s => s.HasValue);
+
+        private class FieldDecorationContext : IFieldDecorationContext
+        {
+            public bool IsValueStruct { get; }
+            public bool IsVarGroup { get; }
+
+            public FieldDecorationContext(bool isVarGroup)
+            {
+                IsValueStruct = !isVarGroup;
+                IsVarGroup = isVarGroup;
+            }
+        }
     }
 }

@@ -40,7 +40,7 @@ namespace cilspirv.Library
             ? fieldBehaviour
             : null;
 
-        public IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider provider)
+        public IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider provider, IDecorationContext? _)
         {
             var relatedType = provider.GetRelatedType();
             if (relatedType?.IsByReference ?? false)
