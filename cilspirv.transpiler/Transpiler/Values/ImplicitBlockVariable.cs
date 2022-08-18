@@ -37,7 +37,7 @@ namespace cilspirv.Transpiler.Values
                     new StructMember(0, actualName, actualType, memberDecorations)
                 }.ToImmutableArray(),
                 Decorations = typeDecorations
-            }; ;
+            };
             BlockPointerType = MakePointerType(BlockType);
             Decorations = variableDecorations;
         }
