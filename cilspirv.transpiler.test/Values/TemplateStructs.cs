@@ -11,19 +11,19 @@ namespace cilspirv.transpiler.test.Values.Modules
     {
         public struct Simple
         {
-            [Location(0)] public int m;
+            [Location(0)] public float m;
         }
 
         [EntryPoint(ExecutionModel.Fragment)]
         [return: Output, Location(0)]
-        public int RefFrag([Input] in Simple simple) => simple.m * 2;
+        public float RefFrag([Input] in Simple simple) => simple.m * 2;
 
         [EntryPoint(ExecutionModel.Vertex)]
         public void RefVert([Output] out Simple simple) => simple.m = 42;
 
         [EntryPoint(ExecutionModel.Fragment)]
         [return: Output, Location(0)]
-        public int ValFrag([Input] Simple simple) => simple.m * 2;
+        public float ValFrag([Input] Simple simple) => simple.m * 2;
 
         [EntryPoint(ExecutionModel.Vertex)]
         public void ValVert([Output] Simple simple) => simple.m = 42;

@@ -8,26 +8,26 @@ OpExecutionMode #3 OriginUpperLeft
 OpName #3 "ValFrag"
 OpName #5 "ValVert"
 OpName #7 "#return"
-OpName #8 "System.Int32 cilspirv.transpiler.test.Values.Modules.TemplateStructs/Simple::m"
-OpName #9 "System.Int32 cilspirv.transpiler.test.Values.Modules.TemplateStructs/Simple::m"
-OpName #12 "System.Int32"
+OpName #8 "System.Single cilspirv.transpiler.test.Values.Modules.TemplateStructs/Simple::m"
+OpName #9 "System.Single cilspirv.transpiler.test.Values.Modules.TemplateStructs/Simple::m"
+OpName #12 "System.Single"
 OpDecorate #7 Location 0
 OpDecorate #8 Location 0
 OpDecorate #9 Location 0
-#12 = OpTypeInt 32 1
+#12 = OpTypeFloat 32
 #13 = OpTypeVoid
 #14 = OpTypeFunction #13
 #15 = OpTypePointer Output #12
 #16 = OpTypePointer Input #12
-#10 = OpConstant #12 00000002
-#11 = OpConstant #12 0000002A
+#10 = OpConstant #12 40000000
+#11 = OpConstant #12 42280000
 #7 = OpVariable #15 Output 
 #8 = OpVariable #16 Input 
 #9 = OpVariable #15 Output 
 #3 = OpFunction #13 None #14
 #4 = OpLabel
 #1 = OpLoad #12 #8 
-#2 = OpIMul #12 #1 #10
+#2 = OpFMul #12 #1 #10
 OpStore #7 #2 
 OpReturn
 OpFunctionEnd
