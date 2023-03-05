@@ -20,6 +20,7 @@ namespace cilspirv.SourceGen
             GenerateInstructionClasses(coreGrammar, "InstructionClasses.cs");
             GenerateInstructionEnum(coreGrammar, "OpCode.cs");
             GenerateInstructions(coreGrammar, "Ops");
+            GenerateImageClasses("Image.cs");
         }
 
         private static void WriteLines(this StreamWriter writer, IEnumerable<string> lines)
