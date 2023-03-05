@@ -19,7 +19,7 @@ namespace cilspirv.Transpiler
         IEnumerable<Instruction> BaseGenerateDecorations(IIDMapper context)
         {
             var id = context.IDOf(this);
-            foreach (var entry in Decorations)
+            foreach (var entry in Decorations.OrderBy(e => (int)e.Kind).ThenBy(e => e.GetHashCode()))
             {
                 var stringOperands = entry.ExtraOperands.Where(o => o.Kind == ExtraOperandKind.String).ToImmutableArray();
                 var idOperands = entry.ExtraOperands.Where(o => o.Kind == ExtraOperandKind.ID).ToImmutableArray();

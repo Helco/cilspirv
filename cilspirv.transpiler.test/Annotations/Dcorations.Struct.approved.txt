@@ -5,20 +5,28 @@ OpMemoryModel Logical Simple
 OpEntryPoint Vertex #1 "Struct"
 OpName #1 "Struct"
 OpName #3 "u"
-OpName #5 "System.Int32"
-OpName #7 "UniformsBlock"
-OpMemberName #7 0 "a"
+OpName #6 "System.Int32"
+OpName #9 "System.Numerics.Matrix4x4"
+OpName #10 "UniformsBlock"
+OpMemberName #10 0 "m"
+OpMemberName #10 1 "a"
 OpDecorate #3 Binding 5
 OpDecorate #3 DescriptorSet 0
-OpDecorate #7 Block
-OpMemberDecorate #7 0 Offset 0
+OpDecorate #10 Block
+OpMemberDecorate #10 0 RowMajor
+OpMemberDecorate #10 0 MatrixStride 16
+OpMemberDecorate #10 0 Offset 0
+OpMemberDecorate #10 1 Offset 64
 #4 = OpTypeVoid
-#5 = OpTypeInt 32 1
-#6 = OpTypeFunction #4
-#7 = OpTypeStruct #5
-#8 = OpTypePointer Uniform #7
-#3 = OpVariable #8 Uniform 
-#1 = OpFunction #4 None #6
+#5 = OpTypeFloat 32
+#6 = OpTypeInt 32 1
+#7 = OpTypeFunction #4
+#8 = OpTypeVector #5 4
+#9 = OpTypeMatrix #8 4
+#10 = OpTypeStruct #9 #6
+#11 = OpTypePointer Uniform #10
+#3 = OpVariable #11 Uniform 
+#1 = OpFunction #4 None #7
 #2 = OpLabel
 OpNop
 OpReturn
