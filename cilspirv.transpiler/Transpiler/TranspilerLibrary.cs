@@ -55,6 +55,7 @@ namespace cilspirv.Transpiler
         public IList<ITranspilerLibraryMapper> Mappers { get; } = new List<ITranspilerLibraryMapper>()
         {
             new BuiltinTypeMapper(),
+            new StructOffsetScanner(),
             new AttributeScanner()
         };
 
@@ -159,6 +160,8 @@ namespace cilspirv.Transpiler
         internal IEnumerable<DecorationEntry> ScanDecorations(ICustomAttributeProvider element, IDecorationContext? context = null) => AllMappers
             .Select(scanner => scanner.TryScanDecorations(element, context))
             .SelectMany()
+            .GroupBy(d => d.Kind)
+            .Select(g => g.First())
             ?? Enumerable.Empty<DecorationEntry>();
 
         private StorageClass? TryScanStorageClass(ICustomAttributeProvider element) => AllMappers

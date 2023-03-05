@@ -29,7 +29,7 @@ namespace cilspirv.transpiler.test
             var hasEntryPoint = functions.Any(f => f.isEntryPoint);
 
             var transpiler = new Transpiler.Transpiler(ThisModuleType) { Options = options ?? new() };
-            transpiler.Library.Mappers.Add(new Library.SystemNumericsMapper());
+            transpiler.Library.Mappers.Add(new cilspirv.Library.SystemNumericsMapper());
             transpiler.Module.Capabilities.Add(Capability.Shader);
             if (!hasEntryPoint)
                 transpiler.Module.Capabilities.Add(Capability.Linkage);
