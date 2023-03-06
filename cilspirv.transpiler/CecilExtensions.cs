@@ -1,10 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
+using System.Text;
 using Mono.Cecil;
 
+using BindingFlags = System.Reflection.BindingFlags;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
+using ReflType = System.Type;
+using ReflMethodBase = System.Reflection.MethodBase;
+using ReflMethodInfo = System.Reflection.MethodInfo;
+using CecilMethodReference = Mono.Cecil.MethodReference;
+using CecilType = Mono.Cecil.TypeReference;
 
 namespace cilspirv
 {
@@ -52,13 +58,87 @@ namespace cilspirv
             return (T)ctors[0].Invoke(attribute.ConstructorArguments.Select(arg => arg.Value).ToArray());
         }
 
-        /// <summary>Returns the full name of the method in Cecil style</summary>param>
-        public static string FullName(this MethodBase methodInfo) =>
-            $"{FullNameOfReturnType(methodInfo)} {methodInfo.DeclaringType?.FullName}::{methodInfo.Name}" +
-            $"({string.Join(",", methodInfo.GetParameters().Select(p => p.ParameterType.FullName))})";
+        /// <summary>Returns the full name of the method in our unified style</summary>param>
+        public static string FullCilspirvName(this ReflMethodBase methodInfo)
+        {
+            var name = new StringBuilder();
+            var returnType = (methodInfo as ReflMethodInfo)?.ReturnType ?? typeof(void);
+            name.Append(FullName(returnType));
+            name.Append(' ');
+            name.Append(FullName(methodInfo.DeclaringType!));
+            name.Append("::");
+            name.Append(methodInfo.Name);
+            name.Append('(');
+            foreach (var parameter in methodInfo.GetParameters())
+                name.Append(FullName(parameter.ParameterType));
+            name.Append(')');
+            return name.ToString();
+        }
 
-        private static string FullNameOfReturnType(MethodBase methodBase) =>
-            (methodBase as MethodInfo)?.ReturnType?.FullName ?? typeof(void).FullName!;
+        public static string FullCilspirvName(this CecilMethodReference methodInfo)
+        {
+            var name = new StringBuilder();
+            // the declaring type of the method is the generic instance
+            // the declaring type of the return type is the generic type
+            var potOwner = methodInfo.DeclaringType;
+            if (methodInfo.ReturnType == null)
+                name.Append(FullName(typeof(void)));
+            else
+                name.Append(FullName(methodInfo.ReturnType, potOwner));
+            name.Append(' ');
+            name.Append(FullName(methodInfo.DeclaringType!, potOwner));
+            name.Append("::");
+            name.Append(methodInfo.Name);
+            name.Append('(');
+            foreach (var parameter in methodInfo.Parameters)
+                name.Append(FullName(parameter.ParameterType, potOwner));
+            name.Append(')');
+            return name.ToString();
+        }
+
+        private static string FullName(Type type)
+        {
+            if (type.FullName == null)
+            {
+                if (!type.IsGenericParameter)
+                    throw new ArgumentException("Unknown type type, it has no full name but is not a generic parameter");
+                return "!" + type.GenericParameterPosition;
+            }
+
+            var fullName = type.FullName;
+            if (type.IsConstructedGenericType)
+            {
+                fullName = type.Namespace == null
+                    ? type.Name
+                    : $"{type.Namespace}.{type.Name}";
+                return fullName + "<" + string.Join(',', type.GetGenericArguments().Select(FullName)) + ">";
+            }
+
+            if (type.ContainsGenericParameters)
+                return fullName + "<" + string.Join(',', type.GetGenericArguments().Select(t => t.Name)) + ">";
+
+            return fullName;
+        }
+
+        private static string FullName(CecilType type, CecilType potentialOwner)
+        {
+            return Ungeneric(type, potentialOwner).FullName;
+        }
+
+        public static CecilType Ungeneric(this CecilType type, CecilType? potentialOwner)
+        {
+            if (type is not GenericParameter genParam)
+                return type;
+
+            if (potentialOwner is not IGenericInstance genericOwner)
+                throw new ArgumentException("Cannot ungeneric a generic parameter without a potential owner");
+
+            var declaredGenParam = potentialOwner.GetElementType().GenericParameters.ElementAtOrDefault(genParam.Position);
+            if (declaredGenParam != genParam)
+                throw new ArgumentException("Potential owner is not the owner of the given generic parameter");
+
+            return genericOwner.GenericArguments[genParam.Position];
+        }
 
         public static TypeReference? GetRelatedType(this ICustomAttributeProvider provider) => (provider switch
         {

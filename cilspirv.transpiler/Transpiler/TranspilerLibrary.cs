@@ -69,8 +69,10 @@ namespace cilspirv.Transpiler
             methodMapper = new InternalMethodMapper(this);
         }
 
-        public IMappedFromCILType? TryMapType(TypeReference ilTypeRef)
+        public IMappedFromCILType? TryMapType(TypeReference ilTypeRef, TypeReference? potentialOwner = null)
         {
+            ilTypeRef = ilTypeRef.Ungeneric(potentialOwner);
+
             if (mappedTypes.TryGetValue(ilTypeRef.FullName, out var mappedType))
                 return mappedType;
 
@@ -102,7 +104,7 @@ namespace cilspirv.Transpiler
         public GenerateCallDelegate MapMethod(MethodReference ilMethodRef) => TryMapMethod(ilMethodRef)
             ?? throw new ArgumentException($"Cannot map method {ilMethodRef.FullName}");
 
-        public IMappedFromCILType MapType(TypeReference ilTypeRef) => TryMapType(ilTypeRef)
+        public IMappedFromCILType MapType(TypeReference ilTypeRef, TypeReference? potentialOwner = null) => TryMapType(ilTypeRef, potentialOwner)
             ?? throw new ArgumentException($"Cannot map type {ilTypeRef.FullName}");
 
         public IValueBehaviour MapField(FieldReference fieldRef, object? parentTag)
@@ -174,7 +176,7 @@ namespace cilspirv.Transpiler
             if (mappedParameters.TryGetValue(mappingName, out var mapped))
                 return mapped;
 
-            var paramType = MapType(paramDef.ParameterType);
+            var paramType = MapType(paramDef.ParameterType, ((MemberReference)paramDef.Method).DeclaringType);
             var storageClass = TryScanStorageClass(paramDef);
             var decorations = ScanDecorations(paramDef);
 

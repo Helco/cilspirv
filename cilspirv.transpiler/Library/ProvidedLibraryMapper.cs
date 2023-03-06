@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Threading.Tasks;
 using cilspirv.Spirv;
@@ -56,10 +57,21 @@ internal class ProvidedLibraryMapper : ITranspilerLibraryMapper
     private static IReadOnlyDictionary<string, Type> TypeByName(Type[] types) =>
         types.ToDictionary(t => t.FullName!, t => t);
 
-    private readonly ExternalMethodMapper methodMapper = new()
+    private readonly ExternalMethodMapper methodMapper = new();
+
+    private static readonly Type[] SampleableTypes = new[]
     {
-        { ExternalMethodMapper.FullNameOf(typeof(ISamplable<,>), nameof(ISamplable<int, int>.Sample)), GenerateSample }
+        typeof(ISamplable<Vector4, float>),
+        typeof(ISamplable<Vector4, Vector2>),
+        typeof(ISamplable<Vector4, Vector3>),
+        typeof(ISamplable<Vector4, Vector4>),
     };
+
+    public ProvidedLibraryMapper()
+    {
+        foreach (var sampleableType in SampleableTypes)
+            methodMapper.Add(ExternalMethodMapper.FullNameOf(sampleableType, "Sample"), GenerateSample);
+    }
 
     public IMappedFromCILType? TryMapType(TypeReference ilTypeRef)
     {

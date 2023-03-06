@@ -74,7 +74,8 @@ namespace cilspirv.Transpiler
             {
                 var returnType = (SpirvType)Library.MapType(isCtor
                     ? methodRef.DeclaringType
-                    : methodRef.ReturnType);
+                    : methodRef.ReturnType,
+                    methodRef.DeclaringType);
                 Stack.Add(new ValueStackEntry(methodRef, context.ResultID.Value, returnType));
             }
         }

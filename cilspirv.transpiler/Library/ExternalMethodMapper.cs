@@ -15,7 +15,7 @@ namespace cilspirv.Library
         private readonly Dictionary<string, GenerateCallDelegate> methods = new Dictionary<string, GenerateCallDelegate>();
 
         public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) =>
-            methods.TryGetValue(methodRef.FullName, out var method)
+            methods.TryGetValue(methodRef.FullCilspirvName(), out var method)
             ? method
             : null;
 
@@ -31,7 +31,7 @@ namespace cilspirv.Library
                 throw new ArgumentException($"Could not find method \"{localMethodName}\" on type {type.FullName}");
             if (methodInfos.Count() > 1)
                 throw new InvalidOperationException($"Method \"{localMethodName}\" on type {type.FullName} is ambiguous");
-            return methodInfos.Single().FullName();
+            return methodInfos.Single().FullCilspirvName();
         }
 
         public static string FullNameOf<T>(string localMethodName, params Type[] parameters)
@@ -39,7 +39,7 @@ namespace cilspirv.Library
             var methodInfo = typeof(T).GetMethod(localMethodName, parameters);
             if (methodInfo == null)
                 throw new ArgumentException($"Could not find \"{localMethodName}({string.Join(",", parameters.Select(p => p.FullName))})\" on type {typeof(T).FullName}");
-            return methodInfo.FullName();
+            return methodInfo.FullCilspirvName();
         }
 
         public static string FullNameOfCtor<T>(params Type[] parameters)
@@ -47,7 +47,7 @@ namespace cilspirv.Library
             var ctorInfo = typeof(T).GetConstructor(parameters);
             if (ctorInfo == null)
                 throw new ArgumentException($"Could not find \".ctor({string.Join(",", parameters.Select(p => p.FullName))})\" on type {typeof(T).FullName}");
-            return ctorInfo.FullName();
+            return ctorInfo.FullCilspirvName();
         }
 
         public enum OperatorKind

@@ -30,7 +30,7 @@ namespace cilspirv.Library
                     _ => null
                 };
                 if (callMethod != null)
-                    methods.Add(method.FullName(), callMethod);
+                    methods.Add(method.FullCilspirvName(), callMethod);
             }
         }
 
