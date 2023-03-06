@@ -42,6 +42,8 @@ namespace cilspirv.Transpiler.BuiltInLibrary
             if (structures.TryGetValue(ilTypeRef.FullName, out var prevMapped))
                 return prevMapped;
             var ilTypeDef = ilTypeRef.Resolve();
+            if (ilTypeDef == null)
+                return null;
             if (!ilTypeDef.IsValueType || ilTypeDef.IsPrimitive || ilTypeDef.IsEnum || !ilTypeDef.HasFields)
                 return null;
 

@@ -28,4 +28,9 @@ namespace cilspirv.Library
     {
         public override StorageClass StorageClass => StorageClass.Uniform;
     }
+
+    public sealed class UniformConstantAttribute : StorageClassAttribute
+    {
+        public override StorageClass StorageClass => StorageClass.UniformConstant;
+    }
 }

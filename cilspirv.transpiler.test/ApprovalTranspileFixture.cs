@@ -30,6 +30,7 @@ namespace cilspirv.transpiler.test
 
             var transpiler = new Transpiler.Transpiler(ThisModuleType) { Options = options ?? new() };
             transpiler.Library.Mappers.Add(new cilspirv.Library.SystemNumericsMapper());
+            transpiler.Library.Mappers.Add(new cilspirv.Library.ProvidedLibraryMapper());
             transpiler.Module.Capabilities.Add(Capability.Shader);
             if (!hasEntryPoint)
                 transpiler.Module.Capabilities.Add(Capability.Linkage);

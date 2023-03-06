@@ -14,8 +14,6 @@ namespace cilspirv.Library
     {
         private readonly Dictionary<string, GenerateCallDelegate> methods = new Dictionary<string, GenerateCallDelegate>();
 
-        public IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => null;
-
         public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) =>
             methods.TryGetValue(methodRef.FullName, out var method)
             ? method
@@ -25,13 +23,14 @@ namespace cilspirv.Library
         public IEnumerator<KeyValuePair<string, GenerateCallDelegate>> GetEnumerator() => methods.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => methods.GetEnumerator();
 
-        public static string FullNameOf<T>(string localMethodName)
+        public static string FullNameOf<T>(string localMethodName) => FullNameOf(typeof(T), localMethodName);
+        public static string FullNameOf(Type type, string localMethodName)
         {
-            var methodInfos = typeof(T).GetMethods().Where(m => m.Name == localMethodName);
+            var methodInfos = type.GetMethods().Where(m => m.Name == localMethodName);
             if (!methodInfos.Any())
-                throw new ArgumentException($"Could not find method \"{localMethodName}\" on type {typeof(T).FullName}");
+                throw new ArgumentException($"Could not find method \"{localMethodName}\" on type {type.FullName}");
             if (methodInfos.Count() > 1)
-                throw new InvalidOperationException($"Method \"{localMethodName}\" on type {typeof(T).FullName} is ambiguous");
+                throw new InvalidOperationException($"Method \"{localMethodName}\" on type {type.FullName} is ambiguous");
             return methodInfos.Single().FullName();
         }
 

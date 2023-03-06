@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using cilspirv.Spirv;
+using cilspirv.Spirv.Ops;
 using cilspirv.Transpiler;
 using Mono.Cecil;
 
@@ -55,6 +56,11 @@ internal class ProvidedLibraryMapper : ITranspilerLibraryMapper
     private static IReadOnlyDictionary<string, Type> TypeByName(Type[] types) =>
         types.ToDictionary(t => t.FullName!, t => t);
 
+    private readonly ExternalMethodMapper methodMapper = new()
+    {
+        { ExternalMethodMapper.FullNameOf(typeof(ISamplable<,>), nameof(ISamplable<int, int>.Sample)), GenerateSample }
+    };
+
     public IMappedFromCILType? TryMapType(TypeReference ilTypeRef)
     {
         if (ImageTypesByName.TryGetValue(ilTypeRef.FullName, out var imageType))
@@ -63,6 +69,8 @@ internal class ProvidedLibraryMapper : ITranspilerLibraryMapper
             return MapSamplerType(samplerType);
         return null;
     }
+
+    public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => methodMapper.TryMapMethod(methodRef);
 
     private static ImageInfoAttribute GetImageInfo(Type type) =>
         type.GetCustomAttribute<ImageInfoAttribute>() ?? 
@@ -94,6 +102,24 @@ internal class ProvidedLibraryMapper : ITranspilerLibraryMapper
         {
             ImageType = MapImageType(imageInfo, type.Name + "_Image"),
             UserName = type.Name
+        };
+    }
+
+    private static IEnumerable<Instruction> GenerateSample(ITranspilerMethodContext ctx)
+    {
+        var thiz = ctx.This ?? throw new InvalidOperationException("Encountered sample method witout this parameter");
+        var thizType = (SpirvSampledImageType)thiz.type;
+        var resultType = new SpirvVectorType()
+        {
+            ComponentType = thizType.ImageType!.SampledType!,
+            ComponentCount = 4
+        };
+        yield return new OpImageSampleImplicitLod()
+        {
+            Result = ctx.ResultID = ctx.CreateID(),
+            ResultType = ctx.IDOf(resultType),
+            SampledImage = thiz.id,
+            Coordinate = ctx.Parameters[0].id
         };
     }
 }

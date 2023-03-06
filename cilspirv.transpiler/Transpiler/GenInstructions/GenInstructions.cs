@@ -120,6 +120,7 @@ namespace cilspirv.Transpiler
                     case (Code.Ret): Return(); break;
                     case (Code.Newobj): Call((MethodReference)ilInstr.Operand, isCtor: true); break;
                     case (Code.Call): Call((MethodReference)ilInstr.Operand, isCtor: false); break;
+                    case (Code.Callvirt): Call((MethodReference)ilInstr.Operand, isCtor: false); break;
 
                     case (Code.Ldarga):
                     case (Code.Ldarga_S): LoadArgumentAddress(((ParameterReference)ilInstr.Operand).Index); break;
