@@ -4,6 +4,7 @@ using Veldrid;
 using Veldrid.Sdl2;
 using Veldrid.StartupUtilities;
 using Veldrid.SPIRV;
+using Veldrid.ImageSharp;
 using System.Text;
 using System.Runtime.InteropServices;
 
@@ -93,11 +94,11 @@ namespace cilspirv.test.veldrid
 
             ShaderDescription vertexShaderDesc = new ShaderDescription(
                 ShaderStages.Vertex,
-                File.ReadAllBytes("Simple.spv"),
+                File.ReadAllBytes("Texture.spv"),
                 "Vert");
             ShaderDescription fragmentShaderDesc = new ShaderDescription(
                 ShaderStages.Fragment,
-                File.ReadAllBytes("Simple.spv"),
+                File.ReadAllBytes("Texture.spv"),
                 "Frag");
 
             //_shaders = factory.CreateFromSpirv(vertexShaderDesc, fragmentShaderDesc);
@@ -126,7 +127,7 @@ namespace cilspirv.test.veldrid
             var identity = Matrix4x4.Identity;
             _graphicsDevice.UpdateBuffer(identityBuffer, 0, ref identity);
 
-            var resourceLayout = factory.CreateResourceLayout(new ResourceLayoutDescription(
+            /*var resourceLayout = factory.CreateResourceLayout(new ResourceLayoutDescription(
                 new ResourceLayoutElementDescription("B0", ResourceKind.UniformBuffer, ShaderStages.Vertex | ShaderStages.Fragment),
                 new ResourceLayoutElementDescription("B1", ResourceKind.UniformBuffer, ShaderStages.Vertex | ShaderStages.Fragment),
                 new ResourceLayoutElementDescription("projection", ResourceKind.UniformBuffer, ShaderStages.Vertex),
@@ -134,12 +135,19 @@ namespace cilspirv.test.veldrid
                 new ResourceLayoutElementDescription("world", ResourceKind.UniformBuffer, ShaderStages.Vertex),
                 new ResourceLayoutElementDescription("uniforms", ResourceKind.UniformBuffer, ShaderStages.Fragment)));
             resourceSet = factory.CreateResourceSet(new ResourceSetDescription(
-                resourceLayout, identityBuffer, identityBuffer, identityBuffer, identityBuffer, identityBuffer, uniformBuffer));
+                resourceLayout, identityBuffer, identityBuffer, identityBuffer, identityBuffer, identityBuffer, uniformBuffer));*/
 
             /*var resourceLayout = factory.CreateResourceLayout(new ResourceLayoutDescription(
                 new ResourceLayoutElementDescription("Uniforms", ResourceKind.UniformBuffer, ShaderStages.Fragment)));
             resourceSet = factory.CreateResourceSet(new ResourceSetDescription(
                 resourceLayout, uniformBuffer));*/
+
+            var texture = new ImageSharpTexture("image.png").CreateDeviceTexture(_graphicsDevice, factory);
+            var resourceLayout = factory.CreateResourceLayout(new ResourceLayoutDescription(
+                new ResourceLayoutElementDescription("image", ResourceKind.TextureReadOnly, ShaderStages.Fragment),
+                new ResourceLayoutElementDescription("sampler", ResourceKind.Sampler, ShaderStages.Fragment)));
+            resourceSet = factory.CreateResourceSet(new ResourceSetDescription(
+                resourceLayout, texture, _graphicsDevice.LinearSampler));
 
             // Create pipeline
             GraphicsPipelineDescription pipelineDescription = new GraphicsPipelineDescription();

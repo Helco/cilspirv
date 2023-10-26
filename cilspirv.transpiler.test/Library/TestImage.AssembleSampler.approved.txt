@@ -1,0 +1,43 @@
+﻿SPIRV 1.3
+Generator 002A 1.0
+OpCapability Shader
+OpMemoryModel Logical Simple
+OpEntryPoint Fragment #6 "AssembleSampler" #8
+OpExecutionMode #6 OriginUpperLeft
+OpName #6 "AssembleSampler"
+OpName #8 "#return"
+OpName #9 "image"
+OpName #10 "sampler"
+OpName #12 "Sampler"
+OpName #15 "Image2D"
+OpName #20 "Image2D_Combined"
+OpDecorate #8 Location 0
+OpDecorate #9 Binding 0
+OpDecorate #9 DescriptorSet 0
+OpDecorate #10 Binding 1
+OpDecorate #10 DescriptorSet 0
+#12 = OpTypeSampler
+#13 = OpTypeVoid
+#14 = OpTypeFloat 32
+#15 = OpTypeImage #14 Dim2D 0 0 0 1 Unknown 
+#16 = OpTypeVector #14 2
+#17 = OpTypeVector #14 4
+#18 = OpTypeFunction #13
+#19 = OpTypePointer UniformConstant #12
+#20 = OpTypeSampledImage #15
+#21 = OpTypePointer Output #17
+#22 = OpTypePointer UniformConstant #15
+#11 = OpConstant #14 00000000
+#8 = OpVariable #21 Output 
+#9 = OpVariable #22 UniformConstant 
+#10 = OpVariable #19 UniformConstant 
+#6 = OpFunction #13 None #18
+#7 = OpLabel
+#1 = OpLoad #15 #9 
+#2 = OpLoad #12 #10 
+#3 = OpSampledImage #20 #1 #2
+#4 = OpCompositeConstruct #16 #11 #11
+#5 = OpImageSampleImplicitLod #17 #3 #4 
+OpStore #8 #5 
+OpReturn
+OpFunctionEnd

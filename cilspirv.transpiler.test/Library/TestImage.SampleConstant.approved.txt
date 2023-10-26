@@ -17,7 +17,7 @@ OpDecorate #7 DescriptorSet 0
 #11 = OpTypeVector #10 2
 #12 = OpTypeVector #10 4
 #13 = OpTypeFunction #9
-#14 = OpTypeImage #10 Dim2D 0 0 0 1 Unknown ReadOnly
+#14 = OpTypeImage #10 Dim2D 0 0 0 1 Unknown 
 #15 = OpTypeSampledImage #14
 #16 = OpTypePointer Output #12
 #17 = OpTypePointer UniformConstant #15

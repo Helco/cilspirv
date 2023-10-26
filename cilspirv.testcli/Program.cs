@@ -34,6 +34,7 @@ namespace cilspirv.testcli
 
                 var unit = new Transpiler.Transpiler(moduleTypeDef);
                 unit.Library.Mappers.Add(new SystemNumericsMapper());
+                unit.Library.Mappers.Add(new ProvidedLibraryMapper());
                 unit.ExtractModuleAttributes();
                 foreach (var entryPoint in entryPoints)
                 {
