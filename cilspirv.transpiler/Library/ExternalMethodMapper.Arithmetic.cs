@@ -19,7 +19,7 @@ namespace cilspirv.Library
 
             foreach (var method in opMethods)
             {
-                var operatorKind = Enum.Parse<OperatorKind>(method.Name.Substring(3));
+                var operatorKind = (OperatorKind)Enum.Parse(typeof(OperatorKind), method.Name.Substring(3));
                 var callMethod = (operatorKind, meType) switch
                 {
                     (OperatorKind.Addition, SpirvVectorType vectorType) => CallVectorAdd(vectorType),

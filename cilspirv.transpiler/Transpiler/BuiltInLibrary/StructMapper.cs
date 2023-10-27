@@ -10,7 +10,7 @@ using cilspirv.Transpiler.Declarations;
 
 namespace cilspirv.Transpiler.BuiltInLibrary
 {
-    internal class StructMapper : ITranspilerLibraryMapper
+    internal class StructMapper : NullTranspilerLibraryMapper
     {
         private static readonly ISet<Decoration> GlobalDecorations = new HashSet<Decoration>()
         {
@@ -35,9 +35,9 @@ namespace cilspirv.Transpiler.BuiltInLibrary
             this.module = module;
         }
 
-        public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => null;
+        public override GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => null;
 
-        public IMappedFromCILType? TryMapType(TypeReference ilTypeRef)
+        public override IMappedFromCILType? TryMapType(TypeReference ilTypeRef)
         {
             if (structures.TryGetValue(ilTypeRef.FullName, out var prevMapped))
                 return prevMapped;

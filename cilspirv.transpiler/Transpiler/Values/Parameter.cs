@@ -7,16 +7,18 @@ using cilspirv.Spirv.Ops;
 namespace cilspirv.Transpiler.Values
 {
     internal class Parameter :
+        BaseValueBehaviour,
         IDecoratableInstructionGeneratable,
-        IDebugInstructionGeneratable,
-        IValueBehaviour
+        IDebugInstructionGeneratable
     {
         public int SpirvIndex { get; } // this can be different from the CLI arg index
         public string Name { get; }
         public SpirvType Type { get; }
-        public IReadOnlySet<DecorationEntry> Decorations { get; set; } = new HashSet<DecorationEntry>();
+        public IReadOnlySetDecorationEntry Decorations { get; set; } = new HashSet<DecorationEntry>();
 
         public Parameter(int index, string name, SpirvType type) => (SpirvIndex, Name, Type) = (index, name, type);
+
+        IEnumerable<Instruction> IDecoratableInstructionGeneratable.GenerateDecorations(IIDMapper mapper) => this.BaseGenerateDecorations(mapper);
 
         public IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
@@ -36,13 +38,13 @@ namespace cilspirv.Transpiler.Values
             };
         }
 
-        IEnumerable<Instruction>? IValueBehaviour.Load(ITranspilerValueContext context)
+        public override IEnumerable<Instruction>? Load(ITranspilerValueContext context)
         {
             context.Result = new ValueStackEntry(this, context.IDOf(this), Type);
             return Enumerable.Empty<Instruction>();
         }
 
-        IEnumerable<Instruction>? IValueBehaviour.Store(ITranspilerValueContext context, ValueStackEntry value) =>
+        public override IEnumerable<Instruction>? Store(ITranspilerValueContext context, ValueStackEntry value) =>
             throw new InvalidOperationException($"Cannot store values into parameters");
     }
 }

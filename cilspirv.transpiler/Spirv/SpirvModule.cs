@@ -43,33 +43,18 @@ namespace cilspirv.Spirv
             if (readWord() != 0)
                 throw new NotSupportedException("Unsupported reserved number");
 
-            var uintBuffer = new uint[16];
-            var byteBuffer = MemoryMarshal.AsBytes(uintBuffer.AsSpan());
+            var words = new List<uint>(16);
             var instructions = new List<Instruction>();
-            while (true)
+            while (reader.PeekChar() >= 0)
             {
-                var read = stream.Read(byteBuffer.Slice(0, sizeof(uint)));
-                if (read == 0)
-                    break;
-                else if (read != sizeof(uint))
-                    throw new EndOfStreamException("Stream ended during instruction");
-                if (Magic == SwappedMagic)
-                    uintBuffer[0] = Swap32(uintBuffer[0]);
-
-                int wordCount = (int)(uintBuffer[0] >> 16);
-                if (uintBuffer.Length < wordCount)
-                {
-                    Array.Resize(ref uintBuffer, wordCount);
-                    byteBuffer = MemoryMarshal.AsBytes(uintBuffer.AsSpan());
-                }
-                var expectedRead = sizeof(uint) * (wordCount - 1);
-                read = stream.Read(byteBuffer.Slice(sizeof(uint), expectedRead));
-                if (read != expectedRead)
-                    throw new EndOfStreamException("Stream ended during operands");
-
-                if (Magic == SwappedMagic)
-                    SwapAll(uintBuffer.AsSpan(1));
-                instructions.Add(Instruction.Read(uintBuffer));
+                words.Clear();
+                words.Add(readWord());
+                int wordCount = (int)(words[0] >> 16);
+                if (words.Capacity < wordCount)
+                    words.Capacity = wordCount;
+                for (int i = 1; i < wordCount; i++)
+                    words.Add(readWord());
+                instructions.Add(Instruction.Read(words));
             }
             Instructions = instructions;
         }
@@ -91,16 +76,14 @@ namespace cilspirv.Spirv
             writeWord(0);
 
             var uintBuffer = new uint[16];
-            var byteBuffer = MemoryMarshal.AsBytes(uintBuffer.AsSpan());
             foreach (var instruction in Instructions)
             {
                 if (uintBuffer.Length < instruction.WordCount)
-                {
                     Array.Resize(ref uintBuffer, instruction.WordCount);
-                    byteBuffer = MemoryMarshal.AsBytes(uintBuffer.AsSpan());
-                }
                 instruction.Write(uintBuffer.AsSpan(), mapID ?? (x => x.Value));
-                writer.Write(byteBuffer.Slice(0, instruction.WordCount * sizeof(uint)));
+
+                for (int i = 0; i < instruction.WordCount; i++)
+                    writeWord(uintBuffer[i]);
             }
         }
 

@@ -24,7 +24,9 @@ namespace cilspirv
         public abstract IEnumerator<KeyValuePair<T1, T2>> GetEnumerator();
         public abstract bool Remove(T1 key);
         public abstract bool Remove(KeyValuePair<T1, T2> item);
+#pragma warning disable CS8767 // Nullability of reference types in type of parameter doesn't match implicitly implemented member (possibly because of nullability attributes).
         public abstract bool TryGetValue(T1 key, [MaybeNullWhen(false)] out T2 value);
+#pragma warning restore CS8767 // Nullability of reference types in type of parameter doesn't match implicitly implemented member (possibly because of nullability attributes).
 
         IEnumerator IEnumerable.GetEnumerator() => throw new InvalidOperationException("Ambiguous enumerator cannot be created");
     }
@@ -84,7 +86,9 @@ namespace cilspirv
         public override bool Remove(KeyValuePair<T1, T2> item) => Remove(item.Key);
         public bool Remove(KeyValuePair<T2, T1> item) => Remove(item.Key);
         public override bool TryGetValue(T1 key, [MaybeNullWhen(false)] out T2 value) => forward.TryGetValue(key, out value);
+#pragma warning disable CS8767 // Nullability of reference types in type of parameter doesn't match implicitly implemented member (possibly because of nullability attributes).
         public bool TryGetValue(T2 key, [MaybeNullWhen(false)] out T1 value) => backward.TryGetValue(key, out value);
+#pragma warning restore CS8767 // Nullability of reference types in type of parameter doesn't match implicitly implemented member (possibly because of nullability attributes).
 
         public override void Clear()
         {

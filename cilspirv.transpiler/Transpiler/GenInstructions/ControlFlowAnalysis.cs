@@ -95,7 +95,7 @@ namespace cilspirv.Transpiler
             .CustomAttributes
             .Select(attr => attr.AttributeType)
             .Any(typeRef =>
-                typeRef.Name == nameof(DoesNotReturnAttribute) || // only local name 
+                typeRef.Name == "DoesNotReturnAttribute" || // only local name, no nameof due to polyfill conflicts
                 typeRef.FullName == typeof(Library.KillAttribute).FullName);
 
         /// <remarks>Also splits blocks where branches jump into</remarks>
@@ -161,7 +161,7 @@ namespace cilspirv.Transpiler
         /// <remarks>Using Depth-First Search</remarks>
         private void SetPostOrderNumber()
         {
-            var visited = new HashSet<Block>(allBlocks.Count);
+            var visited = new HashSet<Block>();
             var stack = new Stack<(Block, int)>();
             stack.Push((allBlocks[0], 0));
             int next = 0;
@@ -184,7 +184,7 @@ namespace cilspirv.Transpiler
         /// <remarks>The postorder of the reversed graph</remarks>
         private void SetPostOrderRevNumber()
         {
-            var visited = new HashSet<Block>(allBlocks.Count);
+            var visited = new HashSet<Block>();
             var stack = new Stack<(Block, int)>();
             foreach (var startBlock in allBlocks.Where(b => b.OutboundEdges.Count == 0))
                 stack.Push((startBlock, 0));
@@ -210,7 +210,7 @@ namespace cilspirv.Transpiler
         /// <remarks>Again using Depth-First Search, but pre-order this time</remarks>
         private void SetInboundEdges()
         {
-            var visited = new HashSet<Block>(allBlocks.Count);
+            var visited = new HashSet<Block>();
             var stack = new Stack<(Block, int)>();
             stack.Push((allBlocks[0], 0));
             while (stack.Any())

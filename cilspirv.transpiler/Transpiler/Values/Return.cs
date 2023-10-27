@@ -7,15 +7,15 @@ using cilspirv.Transpiler.Declarations;
 
 namespace cilspirv.Transpiler.Values
 {
-    internal abstract class Return : IValueBehaviour
+    internal abstract class Return : BaseValueBehaviour
     {
-        public IEnumerable<Instruction> Load(ITranspilerValueContext context) =>
+        public override IEnumerable<Instruction> Load(ITranspilerValueContext context) =>
             throw new InvalidOperationException("Cannot load a return value");
 
-        public IEnumerable<Instruction> LoadAddress(ITranspilerValueContext context) =>
+        public override IEnumerable<Instruction> LoadAddress(ITranspilerValueContext context) =>
             throw new InvalidOperationException("Cannot load a return value address");
 
-        public abstract IEnumerable<Instruction> Store(ITranspilerValueContext context, ValueStackEntry value);
+        public abstract override IEnumerable<Instruction> Store(ITranspilerValueContext context, ValueStackEntry value);
     }
 
     internal class ValueReturn : Return

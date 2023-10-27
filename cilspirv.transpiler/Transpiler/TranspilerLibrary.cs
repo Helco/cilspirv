@@ -56,7 +56,9 @@ namespace cilspirv.Transpiler
         {
             new BuiltinTypeMapper(),
             new StructOffsetScanner(),
-            new AttributeScanner()
+            new AttributeScanner(),
+            new SystemNumericsMapper(),
+            new ProvidedLibraryMapper()
         };
 
         public TranspilerLibrary(TypeDefinition ilModuleType, Module module, Action<DefinedFunction, MethodBody> queueMethodBody)

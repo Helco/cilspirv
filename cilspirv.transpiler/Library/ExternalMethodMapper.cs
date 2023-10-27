@@ -10,11 +10,11 @@ using Mono.Cecil;
 
 namespace cilspirv.Library
 {
-    internal partial class ExternalMethodMapper : ITranspilerLibraryMapper, IEnumerable<KeyValuePair<string, GenerateCallDelegate>>
+    internal partial class ExternalMethodMapper : NullTranspilerLibraryMapper, IEnumerable<KeyValuePair<string, GenerateCallDelegate>>
     {
         private readonly Dictionary<string, GenerateCallDelegate> methods = new Dictionary<string, GenerateCallDelegate>();
 
-        public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) =>
+        public override GenerateCallDelegate? TryMapMethod(MethodReference methodRef) =>
             methods.TryGetValue(methodRef.FullCilspirvName(), out var method)
             ? method
             : null;

@@ -14,7 +14,7 @@ namespace cilspirv.Transpiler.Declarations
         public SpirvType ReturnType { get; }
         public IValueBehaviour? ReturnValue { get; set; }
         public IList<Parameter> Parameters { get; } = new List<Parameter>();
-        public IReadOnlySet<DecorationEntry> Decorations { get; set; } = new HashSet<DecorationEntry>();
+        public IReadOnlySetDecorationEntry Decorations { get; set; } = new HashSet<DecorationEntry>();
         public FunctionControl FunctionControl { get; set; }
 
         public SpirvFunctionType SpirvFunctionType => new SpirvFunctionType()
@@ -25,6 +25,8 @@ namespace cilspirv.Transpiler.Declarations
 
         public Function(string name, SpirvType returnType) =>
             (Name, ReturnType) = (name, returnType);
+
+        public IEnumerable<Instruction> GenerateDecorations(IIDMapper mapper) => this.BaseGenerateDecorations(mapper);
 
         public IEnumerator<Instruction> GenerateInstructions(IIDMapper context) =>
             Parameters.SelectMany(p => p.GenerateInstructions(context))

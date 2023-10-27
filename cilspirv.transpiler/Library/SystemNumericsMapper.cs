@@ -11,7 +11,7 @@ using static cilspirv.Library.ExternalMethodMapper;
 
 namespace cilspirv.Library
 {
-    internal class SystemNumericsMapper : ITranspilerLibraryMapper
+    internal class SystemNumericsMapper : NullTranspilerLibraryMapper
     {
         private static readonly SpirvFloatingType SpirvFloat32 = new SpirvFloatingType() { Width = 32 };
         private static readonly SpirvVectorType SpirvVector2 = new SpirvVectorType()
@@ -137,9 +137,9 @@ namespace cilspirv.Library
                 typeMapper.Add<T, float>("W", new StandardFieldBehavior(SpirvFloat32, 3));
         }
 
-        public IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => typeMapper.TryMapType(ilTypeRef);
-        public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => methodMapper.TryMapMethod(methodRef);
-        public IValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) => typeMapper.TryMapFieldBehavior(fieldRef);
-        public IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider element, IDecorationContext? ctx) => typeMapper.TryScanDecorations(element, ctx);
+        public override IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => typeMapper.TryMapType(ilTypeRef);
+        public override GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => methodMapper.TryMapMethod(methodRef);
+        public override IValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) => typeMapper.TryMapFieldBehavior(fieldRef);
+        public override IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider element, IDecorationContext? ctx) => typeMapper.TryScanDecorations(element, ctx);
     }
 }

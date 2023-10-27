@@ -4,6 +4,15 @@ using System.Linq;
 
 namespace cilspirv
 {
+#if !NETSTANDARD2_1_OR_GREATER
+    [AttributeUsage(AttributeTargets.Parameter)]
+    internal class MaybeNullWhenAttribute : Attribute
+    {
+        public MaybeNullWhenAttribute(bool _) { }
+    }
+
+#endif
+
     public static class LinqExtensions
     {
         public static IEnumerable<T> SelectMany<T>(this IEnumerable<IEnumerable<T>> setOfSets) =>
@@ -69,5 +78,30 @@ namespace cilspirv
             if (i > start)
                 yield return set.Skip(start);
         }
+
+        public static bool TryDequeue<T>(this Queue<T> queue, out T value)
+        {
+            value = default!;
+            if (!queue.Any())
+                return false;
+            value = queue.Dequeue();
+            return true;
+        }
+
+        public static IEnumerable<T> TakeLast<T>(this IEnumerable<T> set, int count)
+        {
+            if (count <= 0)
+                return Enumerable.Empty<T>();
+            if (set is IReadOnlyCollection<T> coll)
+            {
+                var skip = Math.Max(0, coll.Count - count);
+                return coll.Skip(skip);
+            }
+            return set.Reverse().Take(count).Reverse();
+        }
+
+#if !NETSTANDARD2_1_OR_GREATER
+        public static HashSet<T> ToHashSet<T>(this IEnumerable<T> set) => new HashSet<T>(set);
+#endif
     }
 }

@@ -5,15 +5,15 @@ using Mono.Cecil;
 
 namespace cilspirv.Transpiler.BuiltInLibrary
 {
-    internal class ReferenceMapper : ITranspilerLibraryMapper
+    internal class ReferenceMapper : NullTranspilerLibraryMapper
     {
         private readonly TranspilerLibrary library;
 
         public ReferenceMapper(TranspilerLibrary library) => this.library = library;
 
-        public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => null;
+        public override GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => null;
 
-        public IMappedFromCILType? TryMapType(TypeReference ilTypeRef)
+        public override IMappedFromCILType? TryMapType(TypeReference ilTypeRef)
         {
             if (ilTypeRef is not ByReferenceType byRefType)
                 return null;

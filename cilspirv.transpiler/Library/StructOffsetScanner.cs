@@ -7,9 +7,9 @@ using cilspirv.Transpiler;
 
 namespace cilspirv.Library
 {
-    internal class StructOffsetScanner : ITranspilerLibraryMapper
+    internal class StructOffsetScanner : NullTranspilerLibraryMapper
     {
-        public IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider attributeProvider, IDecorationContext? context)
+        public override IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider attributeProvider, IDecorationContext? context)
         {
             if (attributeProvider is not FieldDefinition fieldDef ||
                 context is not IFieldDecorationContext fieldContext ||

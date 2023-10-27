@@ -11,7 +11,7 @@ using Mono.Cecil;
 
 namespace cilspirv.Library;
 
-internal class ProvidedLibraryMapper : ITranspilerLibraryMapper
+internal class ProvidedLibraryMapper : NullTranspilerLibraryMapper
 {
     private static readonly Type[] ImageTypes = new[]
     {
@@ -95,7 +95,7 @@ internal class ProvidedLibraryMapper : ITranspilerLibraryMapper
             methodMapper.Add(ExternalMethodMapper.FullNameOf(combineableType, "Sampled"), GenerateCombine);
     }
 
-    public IMappedFromCILType? TryMapType(TypeReference ilTypeRef)
+    public override IMappedFromCILType? TryMapType(TypeReference ilTypeRef)
     {
         if (ImageTypesByName.TryGetValue(ilTypeRef.FullName, out var imageType))
             return MapImageType(imageType);
@@ -106,7 +106,7 @@ internal class ProvidedLibraryMapper : ITranspilerLibraryMapper
         return null;
     }
 
-    public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => methodMapper.TryMapMethod(methodRef);
+    public override GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => methodMapper.TryMapMethod(methodRef);
 
     private static ImageInfoAttribute GetImageInfo(Type type) =>
         type.GetCustomAttribute<ImageInfoAttribute>() ?? 

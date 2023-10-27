@@ -16,10 +16,19 @@ namespace cilspirv.Transpiler
 
     internal interface ITranspilerLibraryMapper
     {
-        GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => null;
-        IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => null;
-        IValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) => null;
-        StorageClass? TryScanStorageClass(ICustomAttributeProvider fieldDef) => null;
-        IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider field, IDecorationContext? context) => Enumerable.Empty<DecorationEntry>();
+        GenerateCallDelegate? TryMapMethod(MethodReference methodRef);
+        IMappedFromCILType? TryMapType(TypeReference ilTypeRef);
+        IValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef);
+        StorageClass? TryScanStorageClass(ICustomAttributeProvider fieldDef);
+        IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider field, IDecorationContext? context);
+    }
+
+    internal class NullTranspilerLibraryMapper : ITranspilerLibraryMapper
+    {
+        public virtual GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => null;
+        public virtual IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => null;
+        public virtual IValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) => null;
+        public virtual StorageClass? TryScanStorageClass(ICustomAttributeProvider fieldDef) => null;
+        public virtual IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider field, IDecorationContext? context) => Enumerable.Empty<DecorationEntry>();
     }
 }

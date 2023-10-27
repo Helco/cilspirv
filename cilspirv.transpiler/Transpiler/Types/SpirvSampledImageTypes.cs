@@ -35,7 +35,7 @@ namespace cilspirv.Transpiler
                 _ => ""
             } + (IsArray ? "Array" : "") + (IsDepth == true ? "Depth" : "")
             + $"Image{Dim.ToString().Trim('D', 'i', 'm')}<{SampledType}>({Format}"
-            + (tags.Any() ? $",{string.Join(',', tags)})" : ")");
+            + (tags.Any() ? $",{string.Join(",", tags)})" : ")");
         }
 
         public override IEnumerable<SpirvType> Dependencies => new[] { SampledType! };

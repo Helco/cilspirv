@@ -33,8 +33,6 @@ namespace cilspirv.testcli
                     throw new InvalidDataException($"Module class {moduleTypeDef.FullName} has no entry point");
 
                 var unit = new Transpiler.Transpiler(moduleTypeDef);
-                unit.Library.Mappers.Add(new SystemNumericsMapper());
-                unit.Library.Mappers.Add(new ProvidedLibraryMapper());
                 unit.ExtractModuleAttributes();
                 foreach (var entryPoint in entryPoints)
                 {

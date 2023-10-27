@@ -101,12 +101,12 @@ namespace cilspirv.test.veldrid
                 File.ReadAllBytes("Texture.spv"),
                 "Frag");
 
-            //_shaders = factory.CreateFromSpirv(vertexShaderDesc, fragmentShaderDesc);
-            _shaders = new[]
+            _shaders = factory.CreateFromSpirv(vertexShaderDesc, fragmentShaderDesc);
+            /*_shaders = new[]
             {
                 factory.CreateShader(vertexShaderDesc),
                 factory.CreateShader(fragmentShaderDesc)
-            };
+            };*/
 
             var uniforms = new test_shaders.Simple.Uniforms()
             {

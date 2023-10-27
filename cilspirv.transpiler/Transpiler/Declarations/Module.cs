@@ -24,7 +24,7 @@ namespace cilspirv.Transpiler.Declarations
         public ISet<Variable> GlobalVariables { get; } = new HashSet<Variable>();
 
         /// <summary>Available capabilities including implicitly declared ones</summary>
-        public IReadOnlySet<Capability> AllCapabilities
+        public IReadOnlySetCapability AllCapabilities
         {
             get
             {

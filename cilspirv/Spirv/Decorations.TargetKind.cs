@@ -23,7 +23,8 @@ namespace cilspirv.Spirv
 
     partial class Decorations
     {
-        public static DecorationTargetKinds GetTargetKinds(this Decoration decoration) => targetKinds.GetValueOrDefault(decoration);
+        public static DecorationTargetKinds GetTargetKinds(this Decoration decoration) =>
+            targetKinds.TryGetValue(decoration, out var kinds) ? kinds : default;
 
 #pragma warning disable CS0618
         private static readonly Dictionary<Decoration, DecorationTargetKinds> targetKinds = new Dictionary<Decoration, DecorationTargetKinds>()

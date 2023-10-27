@@ -8,18 +8,20 @@ namespace cilspirv.Transpiler
 {
     internal interface IDecoratable
     {
-        IReadOnlySet<DecorationEntry> Decorations { get; }
+        IReadOnlySetDecorationEntry Decorations { get; }
     }
 
     internal interface IDecoratableInstructionGeneratable : IInstructionGeneratable, IDecoratable
     {
-        IEnumerable<Instruction> GenerateDecorations(IIDMapper context)
-            => BaseGenerateDecorations(context);
+        IEnumerable<Instruction> GenerateDecorations(IIDMapper context);
+    }
 
-        IEnumerable<Instruction> BaseGenerateDecorations(IIDMapper context)
+    internal static class IDecoratableExtensions
+    {
+        public static IEnumerable<Instruction> BaseGenerateDecorations(this IDecoratableInstructionGeneratable thiz, IIDMapper context)
         {
-            var id = context.IDOf(this);
-            foreach (var entry in Decorations.OrderBy(e => (int)e.Kind).ThenBy(e => e.GetHashCode()))
+            var id = context.IDOf(thiz);
+            foreach (var entry in thiz.Decorations.OrderBy(e => (int)e.Kind).ThenBy(e => e.GetHashCode()))
             {
                 var stringOperands = entry.ExtraOperands.Where(o => o.Kind == ExtraOperandKind.String).ToImmutableArray();
                 var idOperands = entry.ExtraOperands.Where(o => o.Kind == ExtraOperandKind.ID).ToImmutableArray();

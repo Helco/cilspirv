@@ -5,7 +5,7 @@ using Mono.Cecil;
 
 namespace cilspirv.Library
 {
-    internal class BuiltinTypeMapper : ITranspilerLibraryMapper
+    internal class BuiltinTypeMapper : NullTranspilerLibraryMapper
     {
         private readonly ITranspilerLibraryMapper typeMapper = new ExternalTypeMapper()
         {
@@ -23,11 +23,6 @@ namespace cilspirv.Library
             { typeof(void), new SpirvVoidType() }
         };
 
-        public IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => typeMapper.TryMapType(ilTypeRef);
-
-        public GenerateCallDelegate? TryMapMethod(MethodReference methodRef)
-        {
-            return null;
-        }
+        public override IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => typeMapper.TryMapType(ilTypeRef);
     }
 }

@@ -111,11 +111,11 @@ namespace cilspirv
                 fullName = type.Namespace == null
                     ? type.Name
                     : $"{type.Namespace}.{type.Name}";
-                return fullName + "<" + string.Join(',', type.GetGenericArguments().Select(FullName)) + ">";
+                return fullName + "<" + string.Join(",", type.GetGenericArguments().Select(FullName)) + ">";
             }
 
             if (type.ContainsGenericParameters)
-                return fullName + "<" + string.Join(',', type.GetGenericArguments().Select(t => t.Name)) + ">";
+                return fullName + "<" + string.Join(",", type.GetGenericArguments().Select(t => t.Name)) + ">";
 
             return fullName;
         }

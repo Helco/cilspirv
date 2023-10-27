@@ -8,7 +8,7 @@ using Mono.Cecil;
 
 namespace cilspirv.Library
 {
-    internal class ExternalTypeMapper : ITranspilerLibraryMapper, IEnumerable<KeyValuePair<Type, SpirvType>>
+    internal class ExternalTypeMapper : NullTranspilerLibraryMapper, IEnumerable<KeyValuePair<Type, SpirvType>>
     {
         private readonly Dictionary<Type, SpirvType> mappedTypes = new Dictionary<Type, SpirvType>();
         private readonly Dictionary<string, SpirvType> typeByName = new Dictionary<string, SpirvType>();
@@ -25,7 +25,7 @@ namespace cilspirv.Library
             typeByName.Add(ilType.FullName ?? throw new ArgumentNullException("IL type does not have a name"), spirvType);
         }
 
-        public IMappedFromCILType? TryMapType(TypeReference ilTypeRef) =>
+        public override IMappedFromCILType? TryMapType(TypeReference ilTypeRef) =>
             typeByName.TryGetValue(ilTypeRef.FullName, out var spirvType)
             ? spirvType
             : null;
@@ -33,14 +33,12 @@ namespace cilspirv.Library
         public IEnumerator<KeyValuePair<Type, SpirvType>> GetEnumerator() => mappedTypes.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public GenerateCallDelegate? TryMapMethod(MethodReference methodRef) => null;
-
-        public IValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) =>
+        public override IValueBehaviour? TryMapFieldBehavior(FieldReference fieldRef) =>
             fields.TryGetValue(fieldRef.FullName, out var fieldBehaviour)
             ? fieldBehaviour
             : null;
 
-        public IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider provider, IDecorationContext? _)
+        public override IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider provider, IDecorationContext? _)
         {
             var relatedType = provider.GetRelatedType();
             if (relatedType?.IsByReference ?? false)

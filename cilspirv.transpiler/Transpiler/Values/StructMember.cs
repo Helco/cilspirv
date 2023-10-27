@@ -8,16 +8,17 @@ using cilspirv.Transpiler.Declarations;
 
 namespace cilspirv.Transpiler.Values
 {
-    public record StructMember :
-        IDecoratable,
-        IValueBehaviour
+    internal class StructMember :
+        BaseValueBehaviour,
+        IEquatable<StructMember>,
+        IDecoratable
     {
         public int Index { get; }
         public string Name { get; }
         public SpirvType Type { get; }
-        public IReadOnlySet<DecorationEntry> Decorations { get; }
+        public IReadOnlySetDecorationEntry Decorations { get; }
 
-        public StructMember(int index, string name, SpirvType type, IReadOnlySet<DecorationEntry>? decorations)
+        public StructMember(int index, string name, SpirvType type, IReadOnlySetDecorationEntry? decorations)
         {
             Index = index;
             Name = name;
@@ -25,16 +26,15 @@ namespace cilspirv.Transpiler.Values
             Decorations = decorations ?? new HashSet<DecorationEntry>();
         }
 
-        public virtual bool Equals(StructMember? other) =>
+        public bool Equals(StructMember? other) =>
             other != null &&
-            EqualityContract == other.EqualityContract &&
             Index == other.Index &&
             Name == other.Name &&
             Type == other.Type &&
             Decorations.SetEquals(other.Decorations);
 
         public override int GetHashCode() => Decorations.Aggregate(
-            HashCode.Combine(EqualityContract, Index, Name, Type),
+            HashCode.Combine(Index, Name, Type),
             HashCode.Combine);
 
         internal IEnumerable<Instruction> GenerateDecorations(IIDMapper context, ID structID, int memberI)
@@ -91,14 +91,14 @@ namespace cilspirv.Transpiler.Values
             }, resultType);
         }
 
-        IEnumerable<Instruction> IValueBehaviour.LoadAddress(ITranspilerValueContext context)
+        public override IEnumerable<Instruction> LoadAddress(ITranspilerValueContext context)
         {
             var (instruction, resultType) = CreateAccessChain(context);
             context.Result = new ValueStackEntry(this, instruction.Result, resultType);
             yield return instruction;
         }
 
-        IEnumerable<Instruction> IValueBehaviour.Load(ITranspilerValueContext context)
+        public override IEnumerable<Instruction> Load(ITranspilerValueContext context)
         {
             if (context.Parent is not ValueStackEntry parentValue)
                 throw new InvalidOperationException("Struct member parent is not a value");

@@ -17,11 +17,20 @@ namespace cilspirv.Transpiler
         // if Load/Store returns null, a standard OpLoad/OpStore is attempted using LoadAddress
         // if LoadAddress is not defined, ldflda is not supported
 
-        IEnumerable<SpirvInstruction>? LoadAddress(ITranspilerValueContext context) { return null; }
-        IEnumerable<SpirvInstruction>? Load(ITranspilerValueContext context) { return null; }
-        IEnumerable<SpirvInstruction>? Store(ITranspilerValueContext context, ValueStackEntry value) { return null; }
+        IEnumerable<SpirvInstruction>? LoadAddress(ITranspilerValueContext context);
+        IEnumerable<SpirvInstruction>? Load(ITranspilerValueContext context);
+        IEnumerable<SpirvInstruction>? Store(ITranspilerValueContext context, ValueStackEntry value);
+        IEnumerable<SpirvInstruction> LoadIndirect(ITranspilerValueContext context);
+        IEnumerable<SpirvInstruction> StoreIndirect(ITranspilerValueContext context, StackEntry entry);
+    }
 
-        IEnumerable<SpirvInstruction> LoadIndirect(ITranspilerValueContext context)
+    internal class BaseValueBehaviour : IValueBehaviour
+    {
+        public virtual IEnumerable<SpirvInstruction>? LoadAddress(ITranspilerValueContext context) { return null; }
+        public virtual IEnumerable<SpirvInstruction>? Load(ITranspilerValueContext context) { return null; }
+        public virtual IEnumerable<SpirvInstruction>? Store(ITranspilerValueContext context, ValueStackEntry value) { return null; }
+
+        public virtual IEnumerable<SpirvInstruction> LoadIndirect(ITranspilerValueContext context)
         {
             if (context.Parent is not ValueStackEntry pointer)
                 throw new InvalidOperationException("LoadObject source is not a value");
@@ -38,7 +47,7 @@ namespace cilspirv.Transpiler
             context.Result = new ValueStackEntry(resultId, pointerType.Type!);
         }
 
-        IEnumerable<SpirvInstruction> StoreIndirect(ITranspilerValueContext context, StackEntry entry)
+        public virtual IEnumerable<SpirvInstruction> StoreIndirect(ITranspilerValueContext context, StackEntry entry)
         {
             if (entry is not ValueStackEntry value)
                 throw new InvalidOperationException("StoreObject entry is not a value");

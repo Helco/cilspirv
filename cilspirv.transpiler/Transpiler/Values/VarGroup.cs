@@ -7,8 +7,8 @@ using cilspirv.Spirv;
 namespace cilspirv.Transpiler.Values
 {
     internal class VarGroup :
-        IMappedFromCILType,
-        IValueBehaviour
+        BaseValueBehaviour,
+        IMappedFromCILType
     {
         public TypeDefinition TypeDefinition { get; }
         public string Name { get; }
@@ -17,19 +17,19 @@ namespace cilspirv.Transpiler.Values
         public VarGroup(string name, TypeDefinition typeDef) =>
             (Name, TypeDefinition) = (name, typeDef);
 
-        IEnumerable<Instruction> IValueBehaviour.LoadAddress(ITranspilerValueContext context)
+        public override IEnumerable<Instruction> LoadAddress(ITranspilerValueContext context)
         {
             context.Result = new StackEntry(this);
             return Enumerable.Empty<Instruction>();
         }
 
-        IEnumerable<Instruction> IValueBehaviour.Load(ITranspilerValueContext context)
+        public override IEnumerable<Instruction> Load(ITranspilerValueContext context)
         {
             context.Result = new StackEntry(this);
             return Enumerable.Empty<Instruction>();
         }
 
-        IEnumerable<Instruction> IValueBehaviour.Store(ITranspilerValueContext context, ValueStackEntry value) =>
+        public override IEnumerable<Instruction> Store(ITranspilerValueContext context, ValueStackEntry value) =>
             throw new InvalidOperationException("Cannot store a variable group");
     }
 

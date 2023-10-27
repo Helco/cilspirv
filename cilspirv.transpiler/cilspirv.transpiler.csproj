@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <WarningsAsErrors>NU1605;nullable;CS8618</WarningsAsErrors>
@@ -10,7 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mono.Cecil" Version="0.11.4" />
+    <PackageReference Include="IndexRange" Version="1.0.3" />
+    <PackageReference Include="IsExternalInit" Version="1.0.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Mono.Cecil" Version="0.11.5" />
   </ItemGroup>
 
   <ItemGroup>

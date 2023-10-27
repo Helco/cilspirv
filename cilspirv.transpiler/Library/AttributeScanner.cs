@@ -8,9 +8,9 @@ using cilspirv.Spirv;
 
 namespace cilspirv.Library
 {
-    internal class AttributeScanner : ITranspilerLibraryMapper
+    internal class AttributeScanner : NullTranspilerLibraryMapper
     {
-        public StorageClass? TryScanStorageClass(ICustomAttributeProvider element)
+        public override StorageClass? TryScanStorageClass(ICustomAttributeProvider element)
         {
             var attr = element.GetCustomAttributes<StorageClassAttribute>(exactType: false).SingleOrDefault();
             if (attr == null)
@@ -18,7 +18,7 @@ namespace cilspirv.Library
             return attr.Instantiate<StorageClassAttribute>().StorageClass;
         }
 
-        public IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider element, IDecorationContext? _) => element
+        public override IEnumerable<DecorationEntry> TryScanDecorations(ICustomAttributeProvider element, IDecorationContext? _) => element
             .GetCustomAttributes<DecorationAttribute>(exactType: false)
             .SelectMany(attr => attr.Instantiate<DecorationAttribute>().Decorations);
     }

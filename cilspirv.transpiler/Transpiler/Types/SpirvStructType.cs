@@ -8,7 +8,7 @@ using cilspirv.Transpiler.Values;
 
 namespace cilspirv.Transpiler
 {
-    public record SpirvStructType : SpirvAggregateType, IDecoratableInstructionGeneratable
+    internal record SpirvStructType : SpirvAggregateType, IDecoratableInstructionGeneratable
     {
         public ImmutableArray<StructMember> Members { get; init; }
 

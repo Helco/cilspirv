@@ -11,16 +11,16 @@ using Mono.Cecil;
 
 namespace cilspirv.Transpiler
 {
-    internal class InternalMethodMapper : ITranspilerLibraryMapper
+    internal class InternalMethodMapper : NullTranspilerLibraryMapper
     {
         private readonly TranspilerLibrary library;
         private readonly Dictionary<string, GenerateCallDelegate> methods = new Dictionary<string, GenerateCallDelegate>();
 
         public InternalMethodMapper(TranspilerLibrary library) => this.library = library;
 
-        public IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => null;
+        public override IMappedFromCILType? TryMapType(TypeReference ilTypeRef) => null;
 
-        public GenerateCallDelegate? TryMapMethod(MethodReference methodRef)
+        public override GenerateCallDelegate? TryMapMethod(MethodReference methodRef)
         {
             if (methods.TryGetValue(methodRef.FullName, out var mapped))
                 return mapped;
@@ -53,7 +53,7 @@ namespace cilspirv.Transpiler
             .CustomAttributes
             .Select(attr => attr.AttributeType)
             .Any(typeRef =>
-                typeRef.Name == nameof(DoesNotReturnAttribute) || // only local name 
+                typeRef.Name == "DoesNotReturnAttribute" || // only local name, no nameof due to polyfill conflicts
                 typeRef.FullName == typeof(Library.KillAttribute).FullName);
 
         private IEnumerable<Instruction> GenerateKill(ITranspilerContext context) => new[]

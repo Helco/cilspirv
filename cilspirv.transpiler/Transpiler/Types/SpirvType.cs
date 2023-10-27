@@ -16,7 +16,7 @@ namespace cilspirv.Transpiler
     {
         public string Name => UserName ?? ToString();
         public string? UserName { get; init; }
-        public IReadOnlySet<DecorationEntry> Decorations { get; init; } = new HashSet<DecorationEntry>();
+        public IReadOnlySetDecorationEntry Decorations { get; init; } = new HashSet<DecorationEntry>();
 
         public virtual IEnumerable<SpirvType> Dependencies => Enumerable.Empty<SpirvType>();
 
@@ -31,6 +31,8 @@ namespace cilspirv.Transpiler
                 this is SpirvAggregateType ? Name : "",
                 EqualityContract),
             HashCode.Combine);
+
+        IEnumerable<Instruction> IDecoratableInstructionGeneratable.GenerateDecorations(IIDMapper mapper) => this.BaseGenerateDecorations(mapper);
 
         IEnumerator<Instruction> IInstructionGeneratable.GenerateInstructions(IIDMapper context) => GenerateInstructions(context);
         internal abstract IEnumerator<Instruction> GenerateInstructions(IIDMapper context);

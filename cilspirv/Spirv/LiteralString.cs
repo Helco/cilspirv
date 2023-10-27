@@ -68,7 +68,11 @@ namespace cilspirv.Spirv
 
             var byteBuffer = MemoryMarshal.AsBytes(uintBuffer.AsSpan());
             var byteLength = byteBuffer.IndexOf((byte)0);
+#if NETSTANDARD2_1_OR_GREATER
             var value = Encoding.UTF8.GetString(byteBuffer.Slice(0, byteLength));
+#else
+            var value = Encoding.UTF8.GetString(byteBuffer.Slice(0, byteLength).ToArray());
+#endif
             return (value, i);
         }
 

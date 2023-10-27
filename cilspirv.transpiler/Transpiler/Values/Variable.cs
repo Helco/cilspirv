@@ -14,7 +14,7 @@ namespace cilspirv.Transpiler.Values
         }
     }
 
-    internal class GlobalVariable : Variable, IValueBehaviour
+    internal class GlobalVariable : Variable
     {
         public GlobalVariable(string name, SpirvPointerType pointerType) : base(name, pointerType)
         {
@@ -22,18 +22,20 @@ namespace cilspirv.Transpiler.Values
     }
 
     internal abstract class Variable :
+        BaseValueBehaviour,
         IDecoratableInstructionGeneratable,
-        IDebugInstructionGeneratable,
-        IValueBehaviour
+        IDebugInstructionGeneratable
     {
         public string Name { get; }
         public SpirvPointerType PointerType { get; }
         public SpirvType ElementType => PointerType.Type ?? throw new InvalidOperationException("Element type is not set");
         public StorageClass StorageClass => PointerType.StorageClass;
-        public IReadOnlySet<DecorationEntry> Decorations { get; set; } = new HashSet<DecorationEntry>();
+        public IReadOnlySetDecorationEntry Decorations { get; set; } = new HashSet<DecorationEntry>();
 
         public Variable(string name, SpirvPointerType pointerType) =>
             (Name, PointerType) = (name, pointerType);
+
+        IEnumerable<Instruction> IDecoratableInstructionGeneratable.GenerateDecorations(IIDMapper mapper) => this.BaseGenerateDecorations(mapper);
 
         public virtual IEnumerator<Instruction> GenerateInstructions(IIDMapper context)
         {
@@ -63,7 +65,7 @@ namespace cilspirv.Transpiler.Values
                 entryFunction.Interface.Add(this);
         }
 
-        IEnumerable<Instruction> IValueBehaviour.Load(ITranspilerValueContext context)
+        public override IEnumerable<Instruction> Load(ITranspilerValueContext context)
         {
             MarkUsageIn(context.Function);
             var result = new ValueStackEntry(this, context.CreateID(), ElementType);
@@ -76,14 +78,14 @@ namespace cilspirv.Transpiler.Values
             };
         }
 
-        IEnumerable<Instruction> IValueBehaviour.LoadAddress(ITranspilerValueContext context)
+        public override IEnumerable<Instruction> LoadAddress(ITranspilerValueContext context)
         {
             MarkUsageIn(context.Function);
             context.Result = new ValueStackEntry(this, context.IDOf(this), PointerType);
             return Enumerable.Empty<Instruction>();
         }
 
-        IEnumerable<Instruction> IValueBehaviour.Store(ITranspilerValueContext context, ValueStackEntry value)
+        public override IEnumerable<Instruction> Store(ITranspilerValueContext context, ValueStackEntry value)
         {
             MarkUsageIn(context.Function);
             yield return new OpStore()

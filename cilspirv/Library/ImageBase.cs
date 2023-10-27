@@ -33,12 +33,26 @@ public interface ILODSamplable<TResult, TFCoordinate>
     TResult SampleLOD(TFCoordinate coord, uint lod);
 }
 
-public interface IGatherable<TResult, TFCoordinate>
+public partial interface IGatherable<TResult, TFCoordinate>
 {
     TResult Gather(TFCoordinate coord, int component);
+}
+
+#if NETSTANDARD2_0_OR_GREATER
+partial interface IGatherable<TResult, TFCoordinate>
+{
+    TResult GatherR(TFCoordinate coord);
+    TResult GatherG(TFCoordinate coord);
+    TResult GatherB(TFCoordinate coord);
+    TResult GatherA(TFCoordinate coord);
+}
+#else
+partial interface IGatherable<TResult, TFCoordinate>
+{
     TResult GatherR(TFCoordinate coord) => Gather(coord, 0);
     TResult GatherG(TFCoordinate coord) => Gather(coord, 1);
     TResult GatherB(TFCoordinate coord) => Gather(coord, 2);
     TResult GatherA(TFCoordinate coord) => Gather(coord, 3);
 }
+#endif
 
